@@ -1,0 +1,22 @@
+[project]
+name = "app"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Nicholas",email = "nicholasnas.nn@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi[standard] (>=0.141.1)",
+    "pillow (>=12.3.0,<13.0.0)",
+    "edge-tts (>=7.2.8,<8.0.0)",
+    "sqlalchemy (>=2.0.52,<3.0.0)",
+    "aiosqlite (>=0.22.1,<0.23.0)",
+    "sympy (>=1.14.0,<2.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
