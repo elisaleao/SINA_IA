@@ -73,8 +73,5 @@ app/
 ├── uploads/                        # Armazenamento temporário de arquivos recebidos
 ├── outputs/                        # Armazenamento de arquivos de áudio (.mp3) gerados
 ├── tests/                          # Testes automatizados com pytest e httpx
-├── Dockerfile                      # Multi-stage build para produção
-├── docker-compose.yml              # Orquestração do container e volumes
 ├── pyproject.toml                  # Manifesto de dependências e configuração do Poetry
-├── poetry.lock                     # Lockfile com versões exatas dos pacotes
 └── .env.example                    # Modelo de variáveis de ambiente

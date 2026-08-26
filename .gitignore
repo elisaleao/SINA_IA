@@ -8,3 +8,5 @@ backend/.pytest_cache/
 *.pyc
 .env
 backend/.env
+.vscode
+
