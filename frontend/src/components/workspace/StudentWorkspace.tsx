@@ -10,8 +10,10 @@ import {
   joinClassroomByCode,
   subscribeToClassrooms,
   type StoredClassroom,
+  type StoredClassroomFile,
 } from "@/lib/classrooms-storage";
 import { appRoutes } from "@/lib/routes";
+import { generateStudyContent, getAudioUrl, type GenerationType } from "@/lib/api";
 
 type StudentView = "chat" | "schedule" | "join-room" | "room";
 
@@ -171,6 +173,15 @@ export function StudentWorkspace() {
   );
   const [joinRoomCode, setJoinRoomCode] = useState("");
   const [joinFeedback, setJoinFeedback] = useState<string | null>(null);
+  
+  const [selectedFileForStudy, setSelectedFileForStudy] = useState<StoredClassroomFile | null>(null);
+  const [adaptationType, setAdaptationType] = useState<GenerationType>("summary");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedContent, setGeneratedContent] = useState<{
+    text: string;
+    audioUrl: string | null;
+  } | null>(null);
+  const [generationError, setGenerationError] = useState<string | null>(null);
 
   const timeSlots = useMemo(
     () => buildTimeSlots(scheduleConfig),
@@ -297,20 +308,63 @@ export function StudentWorkspace() {
 
   function openJoinRoom() {
     setSelectedRoom(null);
+    setSelectedFileForStudy(null);
+    setGeneratedContent(null);
+    setGenerationError(null);
     setActiveView("join-room");
     setJoinFeedback(null);
   }
 
   function openRoom(room: StudentRoom) {
     setSelectedRoom(room);
+    setSelectedFileForStudy(null);
+    setGeneratedContent(null);
+    setGenerationError(null);
     setActiveView("room");
     setJoinFeedback(null);
   }
 
   function goBackToMainChat() {
     setSelectedRoom(null);
+    setSelectedFileForStudy(null);
+    setGeneratedContent(null);
+    setGenerationError(null);
     setActiveView("chat");
     setJoinFeedback(null);
+  }
+
+  async function handleGenerateContent(type: GenerationType) {
+    if (!selectedFileForStudy?.documentId) {
+      setGenerationError("Este arquivo não possui um ID de documento válido no back-end. Certifique-se de que ele foi enviado corretamente pelo professor.");
+      return;
+    }
+
+    setIsGenerating(true);
+    setGenerationError(null);
+    setAdaptationType(type);
+
+    try {
+      const response = await generateStudyContent({
+        document_id: selectedFileForStudy.documentId,
+        generation_type: type,
+        teacher_config: {
+          pedagogical_level: "intermediario",
+          math_detail_level: "passo_a_passo",
+          tone: "encorajador",
+        },
+        generate_audio: true,
+      });
+
+      setGeneratedContent({
+        text: response.text_content,
+        audioUrl: response.audio_url,
+      });
+    } catch (error: any) {
+      console.error(error);
+      setGenerationError(error.message || "Erro ao conectar com o servidor para gerar o material.");
+    } finally {
+      setIsGenerating(false);
+    }
   }
 
   function handleJoinRoom(event: React.FormEvent<HTMLFormElement>) {
@@ -541,24 +595,139 @@ export function StudentWorkspace() {
                   <div className="mx-auto flex max-w-4xl items-center gap-3">
                     <button
                       type="button"
-                      onClick={goBackToMainChat}
+                      onClick={() => {
+                        if (selectedFileForStudy) {
+                          setSelectedFileForStudy(null);
+                          setGeneratedContent(null);
+                          setGenerationError(null);
+                        } else {
+                          goBackToMainChat();
+                        }
+                      }}
                       className="inline-flex items-center gap-2 rounded-full border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 transition hover:border-stone-900 hover:text-stone-900"
                     >
                       <ArrowLeftIcon />
-                      Voltar ao chat principal
+                      {selectedFileForStudy ? "Voltar ao chat da sala" : "Voltar ao chat principal"}
                     </button>
                     <span className="text-sm font-medium text-stone-500">
-                      {selectedRoom.title}
+                      {selectedRoom.title}{selectedFileForStudy ? ` • Estudo: ${selectedFileForStudy.title}` : ""}
                     </span>
                   </div>
                 </div>
 
-                <ChatPanel
-                  key={`room-chat-${selectedRoom.id}`}
-                  title={selectedRoom.title}
-                  messages={roomChatMessages}
-                  placeholder="Escreva sua mensagem para a sala"
-                />
+                {selectedFileForStudy ? (
+                  <div className="min-h-0 overflow-y-auto bg-[#faf8f4] p-5 sm:p-6" role="region" aria-label={`Estudo adaptado do arquivo ${selectedFileForStudy.title}`}>
+                    <div className="mx-auto max-w-3xl space-y-6">
+                      <div className="rounded-[1.5rem] border border-stone-200 bg-white p-5 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+                        <span className="rounded-full bg-[#1f5f5b]/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#1f5f5b]">
+                          Material de Estudo Adaptado por IA
+                        </span>
+                        <h3 className="mt-2 text-xl font-bold text-stone-900">{selectedFileForStudy.title}</h3>
+                        <p className="mt-1 text-sm text-stone-500">{selectedFileForStudy.meta}</p>
+
+                        {!selectedFileForStudy.documentId ? (
+                          <div className="mt-4 rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-800">
+                            <strong>Aviso:</strong> Este arquivo foi adicionado antes da ativação do back-end. Não possui ID de documento para gerar o resumo/áudio via IA. Peça para o professor reenviá-lo.
+                          </div>
+                        ) : (
+                          <div className="mt-5 space-y-4">
+                            <p className="text-sm font-semibold text-stone-700">Selecione o formato de estudo para gerar com a IA:</p>
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleGenerateContent("summary")}
+                                disabled={isGenerating}
+                                className={`rounded-full px-4 py-2.5 text-sm font-semibold transition ${
+                                  adaptationType === "summary" && generatedContent
+                                    ? "bg-[#1f5f5b] text-white"
+                                    : "bg-white border border-stone-300 text-stone-700 hover:border-stone-850 hover:bg-stone-50"
+                                }`}
+                              >
+                                {isGenerating && adaptationType === "summary" ? "Gerando Resumo..." : "Resumo Adaptado"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleGenerateContent("quiz")}
+                                disabled={isGenerating}
+                                className={`rounded-full px-4 py-2.5 text-sm font-semibold transition ${
+                                  adaptationType === "quiz" && generatedContent
+                                    ? "bg-[#1f5f5b] text-white"
+                                    : "bg-white border border-stone-300 text-stone-700 hover:border-stone-850 hover:bg-stone-50"
+                                }`}
+                              >
+                                {isGenerating && adaptationType === "quiz" ? "Gerando Questões..." : "Questões de Fixação"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleGenerateContent("study_guide")}
+                                disabled={isGenerating}
+                                className={`rounded-full px-4 py-2.5 text-sm font-semibold transition ${
+                                  adaptationType === "study_guide" && generatedContent
+                                    ? "bg-[#1f5f5b] text-white"
+                                    : "bg-white border border-stone-300 text-stone-700 hover:border-stone-850 hover:bg-stone-50"
+                                }`}
+                              >
+                                {isGenerating && adaptationType === "study_guide" ? "Gerando Guia..." : "Guia de Estudos"}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {isGenerating && (
+                        <div className="flex flex-col items-center justify-center p-12 space-y-4 rounded-[1.5rem] bg-white border border-stone-200">
+                          <div className="w-10 h-10 border-4 border-[#1f5f5b] border-t-transparent rounded-full animate-spin"></div>
+                          <p className="text-sm font-medium text-stone-600">A IA está processando seu material de forma acessível...</p>
+                        </div>
+                      )}
+
+                      {generationError && (
+                        <div className="rounded-[1.5rem] bg-red-50 border border-red-200 p-5 text-sm text-red-800" role="alert">
+                          <strong>Erro:</strong> {generationError}
+                        </div>
+                      )}
+
+                      {generatedContent && !isGenerating && (
+                        <div className="space-y-6">
+                          {generatedContent.audioUrl && (
+                            <div className="rounded-[1.5rem] border border-[#1f5f5b]/20 bg-[#edf6f5] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+                              <p className="text-sm font-bold text-[#1f5f5b] uppercase tracking-[0.16em]">
+                                Versão Falada com Fórmulas Adaptadas
+                              </p>
+                              <p className="mt-1 text-xs text-stone-600">
+                                Play para ouvir a explicação da IA. As equações matemáticas foram traduzidas foneticamente.
+                              </p>
+                              <div className="mt-4 flex items-center">
+                                <audio
+                                  src={getAudioUrl(generatedContent.audioUrl) || undefined}
+                                  controls
+                                  className="w-full"
+                                  aria-label="Reprodutor do áudio explicativo adaptado por IA"
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="rounded-[1.5rem] border border-stone-200 bg-white p-6 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
+                            <h4 className="text-lg font-bold text-stone-900 border-b border-stone-200 pb-3 uppercase tracking-wider">
+                              Conteúdo Escrito ({adaptationType === "summary" ? "Resumo" : adaptationType === "quiz" ? "Questões" : "Guia de Estudos"})
+                            </h4>
+                            <div className="mt-4 text-stone-800 leading-relaxed whitespace-pre-wrap text-base font-sans space-y-4">
+                              {generatedContent.text}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <ChatPanel
+                    key={`room-chat-${selectedRoom.id}`}
+                    title={selectedRoom.title}
+                    messages={roomChatMessages}
+                    placeholder="Escreva sua mensagem para a sala"
+                  />
+                )}
               </div>
 
               <aside aria-label="Materiais da sala" className="min-h-0 overflow-y-auto border-l border-stone-200 bg-white p-5">
@@ -576,9 +745,19 @@ export function StudentWorkspace() {
                 <div className="mt-5 grid gap-3">
                   {selectedRoom.files.length > 0 ? (
                     selectedRoom.files.map((file) => (
-                      <article
+                      <button
                         key={file.id}
-                        className="rounded-[1.25rem] border border-stone-200 bg-[#fffaf1] px-4 py-4"
+                        type="button"
+                        onClick={() => {
+                          setSelectedFileForStudy(file);
+                          setGeneratedContent(null);
+                          setGenerationError(null);
+                        }}
+                        className={`rounded-[1.25rem] border text-left px-4 py-4 transition ${
+                          selectedFileForStudy?.id === file.id
+                            ? "border-[#1f5f5b] bg-[#edf6f5]"
+                            : "border-stone-200 bg-[#fffaf1] hover:border-stone-300"
+                        }`}
                       >
                         <h4 className="text-sm font-semibold text-stone-900">
                           {file.title}
@@ -586,7 +765,7 @@ export function StudentWorkspace() {
                         <p className="mt-2 text-sm leading-6 text-stone-600">
                           {file.meta}
                         </p>
-                      </article>
+                      </button>
                     ))
                   ) : (
                     <div className="rounded-[1.25rem] border border-dashed border-stone-300 px-4 py-5 text-sm leading-6 text-stone-500">

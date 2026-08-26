@@ -2,6 +2,10 @@ export type StoredClassroomFile = {
   id: string;
   title: string;
   meta: string;
+  documentId?: string;
+  extractedMarkdown?: string;
+  accessibleText?: string;
+  equationsFound?: string[];
 };
 
 export type StoredClassroom = {

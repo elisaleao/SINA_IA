@@ -12,6 +12,7 @@ import {
   subscribeToClassrooms,
   type StoredClassroom,
 } from "@/lib/classrooms-storage";
+import { uploadDocument } from "@/lib/api";
 
 type TeacherView = "chat" | "create-room" | "room";
 type TeacherRoom = StoredClassroom;
@@ -178,7 +179,7 @@ export function TeacherWorkspace() {
     fileInputRef.current?.click();
   }
 
-  function handleImportDocuments(event: React.ChangeEvent<HTMLInputElement>) {
+  async function handleImportDocuments(event: React.ChangeEvent<HTMLInputElement>) {
     if (!selectedRoom || !teacherProfile) {
       return;
     }
@@ -189,28 +190,48 @@ export function TeacherWorkspace() {
       return;
     }
 
-    const formatter = new Intl.DateTimeFormat("pt-BR", {
-      dateStyle: "short",
-      timeStyle: "short",
-    });
-    const importedFiles = selectedFiles.map((file) => ({
-      id: `file-${Math.random().toString(36).slice(2, 10)}`,
-      title: file.name,
-      meta: `${file.type || "Arquivo"} • ${(file.size / 1024).toFixed(1)} KB • Importado em ${formatter.format(new Date())}`,
-    }));
-    const updatedRoom = addClassroomFiles(
-      selectedRoom.id,
-      teacherProfile.email,
-      importedFiles,
-    );
+    setFeedbackMessage("Enviando e processando documento na IA... Por favor, aguarde.");
 
-    if (updatedRoom) {
-      setSelectedRoom(updatedRoom);
-      setFeedbackMessage("Documentos importados com sucesso para esta sala.");
-      syncTeacherRooms();
+    try {
+      const formatter = new Intl.DateTimeFormat("pt-BR", {
+        dateStyle: "short",
+        timeStyle: "short",
+      });
+
+      const importedFiles = [];
+
+      for (const file of selectedFiles) {
+        // Envia o arquivo para a API FastAPI
+        const response = await uploadDocument(file);
+        
+        importedFiles.push({
+          id: `file-${response.document_id}`,
+          title: file.name,
+          meta: `${file.type || "Arquivo"} • ${(file.size / 1024).toFixed(1)} KB • Importado em ${formatter.format(new Date())}`,
+          documentId: response.document_id,
+          extractedMarkdown: response.extracted_markdown,
+          accessibleText: response.accessible_text,
+          equationsFound: response.equations_found,
+        });
+      }
+
+      const updatedRoom = addClassroomFiles(
+        selectedRoom.id,
+        teacherProfile.email,
+        importedFiles,
+      );
+
+      if (updatedRoom) {
+        setSelectedRoom(updatedRoom);
+        setFeedbackMessage("Documentos importados e processados com sucesso!");
+        syncTeacherRooms();
+      }
+    } catch (error: any) {
+      console.error(error);
+      setFeedbackMessage(`Erro ao importar documento: ${error.message || "Erro desconhecido. Verifique se o backend está ativo."}`);
+    } finally {
+      event.target.value = "";
     }
-
-    event.target.value = "";
   }
 
   const formattedExpiry = selectedRoom
