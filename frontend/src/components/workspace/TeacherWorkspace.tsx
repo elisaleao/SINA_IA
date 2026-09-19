@@ -226,9 +226,10 @@ export function TeacherWorkspace() {
         setFeedbackMessage("Documentos importados e processados com sucesso!");
         syncTeacherRooms();
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
-      setFeedbackMessage(`Erro ao importar documento: ${error.message || "Erro desconhecido. Verifique se o backend está ativo."}`);
+      const message = error instanceof Error ? error.message : "Erro desconhecido. Verifique se o backend está ativo.";
+      setFeedbackMessage(`Erro ao importar documento: ${message}`);
     } finally {
       event.target.value = "";
     }

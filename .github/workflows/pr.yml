@@ -1,0 +1,85 @@
+name: Quality Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend-gate:
+    name: Frontend Quality Gate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Check TypeScript types
+        run: npx tsc --noEmit
+
+  backend-gate:
+    name: Backend Quality Gate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/app
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install system dependencies for OpenCV and audio
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl1 libglib2.0-0 ffmpeg
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - name: Configure Poetry cache
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'poetry'
+          cache-dependency-path: backend/app/poetry.lock
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Check spelling (typos)
+        run: poetry run typos
+
+      - name: Run Ruff Lint
+        run: poetry run ruff check app tests
+
+      - name: Check code formatting (Ruff)
+        run: poetry run ruff format --check app tests
+
+      - name: Run Pytest with coverage
+        run: poetry run pytest

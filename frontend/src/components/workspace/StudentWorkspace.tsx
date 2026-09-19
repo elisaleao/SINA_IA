@@ -359,9 +359,10 @@ export function StudentWorkspace() {
         text: response.text_content,
         audioUrl: response.audio_url,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
-      setGenerationError(error.message || "Erro ao conectar com o servidor para gerar o material.");
+      const message = error instanceof Error ? error.message : "Erro ao conectar com o servidor para gerar o material.";
+      setGenerationError(message);
     } finally {
       setIsGenerating(false);
     }
