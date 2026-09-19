@@ -1,9 +1,9 @@
 [project]
 name = "app"
 version = "0.1.0"
-description = ""
+description = "Plataforma Educacional Inclusiva SINA_IA"
 authors = [
-    {name = "Nicholas",email = "nicholasnas.nn@gmail.com"}
+    {name = "Nicholas", email = "nicholasnas.nn@gmail.com"}
 ]
 readme = "README.md"
 requires-python = ">=3.13"
@@ -22,7 +22,6 @@ dependencies = [
     "aiofiles (>=23.2.1)"
 ]
 
-
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
@@ -31,12 +30,62 @@ build-backend = "poetry.core.masonry.api"
 dev = [
     "pytest (>=8.0.0)",
     "pytest-asyncio (>=0.23.0)",
-    "httpx (>=0.27.0)"
+    "httpx (>=0.27.0)",
+    "ruff (>=0.16.5,<0.17.0)",
+    "pytest-cov (>=7.1.0,<8.0.0)",
+    "poethepoet (>=0.32.0)",
+    "typos (>=1.50.0,<2.0.0)"
 ]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-pythonpath = ["app"]
+pythonpath = ["app", "."]
+addopts = "-p no:warnings --cov=app --cov-context=test"
 
+[tool.ruff]
+line-length = 79
+extend-exclude = ['migrations']
 
+[tool.ruff.lint]
+preview = true
+select = ['I', 'F', 'E', 'W', 'PL', 'PT']
+ignore = ['PLR', 'PLW0717', 'E501']
 
+[tool.ruff.format]
+preview = true
+quote-style = 'single'
+
+[tool.typos.files]
+extend-exclude = ["*.md"]
+
+[tool.typos.default.extend-words]
+denominador = "denominador"
+numerador = "numerador"
+cliente = "cliente"
+Formate = "Formate"
+Gere = "Gere"
+Erro = "Erro"
+Converte = "Converte"
+Considere = "Considere"
+fundamentais = "fundamentais"
+diagramas = "diagramas"
+ser = "ser"
+
+[tool.poe] 
+poetry_command = ""
+
+[tool.poe.tasks]
+lint.sequence = [
+  { cmd = "typos" },
+  { cmd = "ruff check" },
+]
+format.sequence = [
+  { cmd = "ruff check --fix" },
+  { cmd = "ruff format" },
+]
+serve = "PYTHONPATH=app poetry run uvicorn app.main:app --reload"
+test.sequence = [
+  "lint",
+  { cmd = "pytest -s -x -vv $POE_EXTRA_ARGS" },
+  { cmd = "coverage html --show-contexts" },
+]
