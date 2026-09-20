@@ -5,49 +5,51 @@ from pydantic import BaseModel, Field
 
 
 class GenerationType(str, Enum):
-    SUMMARY = 'summary'
-    QUIZ = 'quiz'
-    STUDY_GUIDE = 'study_guide'
+    SUMMARY = "summary"
+    QUIZ = "quiz"
+    STUDY_GUIDE = "study_guide"
 
 
 class AccessibilityProfileType(str, Enum):
-    VISUAL = 'visual'
-    DYSLEXIA = 'dyslexia'
-    ADHD = 'adhd'
-    COGNITIVE = 'cognitive'
-    UNIVERSAL = 'universal'
+    VISUAL = "visual"
+    DYSLEXIA = "dyslexia"
+    ADHD = "adhd"
+    COGNITIVE = "cognitive"
+    UNIVERSAL = "universal"
 
 
 class AccessibilityConfig(BaseModel):
     profile: AccessibilityProfileType = Field(
         default=AccessibilityProfileType.VISUAL,
-        description='Perfil prioritário de acessibilidade',
+        description="Perfil prioritário de acessibilidade",
     )
     plain_language: bool = Field(
         default=False,
-        description='Se True, simplifica frases e vocabulário (Linguagem Simples)',
+        description="Se True, simplifica frases e vocabulário (Linguagem Simples)",
     )
     include_glossary: bool = Field(
         default=False,
-        description='Gera glossário explicativo de termos técnicos complexos',
+        description="Gera glossário explicativo de termos técnicos complexos",
     )
     highlight_key_points: bool = Field(
         default=True,
-        description='Destaca ideias centrais e termos-chave para foco visual',
+        description="Destaca ideias centrais e termos-chave para foco visual",
+    )
+    vlibras_active: bool = Field(
+        default=False,
+        description="Ativação do tradutor de Libras (VLibras) sob demanda",
     )
 
 
 class TeacherConfig(BaseModel):
     pedagogical_level: str = Field(
-        default='basico', description='basico, intermediario, avancado'
+        default="basico", description="basico, intermediario, avancado"
     )
     math_detail_level: str = Field(
-        default='direto',
-        description='direto, passo_a_passo, explicativo',
+        default="direto",
+        description="direto, passo_a_passo, explicativo",
     )
-    tone: str = Field(
-        default='formal', description='formal, socrático, encorajador'
-    )
+    tone: str = Field(default="formal", description="formal, socrático, encorajador")
 
 
 class GenerateRequest(BaseModel):
@@ -58,7 +60,7 @@ class GenerateRequest(BaseModel):
         default_factory=AccessibilityConfig
     )
     generate_audio: bool = True
-    voice: str = 'pt-BR-AntonioNeural'  # Voz otimizada em PT-BR
+    voice: str = "pt-BR-AntonioNeural"  # Voz otimizada em PT-BR
 
 
 class DocumentProcessResponse(BaseModel):

@@ -33,6 +33,7 @@ export type AccessibilityPreferences = {
   font_size: string;
   line_spacing: string;
   high_contrast: boolean;
+  vlibras_active: boolean;
 };
 
 export type UserProfile = {
@@ -46,6 +47,7 @@ export type UserProfile = {
 
 const ACCESS_TOKEN_KEY = 'sina_access_token';
 const REFRESH_TOKEN_KEY = 'sina_refresh_token';
+const VLIBRAS_STORAGE_KEY = 'sina_vlibras_ativo';
 
 export function getStoredAccessToken(): string | null {
   if (typeof window === 'undefined') return null;
@@ -55,6 +57,17 @@ export function getStoredAccessToken(): string | null {
 export function getStoredRefreshToken(): string | null {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem(REFRESH_TOKEN_KEY);
+}
+
+export function getStoredVLibrasActive(): boolean {
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem(VLIBRAS_STORAGE_KEY) === 'true';
+}
+
+export function setStoredVLibrasActive(active: boolean): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(VLIBRAS_STORAGE_KEY, active ? 'true' : 'false');
+  window.dispatchEvent(new CustomEvent('sina-vlibras-toggle', { detail: { active } }));
 }
 
 export function storeTokens(tokens: TokenResponse): void {
@@ -140,4 +153,30 @@ export async function logoutUser(): Promise<void> {
   }
   clearStoredTokens();
 }
+
+export async function updateUserPreferences(
+  prefs: Partial<AccessibilityPreferences>
+): Promise<AccessibilityPreferences> {
+  const token = getStoredAccessToken();
+  if (!token) {
+    throw new Error('Usuário não autenticado.');
+  }
+
+  const response = await fetch(`${API_BASE_URL}/users/me/preferences`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(prefs),
+  });
+
+  if (!response.ok) {
+    const errorData = (await response.json().catch(() => ({}))) as { detail?: string };
+    throw new Error(errorData.detail || 'Não foi possível atualizar as preferências.');
+  }
+
+  return (await response.json()) as AccessibilityPreferences;
+}
+
 

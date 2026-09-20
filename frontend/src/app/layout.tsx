@@ -1,7 +1,14 @@
 import type { Metadata } from "next";
+import dynamic from "next/dynamic";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AppHeader } from "@/components/layout/AppHeader";
+import { AccessibilityBar } from "@/components/accessibility/AccessibilityBar";
 import "./globals.css";
+
+const VLibrasWidget = dynamic(
+  () => import("@/components/accessibility/VLibrasWidget"),
+  { ssr: false }
+);
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,6 +37,7 @@ export default function RootLayout({
     >
       <body className="min-h-full bg-[var(--background)] text-[var(--foreground)]">
         <div className="flex min-h-screen flex-col">
+          <AccessibilityBar />
           <AppHeader />
           <div
             id="main-content"
@@ -38,8 +46,10 @@ export default function RootLayout({
           >
             {children}
           </div>
+          <VLibrasWidget />
         </div>
       </body>
     </html>
   );
 }
+
