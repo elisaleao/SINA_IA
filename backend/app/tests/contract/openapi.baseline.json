@@ -1,0 +1,414 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Accessible NotebookLM API",
+    "description": "Backend focado em acessibilidade para estudantes com deficiência visual.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/documents/upload": {
+      "post": {
+        "tags": [
+          "Documentos"
+        ],
+        "summary": "Upload Document",
+        "operationId": "upload_document_api_documents_upload_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_document_api_documents_upload_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentProcessResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/content/generate": {
+      "post": {
+        "tags": [
+          "Geração e Acessibilidade"
+        ],
+        "summary": "Generate Study Content",
+        "operationId": "generate_study_content_api_content_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/audio/{filename}": {
+      "get": {
+        "tags": [
+          "Áudio"
+        ],
+        "summary": "Get Audio File",
+        "operationId": "get_audio_file_api_audio__filename__get",
+        "parameters": [
+          {
+            "name": "filename",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Filename"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AccessibilityConfig": {
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/AccessibilityProfileType",
+            "description": "Perfil prioritário de acessibilidade",
+            "default": "visual"
+          },
+          "plain_language": {
+            "type": "boolean",
+            "title": "Plain Language",
+            "description": "Se True, simplifica frases e vocabulário (Linguagem Simples)",
+            "default": false
+          },
+          "include_glossary": {
+            "type": "boolean",
+            "title": "Include Glossary",
+            "description": "Gera glossário explicativo de termos técnicos complexos",
+            "default": false
+          },
+          "highlight_key_points": {
+            "type": "boolean",
+            "title": "Highlight Key Points",
+            "description": "Destaca ideias centrais e termos-chave para foco visual",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "AccessibilityConfig"
+      },
+      "AccessibilityProfileType": {
+        "type": "string",
+        "enum": [
+          "visual",
+          "dyslexia",
+          "adhd",
+          "cognitive",
+          "universal"
+        ],
+        "title": "AccessibilityProfileType"
+      },
+      "Body_upload_document_api_documents_upload_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_document_api_documents_upload_post"
+      },
+      "DocumentProcessResponse": {
+        "properties": {
+          "document_id": {
+            "type": "string",
+            "title": "Document Id"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "extracted_markdown": {
+            "type": "string",
+            "title": "Extracted Markdown"
+          },
+          "accessible_text": {
+            "type": "string",
+            "title": "Accessible Text"
+          },
+          "equations_found": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Equations Found"
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_id",
+          "filename",
+          "extracted_markdown",
+          "accessible_text",
+          "equations_found"
+        ],
+        "title": "DocumentProcessResponse"
+      },
+      "GenerateRequest": {
+        "properties": {
+          "document_id": {
+            "type": "string",
+            "title": "Document Id"
+          },
+          "generation_type": {
+            "$ref": "#/components/schemas/GenerationType",
+            "default": "summary"
+          },
+          "teacher_config": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TeacherConfig"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": {
+              "pedagogical_level": "basico",
+              "math_detail_level": "direto",
+              "tone": "formal"
+            }
+          },
+          "accessibility_config": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AccessibilityConfig"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "generate_audio": {
+            "type": "boolean",
+            "title": "Generate Audio",
+            "default": true
+          },
+          "voice": {
+            "type": "string",
+            "title": "Voice",
+            "default": "pt-BR-AntonioNeural"
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_id"
+        ],
+        "title": "GenerateRequest"
+      },
+      "GenerationResponse": {
+        "properties": {
+          "document_id": {
+            "type": "string",
+            "title": "Document Id"
+          },
+          "generation_type": {
+            "type": "string",
+            "title": "Generation Type"
+          },
+          "text_content": {
+            "type": "string",
+            "title": "Text Content"
+          },
+          "spoken_content": {
+            "type": "string",
+            "title": "Spoken Content"
+          },
+          "audio_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio Url"
+          },
+          "accessibility_profile": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accessibility Profile"
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_id",
+          "generation_type",
+          "text_content",
+          "spoken_content"
+        ],
+        "title": "GenerationResponse"
+      },
+      "GenerationType": {
+        "type": "string",
+        "enum": [
+          "summary",
+          "quiz",
+          "study_guide"
+        ],
+        "title": "GenerationType"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "TeacherConfig": {
+        "properties": {
+          "pedagogical_level": {
+            "type": "string",
+            "title": "Pedagogical Level",
+            "description": "basico, intermediario, avancado",
+            "default": "basico"
+          },
+          "math_detail_level": {
+            "type": "string",
+            "title": "Math Detail Level",
+            "description": "direto, passo_a_passo, explicativo",
+            "default": "direto"
+          },
+          "tone": {
+            "type": "string",
+            "title": "Tone",
+            "description": "formal, socrático, encorajador",
+            "default": "formal"
+          }
+        },
+        "type": "object",
+        "title": "TeacherConfig"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
