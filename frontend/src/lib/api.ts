@@ -8,10 +8,18 @@ export type TeacherConfig = {
   tone?: "formal" | "socrático" | "encorajador" | string;
 };
 
+export type AccessibilityConfig = {
+  profile?: "visual" | "dyslexia" | "adhd" | "cognitive" | "universal";
+  plain_language?: boolean;
+  include_glossary?: boolean;
+  highlight_key_points?: boolean;
+};
+
 export type GenerateRequest = {
   document_id: string;
   generation_type: GenerationType;
   teacher_config?: TeacherConfig;
+  accessibility_config?: AccessibilityConfig;
   generate_audio?: boolean;
   voice?: string;
 };
@@ -30,7 +38,25 @@ export type GenerationResponse = {
   text_content: string;
   spoken_content: string;
   audio_url: string | null;
+  accessibility_profile?: string | null;
 };
+
+export type HealthCheckResponse = {
+  status: string;
+  service: string;
+  version: string;
+};
+
+/**
+ * Checks the operational health and readiness of the backend API.
+ */
+export async function checkHealth(): Promise<HealthCheckResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/health`);
+  if (!response.ok) {
+    throw new Error(`Health check failed with status ${response.status}`);
+  }
+  return response.json();
+}
 
 /**
  * Uploads a document to the backend for OCR and processing.
@@ -69,6 +95,7 @@ export async function generateStudyContent(request: GenerateRequest): Promise<Ge
         math_detail_level: "passo_a_passo",
         tone: "encorajador",
       },
+      accessibility_config: request.accessibility_config,
       generate_audio: request.generate_audio ?? true,
       voice: request.voice || "pt-BR-AntonioNeural",
     }),
