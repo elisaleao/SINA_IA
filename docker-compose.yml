@@ -1,4 +1,7 @@
 services:
+  # -------------------------------------------------------------
+  # 1. Banco de Dados PostgreSQL (Opcional se desejar usar Postgres)
+  # -------------------------------------------------------------
   db:
     image: postgres:16-alpine
     container_name: sina_postgres
@@ -10,13 +13,53 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - ./data/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U sina -d sina_ia"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-volumes:
-  pgdata:
+  # -------------------------------------------------------------
+  # 2. Backend FastAPI (Processamento de documentos, OCR, TTS)
+  # -------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend/app
+      dockerfile: Dockerfile
+    container_name: sina_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # Padrão: arquivo SQLite específico persistido diretamente na sua máquina em ./data/sina_ia.db
+      - DATABASE_URL=sqlite+aiosqlite:///app/data/sina_ia.db
+      # Para alternar para PostgreSQL, comente a linha acima e descomente a linha abaixo:
+      # - DATABASE_URL=postgresql+asyncpg://sina:sina_secret@db:5432/sina_ia
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - UPLOAD_DIR=/app/data/uploads
+      - OUTPUT_DIR=/app/data/outputs
+    volumes:
+      # Mapeia a pasta ./data do seu computador para dentro do container
+      # Dessa forma, o arquivo de banco (sina_ia.db), uploads e áudios MP3 persistem na sua máquina
+      - ./data:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
+        required: false
 
+  # -------------------------------------------------------------
+  # 3. Frontend Next.js (Interface Web e Acessibilidade)
+  # -------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: sina_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend

@@ -236,5 +236,8 @@ uploads/
 outputs/
 backend/app/uploads/
 backend/app/outputs/
+data/
+backend/app/data/
+
 
 
