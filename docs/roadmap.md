@@ -67,6 +67,13 @@ flowchart TD
 | [#6](https://github.com/elisaleao/SINA_IA/issues/6) | **Fase 4** | `P2 - Média` | *Nenhuma no backend* (100% frontend) | *Nenhuma* | 🟢 **Desbloqueada (Independente)** |
 | [#7](https://github.com/elisaleao/SINA_IA/issues/7) | **Fase 5** | `P2 - Média` | #2, #3, #4, #5 (Fluxos completos integrados) | Lançamento Fetin | 🔴 Aguardando Fases 0–3 |
 | [#8](https://github.com/elisaleao/SINA_IA/issues/8) | **Fase 6** | `P3 - Baixa` | #3, #4 (Pesquisa técnica pós-MVP) | *Nenhuma* | 🟡 Backlog / Spikes |
+| [#12](https://github.com/elisaleao/SINA_IA/issues/12) | **Fase UX1** | `P1 - Alta` | *Nenhuma* (Frontend isolado) | #13, #14, #15, #16 | 🟢 **Pronta para execução (Next Front)** |
+| [#13](https://github.com/elisaleao/SINA_IA/issues/13) | **Fase UX2** | `P1 - Alta` | #12 (UX1.4, UX1.5) e #4 (Auth) | #14 | 🔴 Aguardando #12 e #4 |
+| [#14](https://github.com/elisaleao/SINA_IA/issues/14) | **Fase UX3** | `P1 - Alta` | #12 (UX1) e #4 (Auth/Posse) | #16, #17 | 🔴 Aguardando #12 e #4 |
+| [#15](https://github.com/elisaleao/SINA_IA/issues/15) | **Fase UX4** | `P1 - Alta` | #12 (UX1.5 Dropzone) | #16, #17 | 🟢 **Pronta para execução (Sem #4)** |
+| [#16](https://github.com/elisaleao/SINA_IA/issues/16) | **Fase UX5** | `P2 - Média` | #14 (UX3.6) e #15 (UX4) | #17 | 🟡 UX5.1 pronta; restante aguarda #14 e #15 |
+| [#17](https://github.com/elisaleao/SINA_IA/issues/17) | **Fase UX6** | `P1 - Alta` | #14 (UX3.1), #4 (Auth) e #5 (Fase 3) | Nenhuma | 🟡 Conteúdo pronto para iniciar |
+| [#18](https://github.com/elisaleao/SINA_IA/issues/18) | **Fase UX7** | `P2 - Média` | #13, #14, #15, #17 | Nenhuma | 🟡 Contínua |
 
 ---
 
