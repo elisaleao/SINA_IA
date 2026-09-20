@@ -36,6 +36,7 @@ app.include_router(routers.auth_router)
 app.include_router(routers.documents_router)
 app.include_router(routers.content_router)
 app.include_router(routers.audio_router)
+app.include_router(routers.exercises_router)
 
 ingestion_service = deps.get_ingestion_service()
 llm_service = deps.get_llm_client()

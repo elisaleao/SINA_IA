@@ -18,6 +18,10 @@ class LLMClientProtocol(Protocol):
         """Gera conteúdo didático adaptado retornando (markdown_output, spoken_output)."""
         ...
 
+    async def generate_text(self, prompt: str) -> str:
+        """Gera texto puro a partir de um prompt arbitrário."""
+        ...
+
 
 class TTSClientProtocol(Protocol):
     """Protocolo abstrato para clientes de síntese de voz neural (Text-to-Speech)."""
