@@ -3,7 +3,7 @@ from app.accessibility.math_detector import detect_math_content
 
 def test_texto_comum_nao_e_classificado_como_matematica():
     result = detect_math_content(
-        "Este é um texto introdutório sobre acessibilidade e leitura de documentos."
+        'Este é um texto introdutório sobre acessibilidade e leitura de documentos.'
     )
     assert result.is_math is False
 
