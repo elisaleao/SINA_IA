@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+set -e
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+echo -e "${BLUE}🔍 [pre-commit] Executando verificações rápidas de estilo e tipos...${NC}"
+
+# 1. Frontend: ESLint & Typecheck
+echo "  -> Frontend: ESLint..."
+(cd "$ROOT_DIR/frontend" && npm run lint > /dev/null 2>&1) || {
+    echo -e "${RED}✗ Falha no ESLint do Frontend. Execute 'npm run lint' para detalhes.${NC}"
+    exit 1
+}
+
+echo "  -> Frontend: TypeScript Typecheck..."
+(cd "$ROOT_DIR/frontend" && npx tsc --noEmit > /dev/null 2>&1) || {
+    echo -e "${RED}✗ Falha na checagem de tipos TypeScript. Execute 'npx tsc --noEmit' no frontend.${NC}"
+    exit 1
+}
+
+# 2. Backend: Typos, Ruff Check & Format Check
+echo "  -> Backend: Verificação de ortografia técnica (typos)..."
+(cd "$ROOT_DIR/backend/app" && poetry run typos > /dev/null 2>&1) || {
+    echo -e "${RED}✗ Erros ortográficos encontrados pelo typos.${NC}"
+    exit 1
+}
+
+echo "  -> Backend: Ruff Linter..."
+(cd "$ROOT_DIR/backend/app" && poetry run ruff check app tests > /dev/null 2>&1) || {
+    echo -e "${RED}✗ Falha no Ruff Linter. Execute 'poetry run ruff check app tests'.${NC}"
+    exit 1
+}
+
+echo "  -> Backend: Ruff Format Check (aspas simples estritas)..."
+(cd "$ROOT_DIR/backend/app" && poetry run ruff format --check app tests > /dev/null 2>&1) || {
+    echo -e "${RED}✗ Arquivos fora do padrão de formatação. Execute 'poetry run ruff format app tests'.${NC}"
+    exit 1
+}
+
+# 3. Fronteira de Domínio Puro
+echo "  -> Domínio Puro: Isolamento de math_speech_service..."
+python3 -c "
+import sys
+with open('$ROOT_DIR/backend/app/app/services/math_speech_service.py') as f:
+    code = f.read()
+forbidden = ['sqlalchemy', 'fastapi', 'requests', 'aiofiles', 'database']
+violations = [lib for lib in forbidden if lib in code]
+if violations:
+    print(f'  ✗ VIOLAÇÃO DE FRONTEIRA: math_speech_service.py importou: {violations}')
+    sys.exit(1)
+" || {
+    echo -e "${RED}✗ Violação de fronteira arquitetural detectada.${NC}"
+    exit 1
+}
+
+echo -e "${GREEN}✓ [pre-commit] Todas as verificações rápidas passaram com sucesso!${NC}\n"
+exit 0
+

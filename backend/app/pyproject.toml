@@ -52,6 +52,13 @@ markers = [
     "e2e: testes de ponta a ponta",
 ]
 
+[tool.coverage.run]
+concurrency = ["greenlet", "thread"]
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true
+
 [tool.ruff]
 line-length = 79
 extend-exclude = ['migrations']
@@ -69,6 +76,8 @@ quote-style = 'single'
 extend-exclude = ["*.md"]
 
 [tool.typos.default.extend-words]
+responde = "responde"
+Responde = "Responde"
 denominador = "denominador"
 numerador = "numerador"
 cliente = "cliente"
