@@ -63,7 +63,7 @@ preview = true
 quote-style = 'single'
 
 [tool.typos.files]
-extend-exclude = ["*.md"]
+extend-exclude = ["*.md", "app/accessibility/prompts.py"]
 
 [tool.typos.default.extend-words]
 denominador = "denominador"
@@ -89,7 +89,16 @@ inicial = "inicial"
 erros = "erros"
 selectin = "selectin"
 
-[tool.poe] 
+# Palavras em português usadas pelo módulo de acessibilidade.
+problemas = "problemas"
+PROBLEMAS = "PROBLEMAS"
+itens = "itens"
+limite = "limite"
+relevante = "relevante"
+caracteres = "caracteres"
+excede = "excede"
+
+[tool.poe]
 poetry_command = ""
 
 [tool.poe.tasks]
