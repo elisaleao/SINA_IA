@@ -29,6 +29,10 @@ from app.schemas.auth import (
     TokenResponse,
     UserResponse,
 )
+from app.schemas.user import (
+    AccessibilityPreferencesResponse,
+    AccessibilityPreferencesUpdate,
+)
 
 router = APIRouter(tags=['Autenticação'])
 
@@ -264,3 +268,34 @@ async def get_me(
 ) -> UserResponse:
     """Retorna os dados cadastrais e as preferências UDL do usuário autenticado."""
     return UserResponse.model_validate(current_user)
+
+
+@router.patch(
+    '/users/me/preferences',
+    response_model=AccessibilityPreferencesResponse,
+    summary='Atualizar preferências de acessibilidade do usuário logado',
+)
+async def update_my_preferences(
+    payload: AccessibilityPreferencesUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserRecord = Depends(get_current_user),
+) -> AccessibilityPreferencesResponse:
+    """Atualiza de forma parcial as preferências UDL e de acessibilidade (como VLibras)."""
+    prefs = current_user.accessibility_preferences
+    if not prefs:
+        prefs = AccessibilityPreferencesRecord(
+            id=str(uuid.uuid4()),
+            user_id=current_user.id,
+        )
+        db.add(prefs)
+        current_user.accessibility_preferences = prefs
+
+    update_data = payload.model_dump(exclude_unset=True)
+    for field, val in update_data.items():
+        if hasattr(prefs, field) and val is not None:
+            resolved_val = val.value if hasattr(val, 'value') else val
+            setattr(prefs, field, resolved_val)
+
+    await db.commit()
+    await db.refresh(prefs)
+    return AccessibilityPreferencesResponse.model_validate(prefs)

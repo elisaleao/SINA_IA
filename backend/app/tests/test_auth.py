@@ -240,3 +240,49 @@ async def test_document_ownership_and_privacy(client, test_db_session):
     )
     assert res_a.status_code == 200
     assert res_a.json()['filename'] == 'privado_a.pdf'
+
+
+@pytest.mark.asyncio
+async def test_update_accessibility_preferences_vlibras(client):
+    reg = await client.post(
+        '/auth/register',
+        json={
+            'email': 'vlibras_user@sina.edu.br',
+            'password': 'senhaForte123',
+            'full_name': 'VLibras User',
+            'role': 'aluno',
+        },
+    )
+    assert reg.status_code == 201
+    token = reg.json()['access_token']
+
+    # Inicialmente, vlibras_active é False
+    me_resp = await client.get(
+        '/users/me',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+    assert me_resp.status_code == 200
+    assert (
+        me_resp.json()['accessibility_preferences']['vlibras_active'] is False
+    )
+
+    # Atualiza preferência ativando VLibras
+    patch_resp = await client.patch(
+        '/users/me/preferences',
+        headers={'Authorization': f'Bearer {token}'},
+        json={'vlibras_active': True, 'high_contrast': True},
+    )
+    assert patch_resp.status_code == 200
+    patch_data = patch_resp.json()
+    assert patch_data['vlibras_active'] is True
+    assert patch_data['high_contrast'] is True
+
+    # Verifica persistência ao consultar /users/me novamente
+    me_resp_updated = await client.get(
+        '/users/me',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+    assert me_resp_updated.status_code == 200
+    updated_prefs = me_resp_updated.json()['accessibility_preferences']
+    assert updated_prefs['vlibras_active'] is True
+    assert updated_prefs['high_contrast'] is True

@@ -119,6 +119,9 @@ class AccessibilityPreferencesRecord(Base):
     high_contrast: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False
     )
+    vlibras_active: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

@@ -13,6 +13,7 @@ export type AccessibilityConfig = {
   plain_language?: boolean;
   include_glossary?: boolean;
   highlight_key_points?: boolean;
+  vlibras_active?: boolean;
 };
 
 export type GenerateRequest = {

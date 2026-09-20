@@ -46,6 +46,10 @@ class AccessibilityPreferencesBase(BaseModel):
         default=False,
         description='Modo de alto contraste para baixa visão',
     )
+    vlibras_active: bool = Field(
+        default=False,
+        description='Ativação do tradutor de Libras (VLibras) sob demanda',
+    )
 
 
 class AccessibilityPreferencesCreate(AccessibilityPreferencesBase):
@@ -61,6 +65,7 @@ class AccessibilityPreferencesUpdate(BaseModel):
     font_size: Optional[str] = None
     line_spacing: Optional[str] = None
     high_contrast: Optional[bool] = None
+    vlibras_active: Optional[bool] = None
 
 
 class AccessibilityPreferencesResponse(AccessibilityPreferencesBase):

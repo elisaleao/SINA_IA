@@ -35,6 +35,10 @@ class AccessibilityConfig(BaseModel):
         default=True,
         description='Destaca ideias centrais e termos-chave para foco visual',
     )
+    vlibras_active: bool = Field(
+        default=False,
+        description='Ativação do tradutor de Libras (VLibras) sob demanda',
+    )
 
 
 class TeacherConfig(BaseModel):
