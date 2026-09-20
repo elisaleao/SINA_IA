@@ -4,6 +4,7 @@ from typing import Optional
 from sqlalchemy import (
     Boolean,
     DateTime,
+    Float,
     ForeignKey,
     Integer,
     String,
@@ -200,6 +201,111 @@ class RefreshTokenRecord(Base):
         'UserRecord',
         back_populates='refresh_tokens',
     )
+
+
+class ExerciseRecord(Base):
+    """Modelo de questão de exercício/quiz acessível de engenharia."""
+
+    __tablename__ = 'exercicios'
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    materia_id: Mapped[str] = mapped_column(
+        String(50), nullable=False, index=True
+    )
+    enunciado: Mapped[str] = mapped_column(Text, nullable=False)
+    enunciado_falado: Mapped[str] = mapped_column(Text, nullable=False)
+    codigo: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    linguagem: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    resposta_correta: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    explicacao: Mapped[str] = mapped_column(Text, nullable=False)
+    fonte: Mapped[str] = mapped_column(
+        String(20), default='manual', nullable=False
+    )
+    status: Mapped[str] = mapped_column(
+        String(20), default='publicado', nullable=False, index=True
+    )
+    revisado_por: Mapped[Optional[str]] = mapped_column(
+        String(36),
+        ForeignKey('usuarios.id', ondelete='SET NULL'),
+        nullable=True,
+    )
+    revisado_em: Mapped[Optional[datetime.datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class ExerciseSessionRecord(Base):
+    """Modelo de sessão de quiz com timer e cálculo de tempo no servidor."""
+
+    __tablename__ = 'sessoes_exercicio'
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey('usuarios.id', ondelete='CASCADE'),
+        nullable=False,
+        index=True,
+    )
+    materia_id: Mapped[Optional[str]] = mapped_column(
+        String(50), nullable=True, index=True
+    )
+    total_questoes: Mapped[int] = mapped_column(
+        Integer, default=5, nullable=False
+    )
+    tempo_limite_segundos: Mapped[int] = mapped_column(
+        Integer, default=13, nullable=False
+    )
+    iniciado_em: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    finalizado_em: Mapped[Optional[datetime.datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    user: Mapped['UserRecord'] = relationship('UserRecord')
+    respostas: Mapped[list['ExerciseAnswerRecord']] = relationship(
+        'ExerciseAnswerRecord',
+        back_populates='sessao',
+        cascade='all, delete-orphan',
+        lazy='selectin',
+    )
+
+
+class ExerciseAnswerRecord(Base):
+    """Modelo de resposta enviada pelo aluno em uma sessão de quiz."""
+
+    __tablename__ = 'respostas_exercicio'
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    sessao_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey('sessoes_exercicio.id', ondelete='CASCADE'),
+        nullable=False,
+        index=True,
+    )
+    exercicio_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey('exercicios.id', ondelete='CASCADE'),
+        nullable=False,
+        index=True,
+    )
+    resposta_aluno: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    acertou: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    tempo_gasto_segundos: Mapped[float] = mapped_column(
+        Float, default=0.0, nullable=False
+    )
+    respondido_em: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    sessao: Mapped['ExerciseSessionRecord'] = relationship(
+        'ExerciseSessionRecord',
+        back_populates='respostas',
+    )
+    exercicio: Mapped['ExerciseRecord'] = relationship('ExerciseRecord')
 
 
 async def init_db():

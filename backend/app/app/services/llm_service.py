@@ -120,3 +120,13 @@ class LLMService:
         )
 
         return output_markdown, spoken_output
+
+    async def generate_text(self, prompt: str) -> str:
+        if not self.client:
+            raise ValueError('GEMINI_API_KEY não configurada.')
+
+        response = self.client.models.generate_content(
+            model='gemini-1.5-flash',
+            contents=[prompt],
+        )
+        return response.text or ''

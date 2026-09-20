@@ -48,6 +48,20 @@ class FakeLLMClient:
         )
         return output_markdown, spoken_output
 
+    async def generate_text(self, prompt: str) -> str:
+        self.calls.append({'prompt': prompt})
+        if self.default_response is not None:
+            return self.default_response
+        return """[
+            {
+                "enunciado": "A aceleração da gravidade na Terra é aproximadamente $9.8 m/s^2$.",
+                "codigo": null,
+                "linguagem": null,
+                "resposta_correta": true,
+                "explicacao": "Na superfície da Terra, a gravidade padrão é de cerca de 9,8 metros por segundo ao quadrado."
+            }
+        ]"""
+
 
 class FakeTTSClient:
     """Fake determinístico para síntese de voz neural sem chamadas ao Edge-TTS."""

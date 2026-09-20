@@ -95,6 +95,13 @@ corporativo = "corporativo"
 caracteres = "caracteres"
 controle = "controle"
 credencial = "credencial"
+limite = "limite"
+algoritmos = "algoritmos"
+falso = "falso"
+Falso = "Falso"
+momento = "momento"
+professores = "professores"
+
 
 [tool.poe] 
 poetry_command = ""
