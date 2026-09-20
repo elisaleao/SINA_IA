@@ -256,10 +256,24 @@ def make_gemini_service(
     return GeminiAccessibilityService()
 
 
-def test_gemini_service_requires_api_key(monkeypatch: pytest.MonkeyPatch):
+@pytest.mark.asyncio
+async def test_gemini_service_requires_api_key(
+    monkeypatch: pytest.MonkeyPatch,
+):
     monkeypatch.delenv('GEMINI_API_KEY', raising=False)
+    monkeypatch.setattr(
+        gemini_module,
+        'settings',
+        SimpleNamespace(GEMINI_API_KEY=None),
+    )
+
+    service = GeminiAccessibilityService()
+
     with pytest.raises(RuntimeError, match='GEMINI_API_KEY'):
-        GeminiAccessibilityService()
+        await service.generate_text(
+            system_instruction='System',
+            user_text='Input',
+        )
 
 
 @pytest.mark.asyncio
@@ -525,10 +539,15 @@ async def test_pipeline_rejects_invalid_level(
         monkeypatch=monkeypatch,
     )
 
-    with pytest.raises(ValueError, match='Nível inválido'):
-        async for _ in pipeline.run(
+    events = [
+        event
+        async for event in pipeline.run(
             filename='document.txt',
             data=b'data',
             level=9,
-        ):
-            pass
+        )
+    ]
+
+    assert len(events) == 1
+    assert events[0].type == 'error'
+    assert 'Nível inválido' in (events[0].message or '')
