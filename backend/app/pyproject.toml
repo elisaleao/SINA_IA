@@ -106,25 +106,6 @@ PROBLEMAS = "PROBLEMAS"
 itens = "itens"
 relevante = "relevante"
 excede = "excede"
-<<<<<<< HEAD
-=======
-
->>>>>>> origin/main
-
-problemas = "problemas"
-PROBLEMAS = "PROBLEMAS"
-itens = "itens"
-relevante = "relevante"
-excede = "excede"
-
-# Palavras em português usadas pelo módulo de acessibilidade.
-problemas = "problemas"
-PROBLEMAS = "PROBLEMAS"
-itens = "itens"
-limite = "limite"
-relevante = "relevante"
-caracteres = "caracteres"
-excede = "excede"
 
 [tool.poe]
 poetry_command = ""
