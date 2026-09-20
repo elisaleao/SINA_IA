@@ -1,11 +1,17 @@
 """Provedores de dependências reutilizáveis para rotas FastAPI."""
 
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Optional
 
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.protocols import LLMClientProtocol, TTSClientProtocol
-from app.database import AsyncSessionLocal
+from app.core.security import decode_access_token
+from app.database import AsyncSessionLocal, UserRecord
+from app.schemas.user import UserRole
 from app.services.audio_service import AudioService
 from app.services.ingestion_service import IngestionService
 from app.services.llm_service import LLMService
@@ -13,6 +19,7 @@ from app.services.llm_service import LLMService
 _default_llm = LLMService()
 _default_tts = AudioService()
 _default_ingestion = IngestionService()
+security_scheme = HTTPBearer(auto_error=False)
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -34,3 +41,96 @@ def get_tts_client() -> TTSClientProtocol:
 def get_ingestion_service() -> IngestionService:
     """Retorna o serviço de ingestão e OCR (substituível via app.dependency_overrides)."""
     return _default_ingestion
+
+
+async def get_current_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(
+        security_scheme
+    ),
+    db: AsyncSession = Depends(get_db),
+) -> UserRecord:
+    """Extrai e valida o token Bearer JWT e recupera o usuário ativo no banco."""
+    if not credentials or credentials.scheme.lower() != 'bearer':
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Credenciais de autenticação não fornecidas ou inválidas.',
+            headers={'WWW-Authenticate': 'Bearer'},
+        )
+    try:
+        payload = decode_access_token(credentials.credentials)
+        user_id = payload.get('sub')
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail='Token inválido: sujeito ausente.',
+                headers={'WWW-Authenticate': 'Bearer'},
+            )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Token inválido ou expirado.',
+            headers={'WWW-Authenticate': 'Bearer'},
+        )
+
+    stmt = (
+        select(UserRecord)
+        .options(
+            selectinload(UserRecord.accessibility_preferences),
+            selectinload(UserRecord.documents),
+        )
+        .where(UserRecord.id == user_id)
+    )
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Usuário não encontrado.',
+            headers={'WWW-Authenticate': 'Bearer'},
+        )
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail='Usuário inativo no sistema.',
+        )
+    return user
+
+
+def require_role(allowed_roles: list[UserRole] | list[str]):
+    """Fábrica de dependência para controle de acesso baseado em papéis (RBAC)."""
+    roles_str = [
+        r.value if isinstance(r, UserRole) else str(r) for r in allowed_roles
+    ]
+
+    async def role_checker(
+        current_user: UserRecord = Depends(get_current_user),
+    ) -> UserRecord:
+        if current_user.role not in roles_str:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail='Permissão insuficiente para acessar este recurso.',
+            )
+        return current_user
+
+    return role_checker
+
+
+async def get_optional_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(
+        security_scheme
+    ),
+    db: AsyncSession = Depends(get_db),
+) -> Optional[UserRecord]:
+    """Retorna o usuário logado caso exista credencial válida, ou None caso anônimo."""
+    if not credentials or credentials.scheme.lower() != 'bearer':
+        return None
+    try:
+        payload = decode_access_token(credentials.credentials)
+        user_id = payload.get('sub')
+        if not user_id:
+            return None
+        stmt = select(UserRecord).where(UserRecord.id == user_id)
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
+    except Exception:
+        return None

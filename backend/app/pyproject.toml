@@ -6,7 +6,7 @@ authors = [
     {name = "Nicholas", email = "nicholasnas.nn@gmail.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.13,<4.0"
 dependencies = [
     "fastapi[standard] (>=0.141.1)",
     "pillow (>=12.3.0,<13.0.0)",
@@ -22,7 +22,10 @@ dependencies = [
     "aiofiles (>=23.2.1)",
     "asyncpg (>=0.30.0)",
     "alembic (>=1.14.0)",
-    "psycopg2-binary (>=2.9.10)"
+    "psycopg2-binary (>=2.9.10)",
+    "argon2-cffi (>=23.1.0)",
+    "pyjwt (>=2.9.0)",
+    "slowapi (>=0.1.9)"
 ]
 
 [build-system]
@@ -88,6 +91,10 @@ atual = "atual"
 inicial = "inicial"
 erros = "erros"
 selectin = "selectin"
+corporativo = "corporativo"
+caracteres = "caracteres"
+controle = "controle"
+credencial = "credencial"
 
 [tool.poe] 
 poetry_command = ""

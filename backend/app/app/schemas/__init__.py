@@ -1,5 +1,13 @@
 """Schemas Pydantic para validação e serialização de dados."""
 
+from app.schemas.auth import (
+    AuthStatusResponse,
+    LoginRequest,
+    LogoutRequest,
+    RefreshRequest,
+    RegisterRequest,
+    TokenResponse,
+)
 from app.schemas.user import (
     AccessibilityPreferencesBase,
     AccessibilityPreferencesCreate,
@@ -17,6 +25,12 @@ __all__ = [
     'AccessibilityPreferencesCreate',
     'AccessibilityPreferencesResponse',
     'AccessibilityPreferencesUpdate',
+    'AuthStatusResponse',
+    'LoginRequest',
+    'LogoutRequest',
+    'RefreshRequest',
+    'RegisterRequest',
+    'TokenResponse',
     'UserBase',
     'UserCreate',
     'UserResponse',
