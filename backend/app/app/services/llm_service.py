@@ -1,14 +1,15 @@
 from typing import Optional
 
-from config import settings
 from google import genai
-from models import (
+
+from app.core.config import settings
+from app.models import (
     AccessibilityConfig,
     AccessibilityProfileType,
     GenerationType,
     TeacherConfig,
 )
-from services.math_speech_service import MathToSpeechService
+from app.services.math_speech_service import MathToSpeechService
 
 
 class LLMService:
@@ -25,12 +26,9 @@ class LLMService:
         accessibility: Optional[AccessibilityConfig] = None,
     ) -> str:
         acc = accessibility or AccessibilityConfig()
-        profile_guidelines = ''
+        profile_guidelines = ""
 
-        if (
-            acc.profile == AccessibilityProfileType.DYSLEXIA
-            or acc.plain_language
-        ):
+        if acc.profile == AccessibilityProfileType.DYSLEXIA or acc.plain_language:
             profile_guidelines = """
         Adaptação para Dislexia e Leitura Fluida:
         - Aplique rigorosamente princípios de Linguagem Simples (Plain Language).
@@ -93,20 +91,20 @@ class LLMService:
         accessibility: Optional[AccessibilityConfig] = None,
     ) -> tuple[str, str]:
         if not self.client:
-            raise ValueError('GEMINI_API_KEY não configurada.')
+            raise ValueError("GEMINI_API_KEY não configurada.")
 
         prompt_system = self._build_system_prompt(config, accessibility)
 
-        task_prompt = ''
+        task_prompt = ""
         if gen_type == GenerationType.SUMMARY:
-            task_prompt = 'Gere um resumo detalhado e estruturado com os pontos principais e fórmulas do seguinte conteúdo:\n\n'
+            task_prompt = "Gere um resumo detalhado e estruturado com os pontos principais e fórmulas do seguinte conteúdo:\n\n"
         elif gen_type == GenerationType.QUIZ:
-            task_prompt = 'Crie 3 questões de fixação com gabarito comentado a partir do seguinte texto:\n\n'
+            task_prompt = "Crie 3 questões de fixação com gabarito comentado a partir do seguinte texto:\n\n"
         elif gen_type == GenerationType.STUDY_GUIDE:
-            task_prompt = 'Crie um guia de estudos em tópicos com passo a passo prático sobre o conteúdo:\n\n'
+            task_prompt = "Crie um guia de estudos em tópicos com passo a passo prático sobre o conteúdo:\n\n"
 
         response = self.client.models.generate_content(
-            model='gemini-1.5-flash',
+            model="gemini-1.5-flash",
             contents=[
                 prompt_system,
                 task_prompt + text[:15000],
@@ -114,8 +112,6 @@ class LLMService:
         )
 
         output_markdown = response.text
-        spoken_output = MathToSpeechService.latex_to_spoken_portuguese(
-            output_markdown
-        )
+        spoken_output = MathToSpeechService.latex_to_spoken_portuguese(output_markdown)
 
         return output_markdown, spoken_output
