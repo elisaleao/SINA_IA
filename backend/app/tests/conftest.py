@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from sqlalchemy.pool import StaticPool
 
 from app.api.deps import get_db, get_llm_client, get_tts_client
 from app.database import Base
@@ -30,7 +31,12 @@ def fake_tts():
 @pytest_asyncio.fixture
 async def test_engine():
     """Cria o banco de dados em memória e inicializa todas as tabelas."""
-    engine = create_async_engine(TEST_DATABASE_URL, echo=False)
+    engine = create_async_engine(
+        TEST_DATABASE_URL,
+        echo=False,
+        connect_args={'check_same_thread': False},
+        poolclass=StaticPool,
+    )
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

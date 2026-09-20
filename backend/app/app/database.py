@@ -73,6 +73,12 @@ class UserRecord(Base):
         cascade='all, delete-orphan',
         lazy='selectin',
     )
+    refresh_tokens: Mapped[list['RefreshTokenRecord']] = relationship(
+        'RefreshTokenRecord',
+        back_populates='user',
+        cascade='all, delete-orphan',
+        lazy='selectin',
+    )
 
 
 class AccessibilityPreferencesRecord(Base):
@@ -159,6 +165,40 @@ class DocumentRecord(Base):
     user: Mapped[Optional['UserRecord']] = relationship(
         'UserRecord',
         back_populates='documents',
+    )
+
+
+class RefreshTokenRecord(Base):
+    """Modelo de refresh token com rotação e família para revogação em cadeia."""
+
+    __tablename__ = 'refresh_tokens'
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey('usuarios.id', ondelete='CASCADE'),
+        nullable=False,
+        index=True,
+    )
+    token_hash: Mapped[str] = mapped_column(
+        String(64), unique=True, nullable=False, index=True
+    )
+    family_id: Mapped[str] = mapped_column(
+        String(36), nullable=False, index=True
+    )
+    revoked: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
+    expires_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    user: Mapped['UserRecord'] = relationship(
+        'UserRecord',
+        back_populates='refresh_tokens',
     )
 
 

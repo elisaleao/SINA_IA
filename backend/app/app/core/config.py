@@ -18,6 +18,13 @@ class Settings(BaseSettings):
     )
     CORS_ORIGINS: list[str] = ['*']
 
+    JWT_SECRET: str = os.getenv(
+        'JWT_SECRET', 'insecure-dev-secret-change-me-in-production-sina-ia'
+    )
+    JWT_ALGORITHM: str = 'HS256'
+    ACCESS_TOKEN_MINUTES: int = 15
+    REFRESH_TOKEN_DAYS: int = 7
+
     class Config:
         env_file = '.env'
         extra = 'ignore'

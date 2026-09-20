@@ -32,6 +32,7 @@ app.add_middleware(
 )
 
 app.include_router(routers.health_router)
+app.include_router(routers.auth_router)
 app.include_router(routers.documents_router)
 app.include_router(routers.content_router)
 app.include_router(routers.audio_router)
