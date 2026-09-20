@@ -1,0 +1,83 @@
+[
+  {
+    "materia_id": "calculo",
+    "enunciado": "A derivada da função $f(x) = x^2$ em relação a $x$ é dada por $f'(x) = 2x$.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": true,
+    "explicacao": "Pela regra do tombo para polinômios, ao derivar x elevado a n, multiplicamos pelo expoente e subtraímos um. Logo, a derivada de x ao quadrado é dois x."
+  },
+  {
+    "materia_id": "calculo",
+    "enunciado": "A integral indefinida $\\int \\cos(x) dx$ é igual a $-\\sin(x) + C$.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": false,
+    "explicacao": "A integral de cosseno de x é seno positivo de x mais a constante C. A derivada de menos seno seria menos cosseno."
+  },
+  {
+    "materia_id": "calculo",
+    "enunciado": "O limite $\\lim_{x \\to 0} \\frac{\\sin(x)}{x} = 1$.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": true,
+    "explicacao": "Este é o limite fundamental trigonométrico, amplamente utilizado no cálculo diferencial."
+  },
+  {
+    "materia_id": "fisica",
+    "enunciado": "De acordo com a Primeira Lei de Newton, um corpo em repouso tende a permanecer em repouso caso a força resultante sobre ele seja nula.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": true,
+    "explicacao": "O princípio da inércia afirma que na ausência de forças resultantes externas, a velocidade vetorial do corpo permanece constante."
+  },
+  {
+    "materia_id": "fisica",
+    "enunciado": "A energia cinética de um objeto de massa $m$ com velocidade $v$ é dada pela fórmula $E_c = m \\cdot v$.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": false,
+    "explicacao": "A fórmula correta da energia cinética é metade da massa multiplicada pelo quadrado da velocidade: Ec = (1/2) * m * v^2."
+  },
+  {
+    "materia_id": "algoritmos",
+    "enunciado": "A busca binária possui complexidade de tempo de pior caso igual a $O(\\log n)$ quando aplicada sobre uma lista ordenada.",
+    "codigo": "def binary_search(arr, target):\n    low, high = 0, len(arr) - 1\n    while low <= high:\n        mid = (low + high) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid - 1\n    return -1",
+    "linguagem": "python",
+    "resposta_correta": true,
+    "explicacao": "A cada iteração o espaço de busca é dividido pela metade, resultando em complexidade logarítmica O(log n)."
+  },
+  {
+    "materia_id": "algoritmos",
+    "enunciado": "O algoritmo Bubble Sort possui complexidade de tempo média de $O(n \\log n)$.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": false,
+    "explicacao": "O Bubble Sort realiza comparações par a par sucessivas, tendo complexidade média e de pior caso quadrática O(n^2)."
+  },
+  {
+    "materia_id": "estruturas-de-dados",
+    "enunciado": "Em uma estrutura do tipo Pilha (Stack), o primeiro elemento inserido é o primeiro elemento a ser removido (FIFO).",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": false,
+    "explicacao": "A pilha opera sob a disciplina LIFO (Last-In, First-Out), onde o último a entrar é o primeiro a sair. FIFO é a disciplina da Fila (Queue)."
+  },
+  {
+    "materia_id": "estruturas-de-dados",
+    "enunciado": "Em uma árvore binária de busca válida, todos os nós na subárvore esquerda de um nó $X$ possuem valores estritamente menores que $X$.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": true,
+    "explicacao": "Esta é a propriedade fundamental de ordenação da Árvore Binária de Busca (BST)."
+  },
+  {
+    "materia_id": "logica",
+    "enunciado": "Pelas Leis de De Morgan, a negação da conjunção $\\neg(A \\land B)$ é logicamente equivalente a $(\\neg A) \\lor (\\neg B)$.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": true,
+    "explicacao": "A negação de 'A e B' é verdadeira quando pelo menos um deles é falso: 'não A ou não B'."
+  }
+]
+
