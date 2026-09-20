@@ -89,6 +89,23 @@ inicial = "inicial"
 erros = "erros"
 selectin = "selectin"
 
+corporativo = "corporativo"
+caracteres = "caracteres"
+controle = "controle"
+credencial = "credencial"
+limite = "limite"
+algoritmos = "algoritmos"
+falso = "falso"
+Falso = "Falso"
+momento = "momento"
+professores = "professores"
+
+problemas = "problemas"
+PROBLEMAS = "PROBLEMAS"
+itens = "itens"
+relevante = "relevante"
+excede = "excede"
+
 # Palavras em português usadas pelo módulo de acessibilidade.
 problemas = "problemas"
 PROBLEMAS = "PROBLEMAS"
