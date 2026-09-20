@@ -29,6 +29,7 @@ Consulte a documentação temática antes de realizar alterações:
 | Alterar regras de conversão matemática e didática | `backend/app/app/services/` | `docs/rules/domain.md` |
 | Criar ou modificar modelos de dados e migrações | `backend/app/app/database.py` | `docs/rules/concurrency.md` |
 | Mexer em concorrência, jobs de OCR e áudio TTS | `backend/app/app/` | `docs/rules/concurrency.md` |
+| Consultar roadmap, prioridades e dependências | Raiz | `docs/roadmap.md` |
 | Validar a integridade geral do projeto | Raiz | `./check.sh` |
 
 ---

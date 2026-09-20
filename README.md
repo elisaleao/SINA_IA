@@ -15,7 +15,7 @@ O repositório é organizado em uma arquitetura monorepo poliglota com fronteira
 
 * **`frontend/`**: Interface web acessível construída com **Next.js 16 (App Router)**, **React 19**, **TypeScript 5** e **TailwindCSS v4**.
 * **`backend/app/`**: API assíncrona robusta em **FastAPI (Python 3.13)** integrada com **Google Gemini** (`google-genai`), banco de dados relacional assíncrono (**SQLAlchemy** / `aiosqlite`), **SymPy**, **PyMuPDF**, **python-docx**, **OpenCV** e síntese vocal neural (**Edge-TTS**).
-* **`docs/`**: Governança viva do projeto com diretrizes temáticas (`docs/rules/`) e registros de decisão de arquitetura (`docs/adr/`).
+* **`docs/`**: Governança viva do projeto com diretrizes temáticas (`docs/rules/`), registros de decisão de arquitetura (`docs/adr/`) e mapa de dependências de tarefas (`docs/roadmap.md`).
 
 ---
 
