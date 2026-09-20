@@ -142,7 +142,7 @@ async def test_extractor_handles_text_image_docx_and_invalid_extension():
     assert 'Main paragraph' in docx_result.text
     assert 'A | B' in docx_result.text
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Formato não suportado'):
         await extractor.extract('data.csv', b'value')
 
 
@@ -185,7 +185,7 @@ def test_generated_file_store_creates_resolves_and_cleans_files(
     assert generated.suffix == '.txt'
     assert store.resolve_safe(generated.name) == generated.resolve()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Nome de arquivo inválido'):
         store.resolve_safe('../outside.txt')
 
     old_file = store.root / 'old.txt'
@@ -214,7 +214,7 @@ async def test_edge_tts_service_success_empty_and_invalid_output(
     await service.synthesize('Accessible audio text', output)
     assert output.read_bytes() == b'audio'
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Não há texto'):
         await service.synthesize('   ', tmp_path / 'empty.mp3')
 
     class EmptyCommunicate:
@@ -273,7 +273,7 @@ async def test_gemini_generate_text_and_ocr(monkeypatch: pytest.MonkeyPatch):
     )
     assert result == 'generated text'
 
-    assert await service.ocr_image(b'image', 'image/png') == ''
+    assert not await service.ocr_image(b'image', 'image/png')
     assert await service.ocr_image(b'image', 'image/png') == 'OCR text'
 
 
@@ -519,7 +519,7 @@ async def test_pipeline_rejects_invalid_level(
         monkeypatch=monkeypatch,
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Nível inválido'):
         async for _ in pipeline.run(
             filename='document.txt',
             data=b'data',
