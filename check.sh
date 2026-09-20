@@ -9,12 +9,12 @@ NC='\033[0m' # No Color
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FAILED=0
 
-echo -e "${BLUE}==============================================${NC}"
-echo -e "${BLUE}        SINA_IA — Quality Gate Local          ${NC}"
-echo -e "${BLUE}==============================================${NC}"
+echo -e "${BLUE}======================================================${NC}"
+echo -e "${BLUE}        SINA_IA — Quality Gate Local (Pragmático)     ${NC}"
+echo -e "${BLUE}======================================================${NC}"
 
-# 1. FRONTEND CHECKS
-echo -e "\n${BLUE}[1/2] Verificando Frontend (Next.js & TypeScript)...${NC}"
+# 1. FRONTEND: LINT & TIPOS
+echo -e "\n${BLUE}[1/3] Verificando Frontend (Next.js & TypeScript)...${NC}"
 cd "$ROOT_DIR/frontend"
 
 echo "  -> Executando ESLint..."
@@ -33,11 +33,10 @@ else
     FAILED=1
 fi
 
-# 2. BACKEND CHECKS
-echo -e "\n${BLUE}[2/2] Verificando Backend (Python 3.13 & FastAPI)...${NC}"
+# 2. BACKEND: LINT, FORMATAÇÃO E TESTES COM COBERTURA
+echo -e "\n${BLUE}[2/3] Verificando Backend (Python 3.13 & FastAPI)...${NC}"
 cd "$ROOT_DIR/backend/app"
 
-# Localizar Poetry ou binários do virtualenv
 VENV_BIN=""
 if command -v poetry >/dev/null 2>&1; then
     RUN_CMD="poetry run"
@@ -92,14 +91,28 @@ if [ -n "$RUN_CMD" ] || [ -n "$VENV_BIN" ]; then
     fi
 fi
 
-echo -e "\n${BLUE}==============================================${NC}"
+# 3. FRONTEIRAS ARQUITETURAIS (DOMÍNIO PURO)
+echo -e "\n${BLUE}[3/3] Verificando Fronteiras Arquiteturais (Domínio Puro)...${NC}"
+cd "$ROOT_DIR"
+python3 -c "
+import sys
+with open('backend/app/app/services/math_speech_service.py') as f:
+    code = f.read()
+forbidden = ['sqlalchemy', 'fastapi', 'requests', 'aiofiles', 'database']
+violations = [lib for lib in forbidden if lib in code]
+if violations:
+    print(f'  ✗ VIOLAÇÃO DE FRONTEIRA: math_speech_service.py importou: {violations}')
+    sys.exit(1)
+print('  ✓ Fronteira de Domínio Puro validada: zero dependências de banco ou HTTP no motor matemático.')
+" || FAILED=1
+
+echo -e "\n${BLUE}======================================================${NC}"
 if [ $FAILED -eq 0 ]; then
-    echo -e "${GREEN}✓ QUALITY GATE 100% VERDE: PRONTO PARA COMMIT!${NC}"
-    echo -e "${BLUE}==============================================${NC}"
+    echo -e "${GREEN}✓ QUALITY GATE 100% VERDE: PRONTO PARA COMMIT & PR!${NC}"
+    echo -e "${BLUE}======================================================${NC}"
     exit 0
 else
-    echo -e "${RED}✗ QUALITY GATE FALHOU. Corrija os problemas acima.${NC}"
-    echo -e "${BLUE}==============================================${NC}"
+    echo -e "${RED}✗ QUALITY GATE FALHOU. Corrija as inconsistências acima.${NC}"
+    echo -e "${BLUE}======================================================${NC}"
     exit 1
 fi
-
