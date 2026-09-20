@@ -2,10 +2,11 @@ import os
 
 import cv2
 import docx
-import fitz  # PyMuPDF
-from config import settings
+import pymupdf as fitz
 from google import genai
-from services.math_speech_service import MathToSpeechService
+
+from app.core.config import settings
+from app.services.math_speech_service import MathToSpeechService
 
 
 class IngestionService:

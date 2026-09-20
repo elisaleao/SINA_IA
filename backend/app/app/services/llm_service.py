@@ -1,14 +1,15 @@
 from typing import Optional
 
-from config import settings
 from google import genai
-from models import (
+
+from app.core.config import settings
+from app.models import (
     AccessibilityConfig,
     AccessibilityProfileType,
     GenerationType,
     TeacherConfig,
 )
-from services.math_speech_service import MathToSpeechService
+from app.services.math_speech_service import MathToSpeechService
 
 
 class LLMService:
