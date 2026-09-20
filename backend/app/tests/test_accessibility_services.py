@@ -53,7 +53,9 @@ class FakeExtractor:
 
 
 class FakePipelineAI:
-    def __init__(self, *, audit: AuditReport, corrected: str | None = None) -> None:
+    def __init__(
+        self, *, audit: AuditReport, corrected: str | None = None
+    ) -> None:
         self.audit_result = audit
         self.corrected = corrected
         self.last_system_instruction = ''
@@ -119,7 +121,9 @@ def make_pipeline(
 async def test_extractor_handles_text_image_docx_and_invalid_extension():
     extractor = DocumentExtractor(FakeOCRAI())
 
-    text_result = await extractor.extract('note.txt', b'\xef\xbb\xbfHello world')
+    text_result = await extractor.extract(
+        'note.txt', b'\xef\xbb\xbfHello world'
+    )
     assert text_result.text == 'Hello world'
 
     latin_result = await extractor.extract('latin.txt', b'ol\xe1')
@@ -246,7 +250,9 @@ def make_gemini_service(
     )
     monkeypatch.setenv('GEMINI_API_KEY', 'test-key')
     monkeypatch.setenv('GEMINI_MODEL', 'test-model')
-    monkeypatch.setattr(gemini_module.genai, 'Client', lambda api_key: fake_client)
+    monkeypatch.setattr(
+        gemini_module.genai, 'Client', lambda api_key: fake_client
+    )
     return GeminiAccessibilityService()
 
 
