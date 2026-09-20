@@ -5,8 +5,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="858adefa-6cf2-4294-b961-756dc7cb19ca" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/app/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/pyproject.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/app/app/accessibility/extractor.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/app/accessibility/extractor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/app/app/accessibility/gemini_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/app/accessibility/gemini_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/app/app/accessibility/math_detector.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/app/accessibility/math_detector.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/app/app/accessibility/pipeline.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/app/accessibility/pipeline.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/app/app/accessibility/prompts.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/app/accessibility/prompts.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/app/app/accessibility/router.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/app/accessibility/router.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/app/app/accessibility/schemas.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/app/accessibility/schemas.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/app/app/accessibility/storage.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/app/accessibility/storage.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/app/app/accessibility/tts_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/app/accessibility/tts_service.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

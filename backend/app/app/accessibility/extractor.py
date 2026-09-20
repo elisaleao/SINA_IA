@@ -12,11 +12,18 @@ from docx import Document
 
 from .gemini_service import GeminiAccessibilityService
 
-
-SUPPORTED_EXTENSIONS = {".pdf", ".docx", ".txt", ".png", ".jpg", ".jpeg", ".webp"}
+SUPPORTED_EXTENSIONS = {
+    '.pdf',
+    '.docx',
+    '.txt',
+    '.png',
+    '.jpg',
+    '.jpeg',
+    '.webp',
+}
 _CHART_WORDS = re.compile(
-    r"\b(gr[aá]fico|figura|eixo|eixos|histograma|dispers[aã]o|boxplot|"
-    r"barras?|linhas?|pizza|percentual|porcentagem|legenda|s[eé]rie)\b",
+    r'\b(gr[aá]fico|figura|eixo|eixos|histograma|dispers[aã]o|boxplot|'
+    r'barras?|linhas?|pizza|percentual|porcentagem|legenda|s[eé]rie)\b',
     flags=re.IGNORECASE,
 )
 
@@ -54,25 +61,25 @@ class DocumentExtractor:
         extension = Path(filename).suffix.lower()
         if extension not in SUPPORTED_EXTENSIONS:
             raise ValueError(
-                "Formato não suportado. Use PDF, DOCX, TXT, PNG, JPG/JPEG ou WEBP."
+                'Formato não suportado. Use PDF, DOCX, TXT, PNG, JPG/JPEG ou WEBP.'
             )
 
-        if extension == ".txt":
+        if extension == '.txt':
             return ExtractionResult(text=self._decode_text(data))
-        if extension == ".docx":
+        if extension == '.docx':
             return self._extract_docx(data)
-        if extension == ".pdf":
+        if extension == '.pdf':
             return await self._extract_pdf(data)
         return await self._extract_image(extension, data)
 
     @staticmethod
     def _decode_text(data: bytes) -> str:
-        for encoding in ("utf-8-sig", "utf-8", "latin-1"):
+        for encoding in ('utf-8-sig', 'utf-8', 'latin-1'):
             try:
                 return data.decode(encoding).strip()
             except UnicodeDecodeError:
                 continue
-        return data.decode("utf-8", errors="replace").strip()
+        return data.decode('utf-8', errors='replace').strip()
 
     def _extract_docx(self, data: bytes) -> ExtractionResult:
         document = Document(BytesIO(data))
@@ -84,13 +91,13 @@ class DocumentExtractor:
                 parts.append(text)
 
         for table_index, table in enumerate(document.tables, start=1):
-            parts.append(f"[Tabela {table_index}]")
+            parts.append(f'[Tabela {table_index}]')
             for row in table.rows:
-                row_text = " | ".join(cell.text.strip() for cell in row.cells)
-                if row_text.strip(" |"):
+                row_text = ' | '.join(cell.text.strip() for cell in row.cells)
+                if row_text.strip(' |'):
                     parts.append(row_text)
 
-        text = "\n".join(parts).strip()
+        text = '\n'.join(parts).strip()
         candidates: list[VisualCandidate] = []
         context = text[:6000]
 
@@ -98,19 +105,19 @@ class DocumentExtractor:
             media_names = sorted(
                 name
                 for name in archive.namelist()
-                if name.startswith("word/media/") and not name.endswith("/")
+                if name.startswith('word/media/') and not name.endswith('/')
             )
             for index, media_name in enumerate(
                 media_names[: self.max_visual_candidates], start=1
             ):
                 image_bytes = archive.read(media_name)
                 extension = Path(media_name).suffix.lower()
-                mime_type = mimetypes.types_map.get(extension, "image/png")
-                if not mime_type.startswith("image/"):
+                mime_type = mimetypes.types_map.get(extension, 'image/png')
+                if not mime_type.startswith('image/'):
                     continue
                 candidates.append(
                     VisualCandidate(
-                        label=f"Imagem {index} do DOCX",
+                        label=f'Imagem {index} do DOCX',
                         image_bytes=image_bytes,
                         mime_type=mime_type,
                         context_text=context,
@@ -120,24 +127,24 @@ class DocumentExtractor:
         return ExtractionResult(text=text, visual_candidates=candidates)
 
     async def _extract_pdf(self, data: bytes) -> ExtractionResult:
-        pdf = fitz.open(stream=data, filetype="pdf")
+        pdf = fitz.open(stream=data, filetype='pdf')
         page_texts: list[str] = []
         candidates: list[VisualCandidate] = []
 
         try:
             for page_number, page in enumerate(pdf, start=1):
-                native_text = page.get_text("text").strip()
+                native_text = page.get_text('text').strip()
                 rendered: bytes | None = None
 
                 # OCR apenas quando há pouco texto selecionável.
                 if len(native_text) < 25:
                     rendered = self._render_page(page, scale=2.0)
                     native_text = (
-                        await self.ai.ocr_image(rendered, "image/png")
+                        await self.ai.ocr_image(rendered, 'image/png')
                     ).strip()
 
                 page_texts.append(
-                    f"[Página {page_number}]\n{native_text}".strip()
+                    f'[Página {page_number}]\n{native_text}'.strip()
                 )
 
                 if len(candidates) >= self.max_visual_candidates:
@@ -146,16 +153,18 @@ class DocumentExtractor:
                 image_count = len(page.get_images(full=True))
                 drawing_count = len(page.get_drawings())
                 likely_chart = bool(_CHART_WORDS.search(native_text))
-                likely_chart = likely_chart or drawing_count >= 12 or image_count > 0
+                likely_chart = (
+                    likely_chart or drawing_count >= 12 or image_count > 0
+                )
 
                 if likely_chart:
                     if rendered is None:
                         rendered = self._render_page(page, scale=1.6)
                     candidates.append(
                         VisualCandidate(
-                            label=f"Página {page_number}",
+                            label=f'Página {page_number}',
                             image_bytes=rendered,
-                            mime_type="image/png",
+                            mime_type='image/png',
                             context_text=native_text[:6000],
                         )
                     )
@@ -163,23 +172,25 @@ class DocumentExtractor:
             pdf.close()
 
         return ExtractionResult(
-            text="\n\n".join(page_texts).strip(),
+            text='\n\n'.join(page_texts).strip(),
             visual_candidates=candidates,
         )
 
-    async def _extract_image(self, extension: str, data: bytes) -> ExtractionResult:
+    async def _extract_image(
+        self, extension: str, data: bytes
+    ) -> ExtractionResult:
         mime_type = {
-            ".png": "image/png",
-            ".jpg": "image/jpeg",
-            ".jpeg": "image/jpeg",
-            ".webp": "image/webp",
+            '.png': 'image/png',
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.webp': 'image/webp',
         }[extension]
         text = (await self.ai.ocr_image(data, mime_type)).strip()
         return ExtractionResult(
             text=text,
             visual_candidates=[
                 VisualCandidate(
-                    label="Imagem enviada",
+                    label='Imagem enviada',
                     image_bytes=data,
                     mime_type=mime_type,
                     context_text=text[:6000],
@@ -191,4 +202,4 @@ class DocumentExtractor:
     def _render_page(page: fitz.Page, *, scale: float) -> bytes:
         matrix = fitz.Matrix(scale, scale)
         pixmap = page.get_pixmap(matrix=matrix, alpha=False)
-        return pixmap.tobytes("png")
+        return pixmap.tobytes('png')

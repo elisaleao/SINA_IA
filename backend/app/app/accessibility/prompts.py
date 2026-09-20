@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 LEVEL_LABELS = {
-    1: "Fidelidade máxima",
-    2: "Linguagem simplificada",
-    3: "Linguagem muito simples",
-    4: "Resumo acessível",
+    1: 'Fidelidade máxima',
+    2: 'Linguagem simplificada',
+    3: 'Linguagem muito simples',
+    4: 'Resumo acessível',
 }
 
 MASTER_PROMPT = """

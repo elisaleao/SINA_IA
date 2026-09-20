@@ -4,10 +4,11 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-
 AdaptationLevel = Literal[1, 2, 3, 4]
-StageName = Literal["upload", "extract", "detect", "convert", "audit", "correct", "tts"]
-StageStatus = Literal["active", "done", "error"]
+StageName = Literal[
+    'upload', 'extract', 'detect', 'convert', 'audit', 'correct', 'tts'
+]
+StageStatus = Literal['active', 'done', 'error']
 
 
 class MathDetection(BaseModel):
@@ -21,14 +22,14 @@ class AuditItem(BaseModel):
 
 
 class AuditReport(BaseModel):
-    status: Literal["ok", "problemas_encontrados"]
+    status: Literal['ok', 'problemas_encontrados']
     itens: list[AuditItem] = Field(default_factory=list)
 
 
 class ChartVisionResult(BaseModel):
     is_chart: bool = False
     title: str | None = None
-    description: str = ""
+    description: str = ''
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
 
 
@@ -52,7 +53,7 @@ class ProcessResult(BaseModel):
 
 
 class PipelineEvent(BaseModel):
-    type: Literal["stage", "result", "error"]
+    type: Literal['stage', 'result', 'error']
     stage: StageName | None = None
     status: StageStatus | None = None
     message: str | None = None
