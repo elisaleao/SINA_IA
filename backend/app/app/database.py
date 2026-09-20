@@ -32,7 +32,7 @@ AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 class UserRecord(Base):
     """Modelo relacional de usuários com papéis RBAC e lock otimista."""
 
-    __tablename__ = "usuarios"
+    __tablename__ = 'usuarios'
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     email: Mapped[str] = mapped_column(
@@ -40,8 +40,12 @@ class UserRecord(Base):
     )
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     full_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    role: Mapped[str] = mapped_column(String(50), default="aluno", nullable=False)
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    role: Mapped[str] = mapped_column(
+        String(50), default='aluno', nullable=False
+    )
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, default=True, nullable=False
+    )
     version_id: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -53,46 +57,50 @@ class UserRecord(Base):
         nullable=False,
     )
 
-    __mapper_args__ = {"version_id_col": version_id}
+    __mapper_args__ = {'version_id_col': version_id}
 
-    accessibility_preferences: Mapped[Optional["AccessibilityPreferencesRecord"]] = (
-        relationship(
-            "AccessibilityPreferencesRecord",
-            back_populates="user",
-            uselist=False,
-            cascade="all, delete-orphan",
-            lazy="selectin",
-        )
+    accessibility_preferences: Mapped[
+        Optional['AccessibilityPreferencesRecord']
+    ] = relationship(
+        'AccessibilityPreferencesRecord',
+        back_populates='user',
+        uselist=False,
+        cascade='all, delete-orphan',
+        lazy='selectin',
     )
-    documents: Mapped[list["DocumentRecord"]] = relationship(
-        "DocumentRecord",
-        back_populates="user",
-        cascade="all, delete-orphan",
-        lazy="selectin",
+    documents: Mapped[list['DocumentRecord']] = relationship(
+        'DocumentRecord',
+        back_populates='user',
+        cascade='all, delete-orphan',
+        lazy='selectin',
     )
-    refresh_tokens: Mapped[list["RefreshTokenRecord"]] = relationship(
-        "RefreshTokenRecord",
-        back_populates="user",
-        cascade="all, delete-orphan",
-        lazy="selectin",
+    refresh_tokens: Mapped[list['RefreshTokenRecord']] = relationship(
+        'RefreshTokenRecord',
+        back_populates='user',
+        cascade='all, delete-orphan',
+        lazy='selectin',
     )
 
 
 class AccessibilityPreferencesRecord(Base):
     """Modelo 1:1 de preferências de acessibilidade e UDL do usuário."""
 
-    __tablename__ = "preferencias_acessibilidade"
+    __tablename__ = 'preferencias_acessibilidade'
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     user_id: Mapped[str] = mapped_column(
         String(36),
-        ForeignKey("usuarios.id", ondelete="CASCADE"),
+        ForeignKey('usuarios.id', ondelete='CASCADE'),
         unique=True,
         nullable=False,
         index=True,
     )
-    profile: Mapped[str] = mapped_column(String(50), default="visual", nullable=False)
-    plain_language: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    profile: Mapped[str] = mapped_column(
+        String(50), default='visual', nullable=False
+    )
+    plain_language: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
     include_glossary: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False
     )
@@ -100,14 +108,20 @@ class AccessibilityPreferencesRecord(Base):
         Boolean, default=True, nullable=False
     )
     font_family: Mapped[str] = mapped_column(
-        String(50), default="system-ui", nullable=False
+        String(50), default='system-ui', nullable=False
     )
-    font_size: Mapped[str] = mapped_column(String(20), default="medium", nullable=False)
+    font_size: Mapped[str] = mapped_column(
+        String(20), default='medium', nullable=False
+    )
     line_spacing: Mapped[str] = mapped_column(
-        String(20), default="normal", nullable=False
+        String(20), default='normal', nullable=False
     )
-    high_contrast: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    vlibras_active: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    high_contrast: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
+    vlibras_active: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -118,21 +132,21 @@ class AccessibilityPreferencesRecord(Base):
         nullable=False,
     )
 
-    user: Mapped["UserRecord"] = relationship(
-        "UserRecord",
-        back_populates="accessibility_preferences",
+    user: Mapped['UserRecord'] = relationship(
+        'UserRecord',
+        back_populates='accessibility_preferences',
     )
 
 
 class DocumentRecord(Base):
     """Modelo de documentos ingeridos com lock otimista e auditoria."""
 
-    __tablename__ = "documentos"
+    __tablename__ = 'documentos'
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     user_id: Mapped[Optional[str]] = mapped_column(
         String(36),
-        ForeignKey("usuarios.id", ondelete="SET NULL"),
+        ForeignKey('usuarios.id', ondelete='SET NULL'),
         nullable=True,
         index=True,
     )
@@ -150,31 +164,35 @@ class DocumentRecord(Base):
         nullable=False,
     )
 
-    __mapper_args__ = {"version_id_col": version_id}
+    __mapper_args__ = {'version_id_col': version_id}
 
-    user: Mapped[Optional["UserRecord"]] = relationship(
-        "UserRecord",
-        back_populates="documents",
+    user: Mapped[Optional['UserRecord']] = relationship(
+        'UserRecord',
+        back_populates='documents',
     )
 
 
 class RefreshTokenRecord(Base):
     """Modelo de refresh token com rotação e família para revogação em cadeia."""
 
-    __tablename__ = "refresh_tokens"
+    __tablename__ = 'refresh_tokens'
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     user_id: Mapped[str] = mapped_column(
         String(36),
-        ForeignKey("usuarios.id", ondelete="CASCADE"),
+        ForeignKey('usuarios.id', ondelete='CASCADE'),
         nullable=False,
         index=True,
     )
     token_hash: Mapped[str] = mapped_column(
         String(64), unique=True, nullable=False, index=True
     )
-    family_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
-    revoked: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    family_id: Mapped[str] = mapped_column(
+        String(36), nullable=False, index=True
+    )
+    revoked: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
     expires_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
     )
@@ -182,32 +200,36 @@ class RefreshTokenRecord(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
-    user: Mapped["UserRecord"] = relationship(
-        "UserRecord",
-        back_populates="refresh_tokens",
+    user: Mapped['UserRecord'] = relationship(
+        'UserRecord',
+        back_populates='refresh_tokens',
     )
 
 
 class ExerciseRecord(Base):
     """Modelo de questão de exercício/quiz acessível de engenharia."""
 
-    __tablename__ = "exercicios"
+    __tablename__ = 'exercicios'
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    materia_id: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    materia_id: Mapped[str] = mapped_column(
+        String(50), nullable=False, index=True
+    )
     enunciado: Mapped[str] = mapped_column(Text, nullable=False)
     enunciado_falado: Mapped[str] = mapped_column(Text, nullable=False)
     codigo: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     linguagem: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     resposta_correta: Mapped[bool] = mapped_column(Boolean, nullable=False)
     explicacao: Mapped[str] = mapped_column(Text, nullable=False)
-    fonte: Mapped[str] = mapped_column(String(20), default="manual", nullable=False)
+    fonte: Mapped[str] = mapped_column(
+        String(20), default='manual', nullable=False
+    )
     status: Mapped[str] = mapped_column(
-        String(20), default="publicado", nullable=False, index=True
+        String(20), default='publicado', nullable=False, index=True
     )
     revisado_por: Mapped[Optional[str]] = mapped_column(
         String(36),
-        ForeignKey("usuarios.id", ondelete="SET NULL"),
+        ForeignKey('usuarios.id', ondelete='SET NULL'),
         nullable=True,
     )
     revisado_em: Mapped[Optional[datetime.datetime]] = mapped_column(
@@ -221,19 +243,21 @@ class ExerciseRecord(Base):
 class ExerciseSessionRecord(Base):
     """Modelo de sessão de quiz com timer e cálculo de tempo no servidor."""
 
-    __tablename__ = "sessoes_exercicio"
+    __tablename__ = 'sessoes_exercicio'
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     user_id: Mapped[str] = mapped_column(
         String(36),
-        ForeignKey("usuarios.id", ondelete="CASCADE"),
+        ForeignKey('usuarios.id', ondelete='CASCADE'),
         nullable=False,
         index=True,
     )
     materia_id: Mapped[Optional[str]] = mapped_column(
         String(50), nullable=True, index=True
     )
-    total_questoes: Mapped[int] = mapped_column(Integer, default=5, nullable=False)
+    total_questoes: Mapped[int] = mapped_column(
+        Integer, default=5, nullable=False
+    )
     tempo_limite_segundos: Mapped[int] = mapped_column(
         Integer, default=13, nullable=False
     )
@@ -244,30 +268,30 @@ class ExerciseSessionRecord(Base):
         DateTime(timezone=True), nullable=True
     )
 
-    user: Mapped["UserRecord"] = relationship("UserRecord")
-    respostas: Mapped[list["ExerciseAnswerRecord"]] = relationship(
-        "ExerciseAnswerRecord",
-        back_populates="sessao",
-        cascade="all, delete-orphan",
-        lazy="selectin",
+    user: Mapped['UserRecord'] = relationship('UserRecord')
+    respostas: Mapped[list['ExerciseAnswerRecord']] = relationship(
+        'ExerciseAnswerRecord',
+        back_populates='sessao',
+        cascade='all, delete-orphan',
+        lazy='selectin',
     )
 
 
 class ExerciseAnswerRecord(Base):
     """Modelo de resposta enviada pelo aluno em uma sessão de quiz."""
 
-    __tablename__ = "respostas_exercicio"
+    __tablename__ = 'respostas_exercicio'
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     sessao_id: Mapped[str] = mapped_column(
         String(36),
-        ForeignKey("sessoes_exercicio.id", ondelete="CASCADE"),
+        ForeignKey('sessoes_exercicio.id', ondelete='CASCADE'),
         nullable=False,
         index=True,
     )
     exercicio_id: Mapped[str] = mapped_column(
         String(36),
-        ForeignKey("exercicios.id", ondelete="CASCADE"),
+        ForeignKey('exercicios.id', ondelete='CASCADE'),
         nullable=False,
         index=True,
     )
@@ -280,11 +304,11 @@ class ExerciseAnswerRecord(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
-    sessao: Mapped["ExerciseSessionRecord"] = relationship(
-        "ExerciseSessionRecord",
-        back_populates="respostas",
+    sessao: Mapped['ExerciseSessionRecord'] = relationship(
+        'ExerciseSessionRecord',
+        back_populates='respostas',
     )
-    exercicio: Mapped["ExerciseRecord"] = relationship("ExerciseRecord")
+    exercicio: Mapped['ExerciseRecord'] = relationship('ExerciseRecord')
 
 
 async def init_db():

@@ -34,14 +34,14 @@ from app.schemas.user import (
     AccessibilityPreferencesUpdate,
 )
 
-router = APIRouter(tags=["Autenticação"])
+router = APIRouter(tags=['Autenticação'])
 
 
 @router.post(
-    "/auth/register",
+    '/auth/register',
     response_model=TokenResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Registro de novo usuário",
+    summary='Registro de novo usuário',
 )
 async def register(
     payload: RegisterRequest,
@@ -53,7 +53,7 @@ async def register(
     if existing_res.scalar_one_or_none():
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Já existe um usuário cadastrado com este e-mail.",
+            detail='Já existe um usuário cadastrado com este e-mail.',
         )
 
     user_id = str(uuid.uuid4())
@@ -72,13 +72,15 @@ async def register(
     prefs = AccessibilityPreferencesRecord(
         id=str(uuid.uuid4()),
         user_id=user_id,
-        profile=prefs_data.profile.value if prefs_data else "visual",
+        profile=prefs_data.profile.value if prefs_data else 'visual',
         plain_language=prefs_data.plain_language if prefs_data else False,
         include_glossary=prefs_data.include_glossary if prefs_data else False,
-        highlight_key_points=(prefs_data.highlight_key_points if prefs_data else True),
-        font_family=prefs_data.font_family if prefs_data else "system-ui",
-        font_size=prefs_data.font_size if prefs_data else "medium",
-        line_spacing=prefs_data.line_spacing if prefs_data else "normal",
+        highlight_key_points=(
+            prefs_data.highlight_key_points if prefs_data else True
+        ),
+        font_family=prefs_data.font_family if prefs_data else 'system-ui',
+        font_size=prefs_data.font_size if prefs_data else 'medium',
+        line_spacing=prefs_data.line_spacing if prefs_data else 'normal',
         high_contrast=prefs_data.high_contrast if prefs_data else False,
     )
     db.add(prefs)
@@ -102,15 +104,15 @@ async def register(
     return TokenResponse(
         access_token=access_token,
         refresh_token=raw_refresh,
-        token_type="bearer",
+        token_type='bearer',
         expires_in=settings.ACCESS_TOKEN_MINUTES * 60,
     )
 
 
 @router.post(
-    "/auth/login",
+    '/auth/login',
     response_model=TokenResponse,
-    summary="Autenticação por e-mail e senha",
+    summary='Autenticação por e-mail e senha',
 )
 async def login(
     payload: LoginRequest,
@@ -124,14 +126,14 @@ async def login(
     if not user or not verify_password(payload.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciais inválidas. Verifique e-mail e senha.",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail='Credenciais inválidas. Verifique e-mail e senha.',
+            headers={'WWW-Authenticate': 'Bearer'},
         )
 
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Usuário inativo no sistema.",
+            detail='Usuário inativo no sistema.',
         )
 
     family_id = str(uuid.uuid4())
@@ -152,15 +154,15 @@ async def login(
     return TokenResponse(
         access_token=access_token,
         refresh_token=raw_refresh,
-        token_type="bearer",
+        token_type='bearer',
         expires_in=settings.ACCESS_TOKEN_MINUTES * 60,
     )
 
 
 @router.post(
-    "/auth/refresh",
+    '/auth/refresh',
     response_model=TokenResponse,
-    summary="Rotação de refresh token com detecção de reuso",
+    summary='Rotação de refresh token com detecção de reuso',
 )
 async def refresh_token(
     payload: RefreshRequest,
@@ -179,7 +181,7 @@ async def refresh_token(
     if not token_record:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token de atualização inválido ou inexistente.",
+            detail='Token de atualização inválido ou inexistente.',
         )
 
     # Detecção de reuso malicioso: token já revogado
@@ -193,7 +195,7 @@ async def refresh_token(
         await db.commit()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Tentativa de reuso de token detectada. Sessão revogada por segurança.",
+            detail='Tentativa de reuso de token detectada. Sessão revogada por segurança.',
         )
 
     # Verifica expiração
@@ -207,7 +209,7 @@ async def refresh_token(
         await db.commit()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token de atualização expirado.",
+            detail='Token de atualização expirado.',
         )
 
     # Revoga o token atual e gera um novo mantendo a mesma family_id
@@ -230,15 +232,15 @@ async def refresh_token(
     return TokenResponse(
         access_token=access_token,
         refresh_token=new_raw_refresh,
-        token_type="bearer",
+        token_type='bearer',
         expires_in=settings.ACCESS_TOKEN_MINUTES * 60,
     )
 
 
 @router.post(
-    "/auth/logout",
+    '/auth/logout',
     response_model=AuthStatusResponse,
-    summary="Encerramento de sessão e revogação de refresh token",
+    summary='Encerramento de sessão e revogação de refresh token',
 )
 async def logout(
     payload: LogoutRequest,
@@ -253,13 +255,13 @@ async def logout(
     )
     await db.execute(stmt)
     await db.commit()
-    return AuthStatusResponse(message="Sessão encerrada com sucesso.")
+    return AuthStatusResponse(message='Sessão encerrada com sucesso.')
 
 
 @router.get(
-    "/users/me",
+    '/users/me',
     response_model=UserResponse,
-    summary="Obter dados e preferências do usuário logado",
+    summary='Obter dados e preferências do usuário logado',
 )
 async def get_me(
     current_user: UserRecord = Depends(get_current_user),
@@ -269,9 +271,9 @@ async def get_me(
 
 
 @router.patch(
-    "/users/me/preferences",
+    '/users/me/preferences',
     response_model=AccessibilityPreferencesResponse,
-    summary="Atualizar preferências de acessibilidade do usuário logado",
+    summary='Atualizar preferências de acessibilidade do usuário logado',
 )
 async def update_my_preferences(
     payload: AccessibilityPreferencesUpdate,
@@ -291,7 +293,7 @@ async def update_my_preferences(
     update_data = payload.model_dump(exclude_unset=True)
     for field, val in update_data.items():
         if hasattr(prefs, field) and val is not None:
-            resolved_val = val.value if hasattr(val, "value") else val
+            resolved_val = val.value if hasattr(val, 'value') else val
             setattr(prefs, field, resolved_val)
 
     await db.commit()
