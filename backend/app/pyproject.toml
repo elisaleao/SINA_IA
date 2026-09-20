@@ -73,7 +73,7 @@ preview = true
 quote-style = 'single'
 
 [tool.typos.files]
-extend-exclude = ["*.md"]
+extend-exclude = ["*.md", "app/accessibility/prompts.py"]
 
 [tool.typos.default.extend-words]
 responde = "responde"
@@ -110,9 +110,13 @@ falso = "falso"
 Falso = "Falso"
 momento = "momento"
 professores = "professores"
+problemas = "problemas"
+PROBLEMAS = "PROBLEMAS"
+itens = "itens"
+relevante = "relevante"
+excede = "excede"
 
-
-[tool.poe] 
+[tool.poe]
 poetry_command = ""
 
 [tool.poe.tasks]
