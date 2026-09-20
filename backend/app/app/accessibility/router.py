@@ -4,7 +4,7 @@ import json
 import os
 from pathlib import Path
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 
 from app.accessibility.extractor import SUPPORTED_EXTENSIONS
@@ -12,7 +12,15 @@ from app.accessibility.pipeline import AccessibilityPipeline
 from app.accessibility.storage import GeneratedFileStore
 
 router = APIRouter(prefix='/api/accessibility', tags=['accessibility'])
-store = GeneratedFileStore()
+
+
+def get_generated_file_store() -> GeneratedFileStore:
+    return GeneratedFileStore()
+
+
+def get_accessibility_pipeline() -> AccessibilityPipeline:
+    return AccessibilityPipeline()
+
 
 MAX_UPLOAD_MB = int(os.getenv('ACCESSIBILITY_MAX_UPLOAD_MB', '20'))
 MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024
@@ -22,6 +30,7 @@ MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024
 async def process_document_stream(
     file: UploadFile = File(...),
     level: int = Form(2),
+    pipeline: AccessibilityPipeline = Depends(get_accessibility_pipeline),
 ):
     filename = Path(file.filename or 'documento').name
     extension = Path(filename).suffix.lower()
@@ -52,7 +61,6 @@ async def process_document_stream(
 
     async def ndjson_stream():
         try:
-            pipeline = AccessibilityPipeline()
             async for event in pipeline.run(
                 filename=filename,
                 data=data,
@@ -77,7 +85,10 @@ async def process_document_stream(
 
 
 @router.get('/files/{filename}')
-async def download_generated_file(filename: str):
+async def download_generated_file(
+    filename: str,
+    store: GeneratedFileStore = Depends(get_generated_file_store),
+):
     try:
         path = store.resolve_safe(filename)
     except ValueError as exc:

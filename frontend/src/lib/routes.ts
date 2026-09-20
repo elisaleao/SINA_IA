@@ -6,6 +6,7 @@ export const appRoutes = {
   studentChat: "/aluno/chat",
   learnMore: "/conhecer-mais",
   exercises: "/exercicios",
+  processDocument: "/processar",
   teacher: "/professor",
   teacherChat: "/professor/chat",
 } as const;

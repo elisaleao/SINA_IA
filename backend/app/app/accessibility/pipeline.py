@@ -16,11 +16,19 @@ from .tts_service import EdgeTTSService
 
 
 class AccessibilityPipeline:
-    def __init__(self) -> None:
-        self.ai = GeminiAccessibilityService()
-        self.extractor = DocumentExtractor(self.ai, max_visual_candidates=4)
-        self.tts = EdgeTTSService()
-        self.store = GeneratedFileStore()
+    def __init__(
+        self,
+        ai: GeminiAccessibilityService | None = None,
+        tts: EdgeTTSService | None = None,
+        store: GeneratedFileStore | None = None,
+        extractor: DocumentExtractor | None = None,
+    ) -> None:
+        self.ai = ai or GeminiAccessibilityService()
+        self.extractor = extractor or DocumentExtractor(
+            self.ai, max_visual_candidates=4
+        )
+        self.tts = tts or EdgeTTSService()
+        self.store = store or GeneratedFileStore()
 
     async def run(
         self,
@@ -29,12 +37,11 @@ class AccessibilityPipeline:
         data: bytes,
         level: int,
     ) -> AsyncIterator[PipelineEvent]:
-        if level not in LEVEL_LABELS:
-            raise ValueError('Nível inválido. Use 1, 2, 3 ou 4.')
-
-        yield self._stage('upload', 'done', 'Arquivo recebido e validado.')
-
         try:
+            if level not in LEVEL_LABELS:
+                raise ValueError('Nível inválido. Use 1, 2, 3 ou 4.')
+
+            yield self._stage('upload', 'done', 'Arquivo recebido e validado.')
             yield self._stage(
                 'extract', 'active', 'Extraindo texto e conteúdo visual.'
             )
@@ -119,9 +126,11 @@ class AccessibilityPipeline:
             yield self._stage(
                 'correct',
                 'active',
-                'Aplicando correções apontadas pela auditoria.'
-                if audit.itens
-                else 'Nenhuma correção necessária.',
+                (
+                    'Aplicando correções apontadas pela auditoria.'
+                    if audit.itens
+                    else 'Nenhuma correção necessária.'
+                ),
             )
             if audit.status == 'problemas_encontrados' and audit.itens:
                 accessible_text = await self.ai.correct(

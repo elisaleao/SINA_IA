@@ -43,6 +43,12 @@ export function AppHeader() {
             Exercícios
           </Link>
           <Link
+            href={appRoutes.processDocument}
+            className="rounded-full border border-stone-300 px-4 py-2 text-sm font-semibold text-stone-800 transition hover:border-stone-900 hover:text-stone-950"
+          >
+            Processar Documento
+          </Link>
+          <Link
             href={appRoutes.login}
             className="rounded-full border border-stone-300 px-4 py-2 text-sm font-semibold text-stone-800 transition hover:border-stone-900 hover:text-stone-950"
           >

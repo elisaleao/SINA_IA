@@ -1,9 +1,10 @@
-from __future__ import annotations
-
 import os
+from typing import Optional
 
 from google import genai
 from google.genai import types
+
+from app.core.config import settings
 
 from .prompts import AUDITOR_PROMPT, CHART_PROMPT, CORRECTOR_PROMPT, OCR_PROMPT
 from .schemas import AuditReport, ChartVisionResult
@@ -12,14 +13,31 @@ from .schemas import AuditReport, ChartVisionResult
 class GeminiAccessibilityService:
     """Centraliza todas as chamadas à IA; nenhuma chave fica no navegador."""
 
-    def __init__(self) -> None:
-        api_key = os.getenv('GEMINI_API_KEY')
-        if not api_key:
+    def __init__(
+        self,
+        client: Optional[genai.Client] = None,
+        api_key: Optional[str] = None,
+        model: Optional[str] = None,
+    ) -> None:
+        self.model = model or os.getenv('GEMINI_MODEL') or 'gemini-1.5-flash'
+        if client:
+            self.client = client
+        else:
+            resolved_key = (
+                api_key
+                or settings.GEMINI_API_KEY
+                or os.getenv('GEMINI_API_KEY')
+            )
+            self.client = (
+                genai.Client(api_key=resolved_key) if resolved_key else None
+            )
+
+    def _ensure_client(self) -> genai.Client:
+        if not self.client:
             raise RuntimeError(
                 'GEMINI_API_KEY não configurada no backend/app/.env.'
             )
-        self.model = os.getenv('GEMINI_MODEL', 'gemini-3.6-flash')
-        self.client = genai.Client(api_key=api_key)
+        return self.client
 
     async def generate_text(
         self,
@@ -28,7 +46,8 @@ class GeminiAccessibilityService:
         user_text: str,
         temperature: float = 0.15,
     ) -> str:
-        response = await self.client.aio.models.generate_content(
+        client = self._ensure_client()
+        response = await client.aio.models.generate_content(
             model=self.model,
             contents=user_text,
             config=types.GenerateContentConfig(
@@ -43,7 +62,8 @@ class GeminiAccessibilityService:
         return text
 
     async def ocr_image(self, image_bytes: bytes, mime_type: str) -> str:
-        response = await self.client.aio.models.generate_content(
+        client = self._ensure_client()
+        response = await client.aio.models.generate_content(
             model=self.model,
             contents=[
                 OCR_PROMPT,
@@ -71,7 +91,8 @@ class GeminiAccessibilityService:
             + '\n\nTEXTO PRÓXIMO/CONTEXTO DO DOCUMENTO:\n'
             + context_text[:6000]
         )
-        response = await self.client.aio.models.generate_content(
+        client = self._ensure_client()
+        response = await client.aio.models.generate_content(
             model=self.model,
             contents=[
                 prompt,
@@ -88,7 +109,8 @@ class GeminiAccessibilityService:
         return ChartVisionResult.model_validate_json(response.text or '{}')
 
     async def audit(self, original: str, accessible: str) -> AuditReport:
-        response = await self.client.aio.models.generate_content(
+        client = self._ensure_client()
+        response = await client.aio.models.generate_content(
             model=self.model,
             contents=(
                 f'TEXTO ORIGINAL EXTRAÍDO:\n{original}\n\n---\n\n'

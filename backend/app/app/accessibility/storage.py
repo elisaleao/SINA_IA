@@ -5,16 +5,18 @@ import time
 import uuid
 from pathlib import Path
 
+from app.core.config import settings
+
 
 class GeneratedFileStore:
     """Armazena somente resultados gerados, nunca o upload original."""
 
-    def __init__(self) -> None:
-        configured = os.getenv('ACCESSIBILITY_OUTPUT_DIR')
+    def __init__(self, root_dir: str | Path | None = None) -> None:
+        configured = root_dir or os.getenv('ACCESSIBILITY_OUTPUT_DIR')
         self.root = (
             Path(configured)
             if configured
-            else Path('.generated_accessibility')
+            else Path(settings.OUTPUT_DIR) / 'accessibility'
         )
         self.root.mkdir(parents=True, exist_ok=True)
         self.max_age_seconds = int(
