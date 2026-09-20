@@ -52,6 +52,13 @@ markers = [
     "e2e: testes de ponta a ponta",
 ]
 
+[tool.coverage.run]
+concurrency = ["greenlet", "thread"]
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true
+
 [tool.ruff]
 line-length = 79
 extend-exclude = ['migrations']
@@ -66,9 +73,11 @@ preview = true
 quote-style = 'single'
 
 [tool.typos.files]
-extend-exclude = ["*.md"]
+extend-exclude = ["*.md", "app/accessibility/prompts.py"]
 
 [tool.typos.default.extend-words]
+responde = "responde"
+Responde = "Responde"
 denominador = "denominador"
 numerador = "numerador"
 cliente = "cliente"
@@ -101,9 +110,13 @@ falso = "falso"
 Falso = "Falso"
 momento = "momento"
 professores = "professores"
+problemas = "problemas"
+PROBLEMAS = "PROBLEMAS"
+itens = "itens"
+relevante = "relevante"
+excede = "excede"
 
-
-[tool.poe] 
+[tool.poe]
 poetry_command = ""
 
 [tool.poe.tasks]

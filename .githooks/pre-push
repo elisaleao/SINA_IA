@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -e
+
+BLUE='\033[0;34m'
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+echo -e "${BLUE}🛡️  [pre-push] Executando Quality Gate completo antes do envio remoto...${NC}"
+
+if "$ROOT_DIR/check.sh"; then
+    echo -e "\n${GREEN}✓ [pre-push] Quality Gate aprovado! Prosseguindo com o git push.${NC}\n"
+    exit 0
+else
+    echo -e "\n${RED}✗ [pre-push] Envio cancelado: o Quality Gate falhou.${NC}"
+    echo -e "${RED}Corrija os erros reportados acima antes de realizar o push.${NC}\n"
+    exit 1
+fi
+
