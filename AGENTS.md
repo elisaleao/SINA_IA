@@ -6,7 +6,11 @@ Este é o ponto de entrada da arquitetura, governança viva e regras do reposit�
 
 ## 1. Visão Geral do Projeto
 
-O **SINA_IA** é uma plataforma educacional inclusiva e adaptativa (inspirada na dinâmica do NotebookLM), estruturada com foco prioritário em **acessibilidade para estudantes com deficiência visual (baixa visão e cegueira total)** e suporte a mediação pedagógica para professores.
+O **SINA_IA** é uma plataforma educacional inclusiva, adaptativa e universal (inspirada na dinâmica do NotebookLM), estruturada com foco em **Acessibilidade Universal e Neurodiversidade**:
+* **Deficiência Visual:** Cegueira total e baixa visão (leitores de tela NVDA/JAWS, audiodescrição e equações matemáticas faladas por extenso).
+* **Dislexia:** Adaptação em Linguagem Simples (*Plain Language*), sentenças curtas na ordem direta, glossários automáticos e tipografia adaptativa.
+* **TDAH e Atenção:** Micro-learning em blocos curtos (*chunks* de 2 a 3 linhas), bullet points estruturados e eliminação de sobrecarga cognitiva.
+* **Apoio Cognitivo e Baixa Literacia:** Analogias concretas do cotidiano e decomposição sequencial de conteúdos complexos.
 
 O projeto possui uma arquitetura poliglota clara:
 * **`frontend/`**: Interface assistiva moderna em **Next.js 16 (App Router)**, **React 19**, **TypeScript** e **TailwindCSS v4**.
@@ -54,12 +58,12 @@ backend/app/app/main.py (Gateway FastAPI / Rotas de Borda)
 
 ## 4. Regras Inegociáveis
 
-1. **Quality Gate 100% Verde:** O comando `./check.sh` (ou `npm run lint && poetry run poe test`) deve passar sem erros antes de qualquer commit.
-2. **Acessibilidade Assistiva (WCAG 2.2 AAA):**
-   * Elementos interativos devem ter labels e semântica ARIA acessíveis por leitores de tela (NVDA, JAWS).
-   * Fórmulas matemáticas em LaTeX devem conter seu respectivo equivalente fonético falado gerado pelo backend.
-3. **TypeScript Estrito:** Nenhuma variável, propriedade ou retorno no frontend pode ter tipo `any` explícito ou implícito. Use tipos específicos ou `unknown` com asserção de tipo segura.
-4. **Idempotência e Resiliência:** Operações pesadas de processamento (OCR, geração via LLM e síntese de voz) devem utilizar chaves de idempotência e suportar retentativas seguras.
+1. **Quality Gate 100% Verde:** O comando `./check.sh` deve passar sem erros antes de qualquer commit.
+2. **Acessibilidade Universal (WCAG 2.2 AAA & UDL):**
+   * Elementos interativos devem ter labels e semântica ARIA acessíveis por leitores de tela.
+   * Adaptações de texto devem respeitar as preferências do perfil (Linguagem Simples para dislexia, concisão para TDAH, transcrição fonética para cegueira).
+3. **TypeScript Estrito:** Nenhuma variável, propriedade ou retorno no frontend pode ter tipo `any` explícito ou implícito.
+4. **Idempotência e Resiliência:** Operações pesadas de processamento (OCR, geração via LLM e síntese de voz) devem suportar retentativas seguras.
 5. **Idioma dos Artefatos:**
    * Prosa, documentação e discussões técnicas em **Português com acentos corretos**.
    * Código, variáveis, nomes de funções, testes e mensagens de commit em **Inglês** (padrão Conventional Commits).

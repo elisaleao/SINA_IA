@@ -120,3 +120,49 @@ async def test_get_audio_file_not_found(client):
         response = await client.get('/api/audio/non-existent.mp3')
         assert response.status_code == 404
         assert response.json()['detail'] == 'Arquivo de áudio não encontrado.'
+
+
+@pytest.mark.asyncio
+async def test_generate_content_with_accessibility_profile(
+    client, test_db_session
+):
+    """POST /api/content/generate with dyslexia accessibility config."""
+    doc_id = 'test-doc-dyslexia'
+    doc = DocumentRecord(
+        id=doc_id,
+        filename='test.txt',
+        raw_markdown='Conteúdo sobre física',
+        accessible_text='Conteúdo sobre física',
+    )
+    test_db_session.add(doc)
+    await test_db_session.commit()
+
+    mock_generate = AsyncMock(
+        return_value=(
+            '# Resumo Adaptado\nTexto simples.',
+            'Texto simples.',
+        )
+    )
+
+    with patch('app.main.llm_service.generate_content', mock_generate):
+        request_body = {
+            'document_id': doc_id,
+            'generation_type': 'summary',
+            'accessibility_config': {
+                'profile': 'dyslexia',
+                'plain_language': True,
+                'include_glossary': True,
+            },
+            'generate_audio': False,
+        }
+
+        response = await client.post(
+            '/api/content/generate', json=request_body
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data['document_id'] == doc_id
+        assert data['accessibility_profile'] == 'dyslexia'
+        assert data['text_content'] == '# Resumo Adaptado\nTexto simples.'
+        mock_generate.assert_called_once()

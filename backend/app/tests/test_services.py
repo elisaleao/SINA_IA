@@ -2,7 +2,12 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from models import GenerationType, TeacherConfig
+from models import (
+    AccessibilityConfig,
+    AccessibilityProfileType,
+    GenerationType,
+    TeacherConfig,
+)
 
 from app.services.audio_service import AudioService
 from app.services.llm_service import LLMService
@@ -55,6 +60,46 @@ async def test_llm_service_generate_content():
         assert markdown == 'Este é um resumo do texto com $\\frac{1}{2}$.'
         assert 'fração com numerador 1 e denominador 2' in spoken
         mock_client.models.generate_content.assert_called_once()
+
+
+def test_llm_service_build_system_prompt_dyslexia():
+    """Build prompt for dyslexia with plain language and glossary."""
+    service = LLMService()
+    teacher_cfg = TeacherConfig()
+    acc_cfg = AccessibilityConfig(
+        profile=AccessibilityProfileType.DYSLEXIA,
+        plain_language=True,
+        include_glossary=True,
+    )
+
+    prompt = service._build_system_prompt(teacher_cfg, acc_cfg)
+    assert 'Linguagem Simples' in prompt
+    assert 'Glossário Acessível' in prompt
+
+
+def test_llm_service_build_system_prompt_adhd():
+    """Build prompt for ADHD with micro-chunks."""
+    service = LLMService()
+    teacher_cfg = TeacherConfig()
+    acc_cfg = AccessibilityConfig(profile=AccessibilityProfileType.ADHD)
+
+    prompt = service._build_system_prompt(teacher_cfg, acc_cfg)
+    assert 'TDAH' in prompt
+    assert 'micro-blocos' in prompt
+
+
+def test_llm_service_build_system_prompt_cognitive_and_universal():
+    """Build prompt for cognitive support and universal design."""
+    service = LLMService()
+    teacher_cfg = TeacherConfig()
+
+    cog_cfg = AccessibilityConfig(profile=AccessibilityProfileType.COGNITIVE)
+    prompt_cog = service._build_system_prompt(teacher_cfg, cog_cfg)
+    assert 'Apoio Cognitivo' in prompt_cog
+
+    uni_cfg = AccessibilityConfig(profile=AccessibilityProfileType.UNIVERSAL)
+    prompt_uni = service._build_system_prompt(teacher_cfg, uni_cfg)
+    assert 'Adaptação Universal' in prompt_uni
 
 
 # AudioService Tests

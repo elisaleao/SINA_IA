@@ -10,6 +10,33 @@ class GenerationType(str, Enum):
     STUDY_GUIDE = 'study_guide'
 
 
+class AccessibilityProfileType(str, Enum):
+    VISUAL = 'visual'
+    DYSLEXIA = 'dyslexia'
+    ADHD = 'adhd'
+    COGNITIVE = 'cognitive'
+    UNIVERSAL = 'universal'
+
+
+class AccessibilityConfig(BaseModel):
+    profile: AccessibilityProfileType = Field(
+        default=AccessibilityProfileType.VISUAL,
+        description='Perfil prioritário de acessibilidade',
+    )
+    plain_language: bool = Field(
+        default=False,
+        description='Se True, simplifica frases e vocabulário (Linguagem Simples)',
+    )
+    include_glossary: bool = Field(
+        default=False,
+        description='Gera glossário explicativo de termos técnicos complexos',
+    )
+    highlight_key_points: bool = Field(
+        default=True,
+        description='Destaca ideias centrais e termos-chave para foco visual',
+    )
+
+
 class TeacherConfig(BaseModel):
     pedagogical_level: str = Field(
         default='basico', description='basico, intermediario, avancado'
@@ -27,6 +54,9 @@ class GenerateRequest(BaseModel):
     document_id: str
     generation_type: GenerationType = GenerationType.SUMMARY
     teacher_config: Optional[TeacherConfig] = TeacherConfig()
+    accessibility_config: Optional[AccessibilityConfig] = Field(
+        default_factory=AccessibilityConfig
+    )
     generate_audio: bool = True
     voice: str = 'pt-BR-AntonioNeural'  # Voz otimizada em PT-BR
 
@@ -45,3 +75,4 @@ class GenerationResponse(BaseModel):
     text_content: str
     spoken_content: str
     audio_url: Optional[str] = None
+    accessibility_profile: Optional[str] = None

@@ -52,3 +52,4 @@ Result = Union[Ok[T], Err[E]]
 ## 4. Testabilidade
 
 Testes unitários de módulos de domínio devem ser instantâneos (< 50ms) e nunca requerer mocks de banco de dados ou conexões de rede ativas. Se um teste de domínio necessitar de `conftest` de banco de dados, a fronteira arquitetural foi violada.
+

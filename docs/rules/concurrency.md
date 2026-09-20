@@ -41,3 +41,4 @@ Worker Poller -> Consome 'processing_jobs' com 'FOR UPDATE SKIP LOCKED'
 * **Garantia At-Least-Once:** Nenhuma tarefa é perdida caso um worker caia durante a síntese de áudio.
 * **Consumo Concorrente Seguro:** Múltiplos workers paralelos utilizam `SKIP LOCKED` (no PostgreSQL) ou transação atômica serializada (no SQLite) para evitar que a mesma tarefa seja executada duas vezes.
 * **Controle de Tentativas (`attempts`):** Tarefas com falhas transitórias de API externa (ex: rate limit temporário) sofrem retentativa exponencial controlada.
+

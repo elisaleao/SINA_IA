@@ -70,6 +70,9 @@ Considere = "Considere"
 fundamentais = "fundamentais"
 diagramas = "diagramas"
 ser = "ser"
+frase = "frase"
+termo = "termo"
+processos = "processos"
 
 [tool.poe] 
 poetry_command = ""

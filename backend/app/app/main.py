@@ -118,11 +118,12 @@ async def generate_study_content(
         )
 
     try:
-        # Geração via Gemini calibrada pelo professor
+        # Geração via Gemini calibrada pelo professor e perfil de acessibilidade
         markdown_output, spoken_output = await llm_service.generate_content(
             text=doc_record.raw_markdown,
             gen_type=req.generation_type,
             config=req.teacher_config,
+            accessibility=req.accessibility_config,
         )
 
         audio_url = None
@@ -132,12 +133,19 @@ async def generate_study_content(
             )
             audio_url = f'/api/audio/{audio_filename}'
 
+        profile_val = (
+            req.accessibility_config.profile.value
+            if req.accessibility_config
+            else None
+        )
+
         return GenerationResponse(
             document_id=req.document_id,
             generation_type=req.generation_type.value,
             text_content=markdown_output,
             spoken_content=spoken_output,
             audio_url=audio_url,
+            accessibility_profile=profile_val,
         )
 
     except Exception as e:

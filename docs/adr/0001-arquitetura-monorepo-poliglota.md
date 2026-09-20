@@ -53,3 +53,4 @@ Adotar a **Alternativa C: Monorepo Poliglota**.
 ### Negativas / Trade-offs:
 * O ambiente de integração contínua (CI) precisa configurar simultaneamente os runtimes de Node.js e Python.
 * Desenvolvedores precisam ter Node.js e Poetry instalados em suas máquinas de desenvolvimento local.
+
