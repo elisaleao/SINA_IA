@@ -13,7 +13,8 @@ class ExerciseBase(BaseModel):
         default=None, description='Trecho de código associado à questão'
     )
     linguagem: Optional[str] = Field(
-        default=None, description='Linguagem de programação do trecho de código'
+        default=None,
+        description='Linguagem de programação do trecho de código',
     )
     resposta_correta: bool = Field(
         description='Gabarito verdadeiro ou falso da assertiva'
@@ -86,7 +87,9 @@ class SessionResponse(BaseModel):
 
 class SubmitAnswerRequest(BaseModel):
     exercicio_id: str = Field(description='Identificador da questão')
-    resposta_aluno: bool = Field(description='Resposta do aluno: True ou False')
+    resposta_aluno: bool = Field(
+        description='Resposta do aluno: True ou False'
+    )
     tempo_gasto_segundos: float = Field(
         default=0.0, ge=0.0, description='Tempo gasto pelo aluno nesta questão'
     )
@@ -127,4 +130,3 @@ class GenerateExercisesRequest(BaseModel):
 
 class PublishExerciseRequest(BaseModel):
     exercicio_id: str
-

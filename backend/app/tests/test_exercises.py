@@ -3,7 +3,10 @@ import uuid
 import pytest
 from sqlalchemy import update
 
-from app.database import AccessibilityPreferencesRecord, ExerciseRecord, UserRecord
+from app.database import (
+    AccessibilityPreferencesRecord,
+    ExerciseRecord,
+)
 from scripts.seed_exercicios import seed
 
 
@@ -77,9 +80,10 @@ async def test_seed_exercicios_idempotent(test_db_session):
     assert skip2 == ins1
 
 
-
 @pytest.mark.asyncio
-async def test_start_session_standard_timer(client, student_auth, sample_exercise):
+async def test_start_session_standard_timer(
+    client, student_auth, sample_exercise
+):
     resp = await client.post(
         '/api/exercicios/sessoes',
         headers=student_auth['headers'],
@@ -94,7 +98,9 @@ async def test_start_session_standard_timer(client, student_auth, sample_exercis
 
 
 @pytest.mark.asyncio
-async def test_start_session_adhd_timer(client, student_auth, test_db_session, sample_exercise):
+async def test_start_session_adhd_timer(
+    client, student_auth, test_db_session, sample_exercise
+):
     # Atualiza preferência para perfil TDAH (adhd)
     me_resp = await client.get('/users/me', headers=student_auth['headers'])
     user_id = me_resp.json()['id']
@@ -118,7 +124,9 @@ async def test_start_session_adhd_timer(client, student_auth, test_db_session, s
 
 
 @pytest.mark.asyncio
-async def test_start_session_cognitive_timer(client, student_auth, test_db_session, sample_exercise):
+async def test_start_session_cognitive_timer(
+    client, student_auth, test_db_session, sample_exercise
+):
     # Atualiza preferência para perfil Cognitivo
     me_resp = await client.get('/users/me', headers=student_auth['headers'])
     user_id = me_resp.json()['id']
@@ -142,7 +150,9 @@ async def test_start_session_cognitive_timer(client, student_auth, test_db_sessi
 
 
 @pytest.mark.asyncio
-async def test_get_next_question_anti_leak_security(client, student_auth, sample_exercise):
+async def test_get_next_question_anti_leak_security(
+    client, student_auth, sample_exercise
+):
     # Inicia sessão
     start_resp = await client.post(
         '/api/exercicios/sessoes',
@@ -173,7 +183,9 @@ async def test_get_next_question_anti_leak_security(client, student_auth, sample
 
 
 @pytest.mark.asyncio
-async def test_get_next_question_isolation_other_user(client, student_auth, sample_exercise):
+async def test_get_next_question_isolation_other_user(
+    client, student_auth, sample_exercise
+):
     start_resp = await client.post(
         '/api/exercicios/sessoes',
         headers=student_auth['headers'],
@@ -254,7 +266,9 @@ async def test_submit_answer_incorrect(client, student_auth, sample_exercise):
 
 
 @pytest.mark.asyncio
-async def test_submit_answer_server_timeout_expiration(client, student_auth, sample_exercise):
+async def test_submit_answer_server_timeout_expiration(
+    client, student_auth, sample_exercise
+):
     start_resp = await client.post(
         '/api/exercicios/sessoes',
         headers=student_auth['headers'],
@@ -335,7 +349,9 @@ async def test_generate_exercises_draft_by_default(client, student_auth):
 
 
 @pytest.mark.asyncio
-async def test_publish_exercise_teacher_moderation(client, student_auth, teacher_auth, test_db_session):
+async def test_publish_exercise_teacher_moderation(
+    client, student_auth, teacher_auth, test_db_session
+):
     # Cria uma questão rascunho
     draft_ex = ExerciseRecord(
         id=str(uuid.uuid4()),

@@ -2,7 +2,6 @@ import asyncio
 import json
 import os
 import uuid
-
 from typing import Optional
 
 from sqlalchemy import select
@@ -74,7 +73,6 @@ async def seed(session: Optional[AsyncSession] = None) -> tuple[int, int]:
         f'Seed concluído com sucesso: {inserted} inseridos, {skipped} ignorados (já existentes).'
     )
     return inserted, skipped
-
 
 
 if __name__ == '__main__':

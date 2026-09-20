@@ -61,9 +61,7 @@ def upgrade() -> None:
             nullable=False,
         ),
     )
-    op.create_index(
-        'ix_exercicios_status', 'exercicios', ['status']
-    )
+    op.create_index('ix_exercicios_status', 'exercicios', ['status'])
 
     # 2. Tabela sessoes_exercicio
     op.create_table(
@@ -166,4 +164,3 @@ def downgrade() -> None:
 
     op.drop_index('ix_exercicios_status', table_name='exercicios')
     op.drop_table('exercicios')
-

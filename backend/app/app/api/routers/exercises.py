@@ -1,6 +1,6 @@
-from datetime import datetime, timezone
 import json
 import uuid
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func, select
@@ -379,4 +379,3 @@ async def publish_exercise(
     await db.commit()
     await db.refresh(exercise)
     return ExerciseResponse.model_validate(exercise)
-
