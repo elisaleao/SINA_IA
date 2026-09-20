@@ -10,12 +10,14 @@ import {
 
 import {
   apiUrl,
+  AuditItem,
   ChartDescription,
+  PipelineEvent,
   ProcessResult,
   processAccessibleDocument,
   StageName,
   StageStatus,
-} from "@/lib/accessibility-api";
+} from "../lib/accessibility-api";
 
 
 const STAGE_LABELS: Record<StageName, string> = {
@@ -127,7 +129,7 @@ export default function AccessibleDocumentProcessor() {
       await processAccessibleDocument(
         file,
         level,
-        (pipelineEvent) => {
+        (pipelineEvent: PipelineEvent) => {
           if (pipelineEvent.type === "stage") {
             setStages((current) => ({
               ...current,
@@ -377,7 +379,7 @@ export default function AccessibleDocumentProcessor() {
             className="mt-4 space-y-3"
           >
             {result.charts.length ? (
-              result.charts.map((chart, index) => (
+              result.charts.map((chart: ChartDescription, index: number) => (
                 <ChartCard key={`${chart.source_label}-${index}`} chart={chart} />
               ))
             ) : (
@@ -412,7 +414,7 @@ export default function AccessibleDocumentProcessor() {
           >
             {result.audit.itens.length ? (
               <ul className="list-disc space-y-2 pl-5">
-                {result.audit.itens.map((item, index) => (
+                {result.audit.itens.map((item: AuditItem, index: number) => (
                   <li key={index}>{item.problema}</li>
                 ))}
               </ul>
