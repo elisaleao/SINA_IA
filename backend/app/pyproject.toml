@@ -41,6 +41,10 @@ dev = [
 asyncio_mode = "auto"
 pythonpath = ["app", "."]
 addopts = "-p no:warnings --cov=app --cov-context=test"
+markers = [
+    "live: testes que chamam APIs externas reais",
+    "e2e: testes de ponta a ponta",
+]
 
 [tool.ruff]
 line-length = 79
@@ -73,6 +77,11 @@ ser = "ser"
 frase = "frase"
 termo = "termo"
 processos = "processos"
+protocolos = "protocolos"
+clientes = "clientes"
+educacional = "educacional"
+operacional = "operacional"
+atual = "atual"
 
 [tool.poe] 
 poetry_command = ""

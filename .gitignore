@@ -232,4 +232,9 @@ backend/.env
 .vscode
 *.db
 .pytest_cache
+uploads/
+outputs/
+backend/app/uploads/
+backend/app/outputs/
+
 
