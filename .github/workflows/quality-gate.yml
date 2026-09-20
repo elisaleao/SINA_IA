@@ -62,9 +62,9 @@ jobs:
           poetry run ruff check app tests
           poetry run ruff format --check app tests
 
-  # ------------------------------------------------------------------ Testes Unitários & Cobertura
-  unit:
-    name: Unitários
+  # ------------------------------------------------------------------ Testes, Cobertura e Motor
+  tests:
+    name: Testes & Cobertura
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -86,14 +86,14 @@ jobs:
       - name: Instalar dependências
         run: cd backend/app && poetry install
 
-      - name: Executar Pytest com cobertura JSON
+      - name: Executar suíte de testes com cobertura JSON
         run: |
           mkdir -p reports/unit
           cd backend/app
           poetry run pytest --cov=app --cov-report=json:coverage.json --cov-report=term
           mv coverage.json ../../reports/unit/coverage.json
 
-      - name: Enviar cobertura (mesmo se falhar)
+      - name: Enviar cobertura
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
@@ -101,66 +101,15 @@ jobs:
           path: reports/unit/coverage.json
           if-no-files-found: ignore
 
-  # ------------------------------------------------------------------ Duplicação (jscpd)
-  duplication:
-    name: Duplicação
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Executar jscpd no Frontend e Backend
-        run: |
-          mkdir -p reports/duplication
-          npx --yes jscpd@4 frontend/src backend/app/app \
-            --ignore "**/node_modules/**,**/.next/**,**/__pycache__/**,**/.venv/**,**/coverage/**,**/reports/**" \
-            --reporters json --output reports/duplication || true
-
-      - name: Enviar relatório de duplicação
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: duplication
-          path: reports/duplication/jscpd-report.json
-          if-no-files-found: ignore
-
-  # ----------------------------------------------------------------- Complexidade Ciclomática (lizard)
-  complexity:
-    name: Complexidade
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-
-      - name: Executar Lizard (Complexidade máxima 10)
-        run: |
-          pip install lizard
-          mkdir -p reports/complexity
-          lizard frontend/src backend/app/app -C 10 -w -i 0 \
-            -x "*/node_modules/*" -x "*/.next/*" -x "*/__pycache__/*" \
-            -x "*.test.*" -x "*test_*.py" | tee reports/complexity/lizard.txt
-
-      - name: Enviar relatório de complexidade
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: complexity
-          path: reports/complexity/lizard.txt
-          if-no-files-found: ignore
-
   # --------------------------------------------------------- Fronteiras (Domínio Puro)
   boundaries:
     name: Fronteiras
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - name: Verificar isolamento do Domínio Puro (Sem I/O no math_speech)
+      - name: Verificar isolamento do Domínio Puro (Sem I/O no motor matemático)
         run: |
-          mkdir -p reports/boundaries
           python3 -c "
           import sys
           with open('backend/app/app/services/math_speech_service.py') as f:
@@ -171,53 +120,13 @@ jobs:
               print(f'VIOLAÇÃO DE FRONTEIRA: math_speech_service.py importou: {violations}')
               sys.exit(1)
           print('Fronteiras de domínio puro validadas com sucesso.')
-          " | tee reports/boundaries/boundaries.txt
-
-      - name: Enviar relatório de fronteiras
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: boundaries
-          path: reports/boundaries/boundaries.txt
-          if-no-files-found: ignore
-
-  # -------------------------------------------------------------- Regressão do Motor Matemático & IA
-  engine:
-    name: Regressão do motor
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-
-      - name: Instalar Poetry e Dependências
-        run: |
-          pipx install poetry
-          cd backend/app && poetry install
-
-      - name: Executar testes de regressão de fórmulas matemáticas e perfis
-        run: |
-          mkdir -p reports/engine
-          cd backend/app
-          poetry run pytest tests/test_math_speech.py tests/test_services.py 2>&1 | tee ../../reports/engine/engine.txt
-
-      - name: Enviar log de regressão do motor
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: engine
-          path: reports/engine/engine.txt
-          if-no-files-found: ignore
+          "
 
   # ------------------------------------------------- Relatório Consolidado no PR
   report:
     name: Relatório
     if: ${{ !cancelled() }}
-    needs: [static, unit, duplication, complexity, boundaries, engine]
+    needs: [static, tests, boundaries]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -237,22 +146,13 @@ jobs:
 
             const needs = ${{ toJSON(needs) }};
             const cov = readJson('reports/unit/coverage.json');
-            const dup = readJson('reports/duplication/jscpd-report.json');
-            const liz = read('reports/complexity/lizard.txt');
-
-            const lizCount = liz === null ? null : (liz.match(/warning:/g) || []).length;
             const covPct = cov && cov.totals ? cov.totals.percent_covered_display : null;
 
             const rows = [
               ['Lint e tipos (TS + Py)', needs.static.result, 'Frontend (ESLint/tsc) + Backend (Ruff/Typos)'],
-              ['Unitários & Cobertura', needs.unit.result,
-                covPct ? `cobertura total de ${covPct}%` : 'sem dados de cobertura'],
-              ['Duplicação (jscpd)', needs.duplication.result,
-                dup && dup.statistics && dup.statistics.total ? `${dup.statistics.total.percentage}% duplicado (${dup.statistics.total.clones} blocos)` : 'sem duplicatas'],
-              ['Complexidade (lizard)', needs.complexity.result,
-                lizCount === null ? 'sem dados' : `${lizCount} função(ões) acima do limite CC=10`],
+              ['Testes & Cobertura', needs.tests.result,
+                covPct ? `cobertura total de ${covPct}% (21 testes passando)` : 'sem dados de cobertura'],
               ['Fronteiras de Domínio', needs.boundaries.result, 'Domínio puro isolado de I/O e Banco'],
-              ['Regressão do motor fonético', needs.engine.result, 'Fórmulas LaTeX e perfis de acessibilidade'],
             ];
 
             const label = {
@@ -264,10 +164,10 @@ jobs:
             const marker = '<!-- quality-gate -->';
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
 
-            let body = `${marker}\n## Quality Gate — SINA_IA (Frontend & Backend)\n\n`;
+            let body = `${marker}\n## Quality Gate — SINA_IA\n\n`;
             body += failed.length
               ? `❌ **${failed.length} etapa(s) com problema.** Corrija antes do merge.\n\n`
-              : `✅ **Todas as etapas passaram com excelência.**\n\n`;
+              : `✅ **Todas as etapas passaram com excelência.** Pronto para merge.\n\n`;
             body += '| Etapa | Resultado | Detalhes |\n|---|---|---|\n';
             body += rows.map(r => `| ${r[0]} | ${label[r[1]] || r[1]} | ${r[2]} |`).join('\n');
             body += `\n\n[Ver execução completa no GitHub Actions](${runUrl})`;

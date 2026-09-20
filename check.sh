@@ -4,18 +4,17 @@ set -e
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 BLUE='\033[0;34m'
-YELLOW='\033[0;33m'
 NC='\033[0m' # No Color
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FAILED=0
 
 echo -e "${BLUE}======================================================${NC}"
-echo -e "${BLUE}        SINA_IA — Quality Gate Local (Poliglota)      ${NC}"
+echo -e "${BLUE}        SINA_IA — Quality Gate Local (Pragmático)     ${NC}"
 echo -e "${BLUE}======================================================${NC}"
 
 # 1. FRONTEND: LINT & TIPOS
-echo -e "\n${BLUE}[1/4] Verificando Frontend (Next.js & TypeScript)...${NC}"
+echo -e "\n${BLUE}[1/3] Verificando Frontend (Next.js & TypeScript)...${NC}"
 cd "$ROOT_DIR/frontend"
 
 echo "  -> Executando ESLint..."
@@ -34,8 +33,8 @@ else
     FAILED=1
 fi
 
-# 2. BACKEND: LINT, FORMATAÇÃO E TIPOS
-echo -e "\n${BLUE}[2/4] Verificando Backend (Python 3.13 & FastAPI)...${NC}"
+# 2. BACKEND: LINT, FORMATAÇÃO E TESTES COM COBERTURA
+echo -e "\n${BLUE}[2/3] Verificando Backend (Python 3.13 & FastAPI)...${NC}"
 cd "$ROOT_DIR/backend/app"
 
 VENV_BIN=""
@@ -93,7 +92,7 @@ if [ -n "$RUN_CMD" ] || [ -n "$VENV_BIN" ]; then
 fi
 
 # 3. FRONTEIRAS ARQUITETURAIS (DOMÍNIO PURO)
-echo -e "\n${BLUE}[3/4] Verificando Fronteiras Arquiteturais (Domínio Puro)...${NC}"
+echo -e "\n${BLUE}[3/3] Verificando Fronteiras Arquiteturais (Domínio Puro)...${NC}"
 cd "$ROOT_DIR"
 python3 -c "
 import sys
@@ -106,18 +105,6 @@ if violations:
     sys.exit(1)
 print('  ✓ Fronteira de Domínio Puro validada: zero dependências de banco ou HTTP no motor matemático.')
 " || FAILED=1
-
-# 4. REGRESSÃO DO MOTOR DE ACESSIBILIDADE E MATEMÁTICA
-echo -e "\n${BLUE}[4/4] Verificando Regressão do Motor de Acessibilidade...${NC}"
-cd "$ROOT_DIR/backend/app"
-if [ -n "$RUN_CMD" ] || [ -n "$VENV_BIN" ]; then
-    if $PYTEST_BIN tests/test_math_speech.py tests/test_services.py -q; then
-        echo -e "  ${GREEN}✓ Motor matemático e perfis de acessibilidade sem regressão.${NC}"
-    else
-        echo -e "  ${RED}✗ Falha nos testes de regressão do motor.${NC}"
-        FAILED=1
-    fi
-fi
 
 echo -e "\n${BLUE}======================================================${NC}"
 if [ $FAILED -eq 0 ]; then
