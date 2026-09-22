@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 
+from app.services.gemini_service import GeminiService
+from app.services.tts_service import TTSService
+
 from .extractor import DocumentExtractor
-from .gemini_service import GeminiAccessibilityService
 from .math_detector import detect_math_content
 from .prompts import LEVEL_LABELS, MASTER_PROMPT, MATH_PROMPT
 from .schemas import (
@@ -12,22 +14,21 @@ from .schemas import (
     ProcessResult,
 )
 from .storage import GeneratedFileStore
-from .tts_service import EdgeTTSService
 
 
 class AccessibilityPipeline:
     def __init__(
         self,
-        ai: GeminiAccessibilityService | None = None,
-        tts: EdgeTTSService | None = None,
+        ai: GeminiService | None = None,
+        tts: TTSService | None = None,
         store: GeneratedFileStore | None = None,
         extractor: DocumentExtractor | None = None,
     ) -> None:
-        self.ai = ai or GeminiAccessibilityService()
+        self.ai = ai or GeminiService()
         self.extractor = extractor or DocumentExtractor(
             self.ai, max_visual_candidates=4
         )
-        self.tts = tts or EdgeTTSService()
+        self.tts = tts or TTSService()
         self.store = store or GeneratedFileStore()
 
     async def run(

@@ -1,24 +1,18 @@
 from typing import Optional
 
-from google import genai
-
-from app.core.config import settings
 from app.models import (
     AccessibilityConfig,
     AccessibilityProfileType,
     GenerationType,
     TeacherConfig,
 )
+from app.services.gemini_service import GeminiService
 from app.services.math_speech_service import MathToSpeechService
 
 
 class LLMService:
-    def __init__(self):
-        self.client = (
-            genai.Client(api_key=settings.GEMINI_API_KEY)
-            if settings.GEMINI_API_KEY
-            else None
-        )
+    def __init__(self, gemini: Optional[GeminiService] = None):
+        self.gemini = gemini or GeminiService()
 
     def _build_system_prompt(
         self,
@@ -93,7 +87,7 @@ class LLMService:
         config: TeacherConfig,
         accessibility: Optional[AccessibilityConfig] = None,
     ) -> tuple[str, str]:
-        if not self.client:
+        if not self.gemini.is_configured:
             raise ValueError('GEMINI_API_KEY não configurada.')
 
         prompt_system = self._build_system_prompt(config, accessibility)
@@ -106,15 +100,10 @@ class LLMService:
         elif gen_type == GenerationType.STUDY_GUIDE:
             task_prompt = 'Crie um guia de estudos em tópicos com passo a passo prático sobre o conteúdo:\n\n'
 
-        response = self.client.models.generate_content(
-            model='gemini-1.5-flash',
-            contents=[
-                prompt_system,
-                task_prompt + text[:15000],
-            ],  # Limitando tokens de entrada
+        output_markdown = await self.gemini.generate_text(
+            system_instruction=prompt_system,
+            user_text=task_prompt + text[:15000],  # Limita tokens de entrada
         )
-
-        output_markdown = response.text
         spoken_output = MathToSpeechService.latex_to_spoken_portuguese(
             output_markdown
         )
@@ -122,11 +111,13 @@ class LLMService:
         return output_markdown, spoken_output
 
     async def generate_text(self, prompt: str) -> str:
-        if not self.client:
+        if not self.gemini.is_configured:
             raise ValueError('GEMINI_API_KEY não configurada.')
 
-        response = self.client.models.generate_content(
-            model='gemini-1.5-flash',
-            contents=[prompt],
-        )
-        return response.text or ''
+        try:
+            return await self.gemini.generate_text(
+                system_instruction=None, user_text=prompt
+            )
+        except RuntimeError:
+            # Resposta vazia: quem chama trata texto vazio (ex.: fallback do quiz)
+            return ''

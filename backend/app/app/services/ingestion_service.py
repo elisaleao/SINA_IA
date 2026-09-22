@@ -1,21 +1,23 @@
 import os
+from typing import Optional
 
 import cv2
 import docx
 import pymupdf as fitz
-from google import genai
 
-from app.core.config import settings
+from app.services.gemini_service import GeminiService
 from app.services.math_speech_service import MathToSpeechService
+
+INGESTION_OCR_PROMPT = """Transcreva o documento nesta imagem em formato Markdown limpo.
+Regras Estritas para Acessibilidade:
+1. Todas as equações e cálculos matemáticos DEVEM ser escritas em sintaxe LaTeX válida ($...$ para inline e $$...$$ para bloco).
+2. Para tabelas, use Markdown formatado com cabeçalho.
+3. Para diagramas ou esquemas gráficos, crie uma descrição textual detalhada (alt-text)."""
 
 
 class IngestionService:
-    def __init__(self):
-        self.client = (
-            genai.Client(api_key=settings.GEMINI_API_KEY)
-            if settings.GEMINI_API_KEY
-            else None
-        )
+    def __init__(self, gemini: Optional[GeminiService] = None):
+        self.gemini = gemini or GeminiService()
 
     async def process_file(
         self, file_path: str, filename: str
@@ -53,7 +55,7 @@ class IngestionService:
             text = page.get_text('text')
 
             # Se a página for escaneada/imagem sem texto
-            if len(text.strip()) < 50 and self.client:
+            if len(text.strip()) < 50 and self.gemini.is_configured:
                 pix = page.get_pixmap(dpi=150)
                 img_path = f'{file_path}_p{page_num}.png'
                 pix.save(img_path)
@@ -87,7 +89,7 @@ class IngestionService:
         processed_path = f'{file_path}_processed.png'
         cv2.imwrite(processed_path, gray)
 
-        if self.client:
+        if self.gemini.is_configured:
             ocr_text = await self._gemini_ocr(processed_path)
         else:
             ocr_text = (
@@ -101,18 +103,6 @@ class IngestionService:
     async def _gemini_ocr(self, image_path: str) -> str:
         with open(image_path, 'rb') as img_file:
             image_bytes = img_file.read()
-
-        response = self.client.models.generate_content(
-            model='gemini-1.5-flash',
-            contents=[
-                """Transcreva o documento nesta imagem em formato Markdown limpo.
-                Regras Estritas para Acessibilidade:
-                1. Todas as equações e cálculos matemáticos DEVEM ser escritas em sintaxe LaTeX válida ($...$ para inline e $$...$$ para bloco).
-                2. Para tabelas, use Markdown formatado com cabeçalho.
-                3. Para diagramas ou esquemas gráficos, crie uma descrição textual detalhada (alt-text).""",
-                genai.types.Part.from_bytes(
-                    data=image_bytes, mime_type='image/png'
-                ),
-            ],
+        return await self.gemini.ocr_image(
+            image_bytes, 'image/png', prompt=INGESTION_OCR_PROMPT
         )
-        return response.text

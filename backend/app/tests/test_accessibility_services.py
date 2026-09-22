@@ -11,14 +11,11 @@ import fitz
 import pytest
 from docx import Document
 
-from app.accessibility import gemini_service as gemini_module
-from app.accessibility import tts_service as tts_module
 from app.accessibility.extractor import (
     DocumentExtractor,
     ExtractionResult,
     VisualCandidate,
 )
-from app.accessibility.gemini_service import GeminiAccessibilityService
 from app.accessibility.pipeline import AccessibilityPipeline
 from app.accessibility.schemas import (
     AuditItem,
@@ -26,7 +23,11 @@ from app.accessibility.schemas import (
     ChartVisionResult,
 )
 from app.accessibility.storage import GeneratedFileStore
-from app.accessibility.tts_service import EdgeTTSService
+from app.core.config import settings
+from app.services import gemini_service as gemini_module
+from app.services import tts_service as tts_module
+from app.services.gemini_service import GeminiService
+from app.services.tts_service import TTSService
 
 
 class FakeOCRAI:
@@ -108,7 +109,9 @@ def make_pipeline(
     ai: FakePipelineAI,
     monkeypatch: pytest.MonkeyPatch,
 ) -> AccessibilityPipeline:
-    monkeypatch.setenv('ACCESSIBILITY_OUTPUT_DIR', str(tmp_path / 'generated'))
+    monkeypatch.setattr(
+        settings, 'ACCESSIBILITY_OUTPUT_DIR', str(tmp_path / 'generated')
+    )
     pipeline = AccessibilityPipeline.__new__(AccessibilityPipeline)
     pipeline.ai = ai
     pipeline.extractor = FakeExtractor(extraction)
@@ -180,8 +183,10 @@ def test_generated_file_store_creates_resolves_and_cleans_files(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    monkeypatch.setenv('ACCESSIBILITY_OUTPUT_DIR', str(tmp_path / 'output'))
-    monkeypatch.setenv('ACCESSIBILITY_FILE_TTL_SECONDS', '1')
+    monkeypatch.setattr(
+        settings, 'ACCESSIBILITY_OUTPUT_DIR', str(tmp_path / 'output')
+    )
+    monkeypatch.setattr(settings, 'ACCESSIBILITY_FILE_TTL_SECONDS', 1)
     store = GeneratedFileStore()
 
     generated = store.new_path('.txt')
@@ -213,7 +218,7 @@ async def test_edge_tts_service_success_empty_and_invalid_output(
             Path(path).write_bytes(b'audio')
 
     monkeypatch.setattr(tts_module.edge_tts, 'Communicate', FakeCommunicate)
-    service = EdgeTTSService()
+    service = TTSService()
     output = tmp_path / 'audio.mp3'
     await service.synthesize('Accessible audio text', output)
     assert output.read_bytes() == b'audio'
@@ -236,7 +241,7 @@ async def test_edge_tts_service_success_empty_and_invalid_output(
 def make_gemini_service(
     monkeypatch: pytest.MonkeyPatch,
     responses: list[object],
-) -> GeminiAccessibilityService:
+) -> GeminiService:
     class FakeModels:
         def __init__(self, items: list[object]) -> None:
             self.items = list(items)
@@ -248,26 +253,21 @@ def make_gemini_service(
     fake_client = SimpleNamespace(
         aio=SimpleNamespace(models=FakeModels(responses)),
     )
-    monkeypatch.setenv('GEMINI_API_KEY', 'test-key')
-    monkeypatch.setenv('GEMINI_MODEL', 'test-model')
+    monkeypatch.setattr(settings, 'GEMINI_API_KEY', 'test-key')
+    monkeypatch.setattr(settings, 'GEMINI_MODEL', 'test-model')
     monkeypatch.setattr(
         gemini_module.genai, 'Client', lambda api_key: fake_client
     )
-    return GeminiAccessibilityService()
+    return GeminiService()
 
 
 @pytest.mark.asyncio
 async def test_gemini_service_requires_api_key(
     monkeypatch: pytest.MonkeyPatch,
 ):
-    monkeypatch.delenv('GEMINI_API_KEY', raising=False)
-    monkeypatch.setattr(
-        gemini_module,
-        'settings',
-        SimpleNamespace(GEMINI_API_KEY=None),
-    )
+    monkeypatch.setattr(settings, 'GEMINI_API_KEY', '')
 
-    service = GeminiAccessibilityService()
+    service = GeminiService()
 
     with pytest.raises(RuntimeError, match='GEMINI_API_KEY'):
         await service.generate_text(

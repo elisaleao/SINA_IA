@@ -9,57 +9,72 @@ from models import (
     TeacherConfig,
 )
 
-from app.services.audio_service import AudioService
+from app.core.config import settings
 from app.services.llm_service import LLMService
+from app.services.tts_service import TTSService
+
+
+def _gemini(configured: bool = True, reply: str = '') -> MagicMock:
+    """GeminiService falso: o LLMService só conhece essa interface."""
+    gemini = MagicMock()
+    gemini.is_configured = configured
+    gemini.generate_text = AsyncMock(return_value=reply)
+    return gemini
 
 
 # LLMService Tests
 def test_llm_service_no_api_key():
     """ValueError is raised if API key is not configured."""
-    with patch('app.services.llm_service.settings') as mock_settings:
-        mock_settings.GEMINI_API_KEY = None
-        service = LLMService()
+    service = LLMService(gemini=_gemini(configured=False))
 
-        with pytest.raises(
-            ValueError, match='GEMINI_API_KEY não configurada.'
-        ):
-            asyncio.run(
-                service.generate_content(
-                    'teste', GenerationType.SUMMARY, TeacherConfig()
-                )
+    with pytest.raises(ValueError, match='GEMINI_API_KEY não configurada.'):
+        asyncio.run(
+            service.generate_content(
+                'teste', GenerationType.SUMMARY, TeacherConfig()
             )
+        )
 
 
 @pytest.mark.asyncio
 async def test_llm_service_generate_content():
     """LLMService should format prompts and process responses using MathToSpeechService."""
-    mock_client = MagicMock()
-    mock_response = MagicMock()
-    mock_response.text = 'Este é um resumo do texto com $\\frac{1}{2}$.'
-    mock_client.models.generate_content.return_value = mock_response
+    gemini = _gemini(reply='Este é um resumo do texto com $\\frac{1}{2}$.')
+    service = LLMService(gemini=gemini)
 
-    with (
-        patch(
-            'app.services.llm_service.genai.Client', return_value=mock_client
+    markdown, spoken = await service.generate_content(
+        text='Conteúdo do arquivo',
+        gen_type=GenerationType.SUMMARY,
+        config=TeacherConfig(
+            pedagogical_level='basico',
+            math_detail_level='direto',
+            tone='formal',
         ),
-        patch('app.services.llm_service.settings') as mock_settings,
-    ):
-        mock_settings.GEMINI_API_KEY = 'dummy_key'
+    )
 
-        service = LLMService()
-        markdown, spoken = await service.generate_content(
-            text='Conteúdo do arquivo',
-            gen_type=GenerationType.SUMMARY,
-            config=TeacherConfig(
-                pedagogical_level='basico',
-                math_detail_level='direto',
-                tone='formal',
-            ),
-        )
+    assert markdown == 'Este é um resumo do texto com $\\frac{1}{2}$.'
+    assert 'fração com numerador 1 e denominador 2' in spoken
+    gemini.generate_text.assert_awaited_once()
+    kwargs = gemini.generate_text.await_args.kwargs
+    assert 'tutor acadêmico' in kwargs['system_instruction']
+    assert kwargs['user_text'].endswith('Conteúdo do arquivo')
 
-        assert markdown == 'Este é um resumo do texto com $\\frac{1}{2}$.'
-        assert 'fração com numerador 1 e denominador 2' in spoken
-        mock_client.models.generate_content.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_llm_service_generate_text_returns_empty_on_empty_reply():
+    gemini = _gemini()
+    gemini.generate_text = AsyncMock(
+        side_effect=RuntimeError('A IA retornou uma resposta vazia.')
+    )
+    service = LLMService(gemini=gemini)
+
+    assert not await service.generate_text('gere questões')
+
+
+@pytest.mark.asyncio
+async def test_llm_service_generate_text_requires_api_key():
+    service = LLMService(gemini=_gemini(configured=False))
+    with pytest.raises(ValueError, match='GEMINI_API_KEY'):
+        await service.generate_text('gere questões')
 
 
 def test_llm_service_build_system_prompt_dyslexia():
@@ -102,28 +117,34 @@ def test_llm_service_build_system_prompt_cognitive_and_universal():
     assert 'Adaptação Universal' in prompt_uni
 
 
-# AudioService Tests
+# TTSService Tests
 @pytest.mark.asyncio
-async def test_audio_service_text_to_speech():
-    """AudioService should call edge_tts Communicate and save the file."""
-    mock_communicate = MagicMock()
-    mock_communicate.save = AsyncMock()
+@pytest.mark.parametrize(
+    ('voice', 'expected_voice'),
+    [('pt-BR-AntonioNeural', 'pt-BR-AntonioNeural'), (None, 'voz-padrao')],
+)
+async def test_tts_service_text_to_speech(
+    tmp_path, monkeypatch, voice, expected_voice
+):
+    """Grava em OUTPUT_DIR e usa a voz pedida ou a padrão do Settings."""
+    monkeypatch.setattr(settings, 'OUTPUT_DIR', str(tmp_path))
+    monkeypatch.setattr(settings, 'EDGE_TTS_VOICE', 'voz-padrao')
+    communicate = MagicMock()
 
-    with (
-        patch(
-            'app.services.audio_service.edge_tts.Communicate',
-            return_value=mock_communicate,
-        ) as mock_comm_cls,
-        patch('app.services.audio_service.settings') as mock_settings,
-    ):
-        mock_settings.OUTPUT_DIR = '/dummy/dir'
+    async def fake_save(path: str) -> None:
+        with open(path, 'wb') as audio:
+            audio.write(b'mp3')
 
-        filename = await AudioService.text_to_speech(
-            'Texto fonético', voice='pt-BR-AntonioNeural'
+    communicate.save = AsyncMock(side_effect=fake_save)
+
+    with patch(
+        'app.services.tts_service.edge_tts.Communicate',
+        return_value=communicate,
+    ) as communicate_cls:
+        filename = await TTSService().text_to_speech(
+            'Texto fonético', voice=voice
         )
 
-        assert filename.endswith('.mp3')
-        mock_comm_cls.assert_called_once_with(
-            'Texto fonético', 'pt-BR-AntonioNeural'
-        )
-        mock_communicate.save.assert_called_once()
+    assert filename.endswith('.mp3')
+    assert (tmp_path / filename).read_bytes() == b'mp3'
+    assert communicate_cls.call_args.kwargs['voice'] == expected_voice

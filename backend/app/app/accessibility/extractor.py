@@ -11,7 +11,7 @@ from pathlib import Path
 import fitz  # PyMuPDF
 from docx import Document
 
-from .gemini_service import GeminiAccessibilityService
+from app.services.gemini_service import GeminiService
 
 SUPPORTED_EXTENSIONS = {
     '.pdf',
@@ -60,7 +60,7 @@ class DocumentExtractor:
 
     def __init__(
         self,
-        ai: GeminiAccessibilityService,
+        ai: GeminiService,
         *,
         max_visual_candidates: int = 4,
     ) -> None:
