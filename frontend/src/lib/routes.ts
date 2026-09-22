@@ -1,12 +1,30 @@
 export const appRoutes = {
-  home: "/",
-  login: "/login",
-  student: "/aluno",
-  studentLearningProfile: "/aluno/perfil-aprendizagem",
-  studentChat: "/aluno/chat",
-  learnMore: "/conhecer-mais",
-  exercises: "/exercicios",
-  processDocument: "/processar",
-  teacher: "/professor",
-  teacherChat: "/professor/chat",
+  home: '/',
+  dashboard: '/inicio',
+  onboarding: '/boas-vindas',
+  login: '/entrar',
+  loginLegacy: '/login',
+  signup: '/cadastro',
+  subjects: '/materias',
+  environments: '/ambientes',
+  quizHub: '/quiz',
+  accessibilitySettings: '/configuracoes/acessibilidade',
+  learnMore: '/conhecer-mais',
+  exercises: '/exercicios',
+  processDocument: '/processar',
+  student: '/aluno',
+  studentLearningProfile: '/aluno/perfil-aprendizagem',
+  studentChat: '/aluno/chat',
+  teacher: '/professor',
+  teacherChat: '/professor/chat',
 } as const;
+
+/** Rota dinâmica para detalhe de uma matéria */
+export function subjectDetailRoute(slug: string): string {
+  return `/materias/${slug}`;
+}
+
+/** Rota dinâmica para detalhe de um ambiente */
+export function environmentDetailRoute(id: string): string {
+  return `/ambientes/${id}`;
+}

@@ -1,96 +1,186 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import {
-  getStoredAccessToken,
-  getStoredVLibrasActive,
-  setStoredVLibrasActive,
-  updateUserPreferences,
-} from '@/lib/auth';
+import React from 'react';
+import { useAccessibility } from './AccessibilityProvider';
 
 export function AccessibilityBar() {
-  const [vlibrasActive, setVlibrasActive] = useState<boolean>(() => {
-    return typeof window !== 'undefined' ? getStoredVLibrasActive() : false;
-  });
-  const [statusAnnouncement, setStatusAnnouncement] = useState<string>('');
+  const { settings, updateSettings } = useAccessibility();
 
-  useEffect(() => {
-    const handleToggleEvent = (e: Event) => {
-      const customEvent = e as CustomEvent<{ active: boolean }>;
-      if (customEvent.detail && typeof customEvent.detail.active === 'boolean') {
-        setVlibrasActive(customEvent.detail.active);
-      }
-    };
+  const handleNextFontSize = () => {
+    const sequence: Array<'normal' | 'large' | 'larger'> = [
+      'normal',
+      'large',
+      'larger',
+    ];
+    const currentIndex = sequence.indexOf(settings.fontSize);
+    const next = sequence[(currentIndex + 1) % sequence.length];
+    updateSettings({ fontSize: next });
+  };
 
-    window.addEventListener('sina-vlibras-toggle', handleToggleEvent);
-    return () => {
-      window.removeEventListener('sina-vlibras-toggle', handleToggleEvent);
-    };
-  }, []);
+  const handleToggleContrast = () => {
+    updateSettings({ highContrast: !settings.highContrast });
+  };
 
-  const handleToggleVLibras = async () => {
-    const nextState = !vlibrasActive;
-    setVlibrasActive(nextState);
-    setStoredVLibrasActive(nextState);
+  const handleToggleLineSpacing = () => {
+    updateSettings({
+      lineSpacing: settings.lineSpacing === 'relaxed' ? 'normal' : 'relaxed',
+    });
+  };
 
-    const announcement = nextState
-      ? 'Tradutor de Libras (VLibras) ativado.'
-      : 'Tradutor de Libras (VLibras) desativado.';
-    setStatusAnnouncement(announcement);
+  const handleToggleDyslexia = () => {
+    updateSettings({ dyslexiaFont: !settings.dyslexiaFont });
+  };
 
-    // Se o usuário estiver autenticado, sincroniza a preferência no banco
-    const token = getStoredAccessToken();
-    if (token) {
-      try {
-        await updateUserPreferences({ vlibras_active: nextState });
-      } catch (err) {
-        console.error('Falha ao sincronizar preferência do VLibras no servidor:', err);
-      }
+  const handleToggleAutoAudio = () => {
+    updateSettings({ autoAudio: !settings.autoAudio });
+  };
+
+  const handleToggleVLibras = () => {
+    const nextState = !settings.vlibrasActive;
+    updateSettings({ vlibrasActive: nextState });
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('sina-vlibras-toggle', {
+          detail: { active: nextState },
+        })
+      );
     }
   };
 
-  return (
-    <div
-      role="region"
-      aria-label="Ferramentas de Acessibilidade"
-      className="bg-stone-100 border-b border-stone-200 py-1.5 px-4 sm:px-6 lg:px-8 text-xs text-stone-700 flex items-center justify-between"
-    >
-      <div className="flex items-center gap-2">
-        <span className="font-semibold uppercase tracking-wider text-stone-500">
-          Acessibilidade:
-        </span>
-        <button
-          type="button"
-          onClick={handleToggleVLibras}
-          aria-pressed={vlibrasActive}
-          aria-label={
-            vlibrasActive
-              ? 'Desativar tradutor de Libras (VLibras)'
-              : 'Ativar tradutor de Libras (VLibras)'
-          }
-          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all font-medium focus:outline-none focus:ring-2 focus:ring-blue-600 ${
-            vlibrasActive
-              ? 'bg-blue-600 text-white border-blue-700 shadow-sm'
-              : 'bg-white text-stone-800 border-stone-300 hover:bg-stone-50 hover:border-stone-400'
-          }`}
-        >
-          <span aria-hidden="true" className="text-sm">🤟</span>
-          <span>VLibras {vlibrasActive ? 'Ativo' : 'Desativado'}</span>
-        </button>
-      </div>
+  const fontSizeLabels: Record<'normal' | 'large' | 'larger', string> = {
+    normal: 'A (Normal)',
+    large: 'A+ (Grande)',
+    larger: 'A++ (Maior)',
+  };
 
-      {/* Região ao vivo para leitores de tela NVDA / JAWS */}
-      <div
-        aria-live="polite"
-        aria-atomic="true"
-        className="sr-only"
-        id="vlibras-announcement"
-      >
-        {statusAnnouncement}
+  return (
+    <nav
+      aria-label="Barra de Acessibilidade e Ajustes de Leitura"
+      className="bg-stone-100 border-b border-stone-300 py-1.5 px-4 sm:px-6 lg:px-8 text-xs text-stone-800"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="font-bold uppercase tracking-wider text-stone-600 mr-1 text-[11px]">
+            Acessibilidade:
+          </span>
+
+          {/* Tamanho da Fonte */}
+          <button
+            type="button"
+            onClick={handleNextFontSize}
+            aria-label={`Alterar tamanho do texto. Atual: ${fontSizeLabels[settings.fontSize]}`}
+            className="inline-flex min-h-[44px] items-center gap-1 px-3 py-1 rounded-md border border-stone-300 bg-white hover:bg-stone-50 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer"
+          >
+            <span aria-hidden="true">🔤</span>
+            <span>{fontSizeLabels[settings.fontSize]}</span>
+          </button>
+
+          {/* Alto Contraste */}
+          <button
+            type="button"
+            onClick={handleToggleContrast}
+            aria-pressed={settings.highContrast}
+            aria-label={
+              settings.highContrast
+                ? 'Desativar modo de alto contraste'
+                : 'Ativar modo de alto contraste'
+            }
+            className={`inline-flex min-h-[44px] items-center gap-1 px-3 py-1 rounded-md border font-semibold focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer ${
+              settings.highContrast
+                ? 'bg-black text-white border-black'
+                : 'bg-white text-stone-800 border-stone-300 hover:bg-stone-50'
+            }`}
+          >
+            <span aria-hidden="true">◐</span>
+            <span>Contraste</span>
+          </button>
+
+          {/* Espaçamento entre Linhas */}
+          <button
+            type="button"
+            onClick={handleToggleLineSpacing}
+            aria-pressed={settings.lineSpacing === 'relaxed'}
+            aria-label={
+              settings.lineSpacing === 'relaxed'
+                ? 'Desativar espaçamento estendido entre linhas'
+                : 'Ativar espaçamento estendido entre linhas'
+            }
+            className={`inline-flex min-h-[44px] items-center gap-1 px-3 py-1 rounded-md border font-semibold focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer ${
+              settings.lineSpacing === 'relaxed'
+                ? 'bg-blue-600 text-white border-blue-700'
+                : 'bg-white text-stone-800 border-stone-300 hover:bg-stone-50'
+            }`}
+          >
+            <span aria-hidden="true">≡</span>
+            <span>Espaçamento</span>
+          </button>
+
+          {/* Fonte Dislexia */}
+          <button
+            type="button"
+            onClick={handleToggleDyslexia}
+            aria-pressed={settings.dyslexiaFont}
+            aria-label={
+              settings.dyslexiaFont
+                ? 'Desativar tipografia de apoio à dislexia'
+                : 'Ativar tipografia de apoio à dislexia'
+            }
+            className={`inline-flex min-h-[44px] items-center gap-1 px-3 py-1 rounded-md border font-semibold focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer ${
+              settings.dyslexiaFont
+                ? 'bg-blue-600 text-white border-blue-700'
+                : 'bg-white text-stone-800 border-stone-300 hover:bg-stone-50'
+            }`}
+          >
+            <span aria-hidden="true">📖</span>
+            <span>Dislexia</span>
+          </button>
+
+          {/* Áudio Automático */}
+          <button
+            type="button"
+            onClick={handleToggleAutoAudio}
+            aria-pressed={settings.autoAudio}
+            aria-label={
+              settings.autoAudio
+                ? 'Desativar leitura de áudio automática'
+                : 'Ativar leitura de áudio automática'
+            }
+            className={`inline-flex min-h-[44px] items-center gap-1 px-3 py-1 rounded-md border font-semibold focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer ${
+              settings.autoAudio
+                ? 'bg-blue-600 text-white border-blue-700'
+                : 'bg-white text-stone-800 border-stone-300 hover:bg-stone-50'
+            }`}
+          >
+            <span aria-hidden="true">🔊</span>
+            <span>Áudio {settings.autoAudio ? 'Ligado' : 'Desligado'}</span>
+          </button>
+        </div>
+
+        {/* VLibras Widget Opt-in */}
+        <div className="flex items-center">
+          <button
+            type="button"
+            onClick={handleToggleVLibras}
+            aria-pressed={settings.vlibrasActive}
+            aria-label={
+              settings.vlibrasActive
+                ? 'Desativar tradutor de Libras (VLibras)'
+                : 'Ativar tradutor de Libras (VLibras)'
+            }
+            className={`inline-flex min-h-[44px] items-center gap-1.5 px-3 py-1 rounded-full border transition-all font-semibold focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer ${
+              settings.vlibrasActive
+                ? 'bg-blue-600 text-white border-blue-700 shadow-sm'
+                : 'bg-white text-stone-800 border-stone-300 hover:bg-stone-50'
+            }`}
+          >
+            <span aria-hidden="true" className="text-sm">🤟</span>
+            <span>VLibras {settings.vlibrasActive ? 'Ativo' : 'Desativado'}</span>
+          </button>
+        </div>
       </div>
-    </div>
+    </nav>
   );
 }
 
 export default AccessibilityBar;
-

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { loginUser } from '@/lib/auth';
+import { appRoutes } from '@/lib/routes';
 
 export default function EntrarPage() {
   const router = useRouter();
@@ -20,7 +21,7 @@ export default function EntrarPage() {
 
     try {
       await loginUser({ email, password });
-      router.push('/');
+      router.push(appRoutes.dashboard);
     } catch (err) {
       if (err instanceof Error) {
         setErrorMessage(err.message);

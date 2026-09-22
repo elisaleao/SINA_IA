@@ -1,28 +1,28 @@
-import type { Metadata } from "next";
-import dynamic from "next/dynamic";
-import { Geist, Geist_Mono } from "next/font/google";
-import { AppHeader } from "@/components/layout/AppHeader";
-import { AccessibilityBar } from "@/components/accessibility/AccessibilityBar";
-import "./globals.css";
-
-const VLibrasWidget = dynamic(
-  () => import("@/components/accessibility/VLibrasWidget"),
-  { ssr: false }
-);
+import type { Metadata } from 'next';
+import { Geist, Geist_Mono } from 'next/font/google';
+import { AppHeader } from '@/components/layout/AppHeader';
+import { AppFooter } from '@/components/layout/AppFooter';
+import { SkipLink } from '@/components/layout/SkipLink';
+import { RouteAnnouncer } from '@/components/layout/RouteAnnouncer';
+import { AccessibilityBar } from '@/components/accessibility/AccessibilityBar';
+import { AccessibilityProvider } from '@/components/accessibility/AccessibilityProvider';
+import { VLibrasWidgetLoader } from '@/components/accessibility/VLibrasWidgetLoader';
+import './globals.css';
 
 const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
 });
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
 });
 
 export const metadata: Metadata = {
-  title: "Plataforma Inclusiva de Aprendizagem",
-  description: "Estrutura inicial de uma plataforma educacional inclusiva.",
+  title: 'SINA_IA — Plataforma Educacional Inclusiva e Adaptativa',
+  description:
+    'Ambiente inclusivo e universal para apoio à aprendizagem em engenharia, ciências e tecnologia com suporte UDL e WCAG 2.2 AAA.',
 };
 
 export default function RootLayout({
@@ -35,21 +35,23 @@ export default function RootLayout({
       lang="pt-BR"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-[var(--background)] text-[var(--foreground)]">
-        <div className="flex min-h-screen flex-col">
+      <body className="min-h-full bg-[var(--background)] text-[var(--foreground)] flex flex-col">
+        <AccessibilityProvider>
+          <SkipLink />
+          <RouteAnnouncer />
           <AccessibilityBar />
           <AppHeader />
-          <div
+          <main
             id="main-content"
             tabIndex={-1}
-            className="flex min-h-0 flex-1 flex-col outline-none"
+            className="flex min-h-0 flex-1 flex-col outline-none w-full"
           >
             {children}
-          </div>
-          <VLibrasWidget />
-        </div>
+          </main>
+          <AppFooter />
+          <VLibrasWidgetLoader />
+        </AccessibilityProvider>
       </body>
     </html>
   );
 }
-
