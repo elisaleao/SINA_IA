@@ -320,3 +320,42 @@ async def test_register_persists_every_accessibility_preference(client):
     stored = me_resp.json()['accessibility_preferences']
     for field, expected in preferences.items():
         assert stored[field] == expected, field
+
+
+@pytest.mark.asyncio
+async def test_public_register_rejects_admin_role(client):
+    response = await client.post(
+        '/auth/register',
+        json={
+            'email': 'quer_ser_admin@sina.edu.br',
+            'password': 'senhaForte123',
+            'full_name': 'Tentativa Admin',
+            'role': 'admin',
+        },
+    )
+    assert response.status_code == 403
+
+    # Nada foi criado: o login com essas credenciais falha
+    login = await client.post(
+        '/auth/login',
+        json={
+            'email': 'quer_ser_admin@sina.edu.br',
+            'password': 'senhaForte123',
+        },
+    )
+    assert login.status_code == 401
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('role', ['aluno', 'professor'])
+async def test_public_register_accepts_student_and_teacher(client, role):
+    response = await client.post(
+        '/auth/register',
+        json={
+            'email': f'{role}_publico@sina.edu.br',
+            'password': 'senhaForte123',
+            'full_name': f'Cadastro {role}',
+            'role': role,
+        },
+    )
+    assert response.status_code == 201

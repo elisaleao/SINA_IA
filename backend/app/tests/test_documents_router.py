@@ -3,9 +3,10 @@ import uuid
 from unittest.mock import AsyncMock
 
 import pytest
+from sqlalchemy import update
 
 from app.api.deps import get_ingestion_service
-from app.database import DocumentRecord
+from app.database import DocumentRecord, UserRecord
 from app.main import app
 
 
@@ -133,16 +134,23 @@ async def test_admin_can_access_any_private_document(client, test_db_session):
         )
     ).json()['id']
 
+    # Admin não pode ser criado pelo cadastro público: promove direto no banco
     reg_admin = await client.post(
         '/auth/register',
         json={
             'email': 'administrador@sina.edu.br',
             'password': 'senhaForte123',
             'full_name': 'Administrador SINA',
-            'role': 'admin',
+            'role': 'professor',
         },
     )
     admin_token = reg_admin.json()['access_token']
+    await test_db_session.execute(
+        update(UserRecord)
+        .where(UserRecord.email == 'administrador@sina.edu.br')
+        .values(role='admin')
+    )
+    await test_db_session.commit()
 
     # Insere documento pertencente ao estudante
     doc_id = str(uuid.uuid4())
