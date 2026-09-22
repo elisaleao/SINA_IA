@@ -311,12 +311,6 @@ class ExerciseAnswerRecord(Base):
     exercicio: Mapped['ExerciseRecord'] = relationship('ExerciseRecord')
 
 
-async def init_db():
-    """Inicializa as tabelas do banco de dados assincronamente."""
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-
 async def close_db():
     """Libera o pool de conexões do engine assíncrono."""
     if engine:

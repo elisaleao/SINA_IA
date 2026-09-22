@@ -62,21 +62,20 @@ DATABASE_URL=sqlite+aiosqlite:///./sina_ia.db
 JWT_SECRET=troque-por-um-valor-aleatorio
 ```
 
-Suba a API:
+Crie ou atualize as tabelas com as migrações e suba a API:
 
 ```bash
+poetry run alembic upgrade head
 poetry run uvicorn app.main:app --reload
 ```
 
-Na primeira execução a API cria as tabelas. Confira em http://localhost:8000/api/health e veja todos os endpoints em http://localhost:8000/docs.
+A API não cria tabelas sozinha. Sempre que alguém adicionar uma migração em `alembic/versions/`, rode `alembic upgrade head` de novo depois do `git pull`. Confira em http://localhost:8000/api/health e veja todos os endpoints em http://localhost:8000/docs.
 
-Para ter questões no quiz, carregue o banco de exemplo (com a API já iniciada pelo menos uma vez):
+Para ter questões no quiz, carregue o banco de exemplo:
 
 ```bash
 poetry run python scripts/seed_exercicios.py
 ```
-
-Se preferir criar o banco pelas migrações em vez da criação automática, rode `poetry run alembic upgrade head`, que usa a mesma `DATABASE_URL`.
 
 ### 2. Frontend
 
@@ -99,7 +98,11 @@ Com Docker instalado, na raiz do repositório:
 GEMINI_API_KEY=sua_chave_aqui docker compose up --build
 ```
 
-Isso sobe o backend na porta 8000, o frontend na 3000 e um PostgreSQL na 5432. Por padrão o backend usa SQLite em `./data/sina_ia.db`, e uploads e áudios também ficam em `./data`. Para usar o PostgreSQL, troque a linha `DATABASE_URL` do serviço `backend` no `docker-compose.yml` pela que está comentada logo abaixo dela.
+Isso sobe o backend na porta 8000, o frontend na 3000 e um PostgreSQL na 5432. O container do backend roda `alembic upgrade head` antes de iniciar a API. Por padrão ele usa SQLite em `./data/sina_ia.db`, e uploads e áudios também ficam em `./data`.
+
+Se o backend não subir com `table ... already exists` ou reclamar de uma coluna inexistente, o `./data/sina_ia.db` foi criado por uma versão antiga que não usava migrações. Em ambiente de desenvolvimento, renomeie o arquivo (`mv data/sina_ia.db data/sina_ia.db.bak`) e suba de novo.
+
+Para usar o PostgreSQL, troque a linha `DATABASE_URL` do serviço `backend` no `docker-compose.yml` pela que está comentada logo abaixo dela.
 
 ## Testes e quality gate
 
