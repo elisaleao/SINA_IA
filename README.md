@@ -111,7 +111,7 @@ Todo commit precisa passar pelo `./check.sh`, que roda na raiz:
 | Parte | Verificações |
 |---|---|
 | Frontend | ESLint, `tsc --noEmit`, Vitest |
-| Backend | typos, Ruff (lint e formatação com aspas simples), pytest com cobertura mínima de 85% |
+| Backend | typos, Ruff (lint e formatação com aspas simples), `alembic check` (as migrações precisam cobrir todos os models), pytest com cobertura mínima de 85% |
 | Arquitetura | O módulo de domínio matemático não pode importar banco nem framework web |
 
 Para rodar partes isoladas:

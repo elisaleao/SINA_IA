@@ -66,6 +66,9 @@ if [ -n "$RUN_CMD" ] || [ -n "$VENV_BIN" ]; then
     PYTEST_BIN="${RUN_CMD:+$RUN_CMD pytest}"
     PYTEST_BIN="${PYTEST_BIN:-$VENV_BIN/pytest}"
 
+    ALEMBIC_BIN="${RUN_CMD:+$RUN_CMD alembic}"
+    ALEMBIC_BIN="${ALEMBIC_BIN:-$VENV_BIN/alembic}"
+
     echo "  -> Executando verificação de ortografia técnica (typos)..."
     if $TYPOS_BIN; then
         echo -e "  ${GREEN}✓ Typos passou sem erros.${NC}"
@@ -89,6 +92,18 @@ if [ -n "$RUN_CMD" ] || [ -n "$VENV_BIN" ]; then
         echo -e "  ${RED}✗ Arquivos fora do padrão de formatação.${NC}"
         FAILED=1
     fi
+
+    echo "  -> Verificando se as migrações Alembic cobrem os models (alembic check)..."
+    # Banco temporário: nunca toca o banco de desenvolvimento nem o .env
+    SCHEMA_DB_DIR="$(mktemp -d)"
+    if DATABASE_URL="sqlite+aiosqlite:///$SCHEMA_DB_DIR/schema_check.db" $ALEMBIC_BIN upgrade head >/dev/null \
+        && DATABASE_URL="sqlite+aiosqlite:///$SCHEMA_DB_DIR/schema_check.db" $ALEMBIC_BIN check; then
+        echo -e "  ${GREEN}✓ Migrações sincronizadas com os models.${NC}"
+    else
+        echo -e "  ${RED}✗ Models e migrações divergem. Gere uma migração em alembic/versions/.${NC}"
+        FAILED=1
+    fi
+    rm -rf "$SCHEMA_DB_DIR"
 
     echo "  -> Executando suíte de testes unitários com cobertura (pytest)..."
     if $PYTEST_BIN; then
