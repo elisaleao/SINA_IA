@@ -9,11 +9,15 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db, get_ingestion_service, get_optional_user
+from app.api.deps import (
+    can_access_document,
+    get_db,
+    get_ingestion_service,
+    get_optional_user,
+)
 from app.core.config import settings
 from app.database import DocumentRecord, UserRecord
 from app.models import DocumentProcessResponse
-from app.schemas.user import UserRole
 from app.services.ingestion_service import IngestionService
 
 router = APIRouter(tags=['Documentos'])
@@ -95,16 +99,12 @@ async def get_document(
             detail='Documento não encontrado.',
         )
 
-    # Se o documento tiver dono, apenas o dono ou um admin podem acessar
-    if doc.user_id is not None:
-        if not current_user or (
-            current_user.id != doc.user_id
-            and current_user.role != UserRole.ADMIN.value
-        ):
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail='Documento não encontrado.',
-            )
+    # 404 em vez de 403 para não revelar que o documento existe
+    if not can_access_document(doc, current_user):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='Documento não encontrado.',
+        )
 
     return DocumentProcessResponse(
         document_id=doc.id,

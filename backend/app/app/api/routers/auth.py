@@ -33,6 +33,7 @@ from app.schemas.user import (
     AccessibilityPreferencesCreate,
     AccessibilityPreferencesResponse,
     AccessibilityPreferencesUpdate,
+    UserRole,
 )
 
 router = APIRouter(tags=['Autenticação'])
@@ -49,6 +50,12 @@ async def register(
     db: AsyncSession = Depends(get_db),
 ) -> TokenResponse:
     """Registra um novo usuário no sistema, criando preferências iniciais e emitindo tokens."""
+    if payload.role == UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail='O cadastro público não permite criar administradores.',
+        )
+
     existing_stmt = select(UserRecord).where(UserRecord.email == payload.email)
     existing_res = await db.execute(existing_stmt)
     if existing_res.scalar_one_or_none():

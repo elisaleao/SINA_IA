@@ -123,3 +123,94 @@ async def test_generate_content_llm_failure_returns_500(
     finally:
         # Restaura fake_llm padrão
         app.dependency_overrides.pop(get_llm_client, None)
+
+
+async def _register(client, email: str) -> tuple[str, str]:
+    reg = await client.post(
+        '/auth/register',
+        json={
+            'email': email,
+            'password': 'senhaForte123',
+            'full_name': 'Usuario Teste',
+            'role': 'aluno',
+        },
+    )
+    token = reg.json()['access_token']
+    me = await client.get(
+        '/users/me', headers={'Authorization': f'Bearer {token}'}
+    )
+    return token, me.json()['id']
+
+
+async def _private_document(test_db_session, owner_id: str) -> str:
+    doc_id = str(uuid.uuid4())
+    test_db_session.add(
+        DocumentRecord(
+            id=doc_id,
+            user_id=owner_id,
+            filename='privado.txt',
+            raw_markdown='# Conteúdo privado',
+            accessible_text='Conteúdo privado',
+        )
+    )
+    await test_db_session.commit()
+    return doc_id
+
+
+def _generate_payload(doc_id: str) -> dict:
+    return {
+        'document_id': doc_id,
+        'generation_type': 'summary',
+        'generate_audio': False,
+    }
+
+
+@pytest.mark.asyncio
+async def test_generate_hides_private_document_from_other_user(
+    client, test_db_session, fake_llm
+):
+    _, owner_id = await _register(client, 'dono_generate@sina.edu.br')
+    other_token, _ = await _register(client, 'outro_generate@sina.edu.br')
+    doc_id = await _private_document(test_db_session, owner_id)
+
+    response = await client.post(
+        '/api/content/generate',
+        json=_generate_payload(doc_id),
+        headers={'Authorization': f'Bearer {other_token}'},
+    )
+
+    assert response.status_code == 404
+    assert response.json()['detail'] == 'Documento não encontrado.'
+    assert fake_llm.calls == []
+
+
+@pytest.mark.asyncio
+async def test_generate_hides_private_document_from_anonymous(
+    client, test_db_session, fake_llm
+):
+    _, owner_id = await _register(client, 'dono_anonimo@sina.edu.br')
+    doc_id = await _private_document(test_db_session, owner_id)
+
+    response = await client.post(
+        '/api/content/generate', json=_generate_payload(doc_id)
+    )
+
+    assert response.status_code == 404
+    assert fake_llm.calls == []
+
+
+@pytest.mark.asyncio
+async def test_generate_allows_owner_of_private_document(
+    client, test_db_session
+):
+    owner_token, owner_id = await _register(client, 'dono_ok@sina.edu.br')
+    doc_id = await _private_document(test_db_session, owner_id)
+
+    response = await client.post(
+        '/api/content/generate',
+        json=_generate_payload(doc_id),
+        headers={'Authorization': f'Bearer {owner_token}'},
+    )
+
+    assert response.status_code == 200
+    assert response.json()['document_id'] == doc_id

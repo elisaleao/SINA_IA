@@ -1,12 +1,20 @@
 """Router para geração de conteúdo didático inclusivo e síntese de voz."""
 
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db, get_llm_client, get_tts_client
+from app.api.deps import (
+    can_access_document,
+    get_db,
+    get_llm_client,
+    get_optional_user,
+    get_tts_client,
+)
 from app.core.protocols import LLMClientProtocol, TTSClientProtocol
-from app.database import DocumentRecord
+from app.database import DocumentRecord, UserRecord
 from app.models import GenerateRequest, GenerationResponse
 
 router = APIRouter(tags=['Geração e Acessibilidade'])
@@ -21,13 +29,15 @@ async def generate_study_content(
     db: AsyncSession = Depends(get_db),
     llm: LLMClientProtocol = Depends(get_llm_client),
     tts: TTSClientProtocol = Depends(get_tts_client),
+    current_user: Optional[UserRecord] = Depends(get_optional_user),
 ):
     result = await db.execute(
         select(DocumentRecord).where(DocumentRecord.id == req.document_id)
     )
     doc_record = result.scalars().first()
 
-    if not doc_record:
+    # Mesmo 404 para inexistente e alheio: não revela que o documento existe
+    if not doc_record or not can_access_document(doc_record, current_user):
         raise HTTPException(
             status_code=404, detail='Documento não encontrado.'
         )
