@@ -3,7 +3,7 @@ import { learnMoreGoals, learnMoreText } from "@/lib/content";
 
 export default function LearnMorePage() {
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-10 px-6 py-12 lg:px-8 lg:py-16">
+    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-10 px-6 py-12 lg:px-8 lg:py-16">
       <PageIntro
         eyebrow="Sobre a plataforma"
         title="Uma base simples para uma educacao mais inclusiva"
@@ -25,6 +25,6 @@ export default function LearnMorePage() {
           ))}
         </div>
       </section>
-    </main>
+    </div>
   );
 }

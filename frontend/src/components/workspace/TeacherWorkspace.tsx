@@ -243,7 +243,7 @@ export function TeacherWorkspace() {
     : null;
 
   return (
-    <main className="h-[calc(100vh-81px)] w-full overflow-hidden" aria-label="Ambiente do professor">
+    <div role="region" className="h-[calc(100vh-81px)] w-full overflow-hidden" aria-label="Ambiente do professor">
       <section
         className={`grid h-full w-full flex-1 overflow-hidden transition-[grid-template-columns] duration-300 ${
           isSidebarOpen
@@ -536,6 +536,6 @@ export function TeacherWorkspace() {
           ) : null}
         </section>
       </section>
-    </main>
+    </div>
   );
 }

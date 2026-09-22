@@ -9,13 +9,13 @@ export const metadata: Metadata = {
 
 export default function ProcessarDocumentoPage() {
   return (
-    <main
+    <div
       className="max-w-5xl mx-auto px-4 py-8 sm:px-6 lg:px-8 w-full"
       role="region"
       aria-label="Processador de Documentos Acessíveis"
     >
       <AccessibleDocumentProcessor />
-    </main>
+    </div>
   );
 }
 

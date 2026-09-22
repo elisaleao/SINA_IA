@@ -204,7 +204,7 @@ export default function ExerciciosPage() {
   };
 
   return (
-    <main
+    <div
       className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8 w-full"
       role="region"
       aria-label="Módulo de Exercícios e Quiz Acessível"
@@ -575,6 +575,6 @@ export default function ExerciciosPage() {
           </button>
         </div>
       )}
-    </main>
+    </div>
   );
 }

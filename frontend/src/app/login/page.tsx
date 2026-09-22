@@ -70,7 +70,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-10 px-6 py-12 lg:px-8 lg:py-16">
+    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-10 px-6 py-12 lg:px-8 lg:py-16">
       <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
         <div className="grid gap-4">
           {roleOptions.map((option) => {
@@ -160,6 +160,6 @@ export default function LoginPage() {
           </div>
         </form>
       </section>
-    </main>
+    </div>
   );
 }

@@ -31,7 +31,7 @@ export function UserWorkspaceShell({
   }> = [];
 
   return (
-    <main className="h-[calc(100vh-81px)] w-full overflow-hidden">
+    <div className="h-[calc(100vh-81px)] w-full overflow-hidden">
       <section
         className={`grid h-full w-full flex-1 overflow-hidden transition-[grid-template-columns] duration-300 ${
           isSidebarOpen
@@ -109,6 +109,6 @@ export function UserWorkspaceShell({
           />
         </section>
       </section>
-    </main>
+    </div>
   );
 }
