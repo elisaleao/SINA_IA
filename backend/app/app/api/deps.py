@@ -10,7 +10,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.protocols import LLMClientProtocol, TTSClientProtocol
 from app.core.security import decode_access_token
-from app.database import AsyncSessionLocal, UserRecord
+from app.database import AsyncSessionLocal, DocumentRecord, UserRecord
 from app.schemas.user import UserRole
 from app.services.audio_service import AudioService
 from app.services.ingestion_service import IngestionService
@@ -134,3 +134,14 @@ async def get_optional_user(
         return result.scalar_one_or_none()
     except Exception:
         return None
+
+
+def can_access_document(
+    document: DocumentRecord, user: Optional[UserRecord]
+) -> bool:
+    """Documento sem dono é público; com dono, só o dono ou um admin acessam."""
+    if document.user_id is None:
+        return True
+    if user is None:
+        return False
+    return user.id == document.user_id or user.role == UserRole.ADMIN.value
