@@ -42,6 +42,12 @@ async def generate_study_content(
             status_code=404, detail='Documento não encontrado.'
         )
 
+    if doc_record.raw_markdown is None:
+        raise HTTPException(
+            status_code=409,
+            detail='O material ainda está sendo processado.',
+        )
+
     try:
         # Geração via LLM calibrada por professor e perfil de acessibilidade
         markdown_output, spoken_output = await llm.generate_content(

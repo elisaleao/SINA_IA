@@ -7,6 +7,7 @@ from app.api.routers.content import router as content_router
 from app.api.routers.documents import router as documents_router
 from app.api.routers.exercises import router as exercises_router
 from app.api.routers.health import router as health_router
+from app.api.routers.materials import router as materials_router
 
 __all__ = [
     'accessibility_router',
@@ -16,4 +17,5 @@ __all__ = [
     'documents_router',
     'exercises_router',
     'health_router',
+    'materials_router',
 ]
