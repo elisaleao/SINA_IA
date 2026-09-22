@@ -5,12 +5,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import deps, routers
 from app.core.config import settings
-from app.database import close_db, init_db
+from app.database import close_db
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await init_db()
+    # O schema é responsabilidade exclusiva do Alembic (alembic upgrade head).
     try:
         yield
     finally:
