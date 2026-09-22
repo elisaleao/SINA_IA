@@ -3,14 +3,14 @@ from typing import Optional
 from google import genai
 from google.genai import types
 
-from app.accessibility.prompts import (
+from app.core.config import settings
+from app.schemas.accessibility import AuditReport, ChartVisionResult
+from app.services.accessibility_prompts import (
     AUDITOR_PROMPT,
     CHART_PROMPT,
     CORRECTOR_PROMPT,
     OCR_PROMPT,
 )
-from app.accessibility.schemas import AuditReport, ChartVisionResult
-from app.core.config import settings
 
 
 class GeminiService:

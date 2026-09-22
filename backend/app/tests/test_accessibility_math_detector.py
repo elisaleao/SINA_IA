@@ -1,4 +1,4 @@
-from app.accessibility.math_detector import detect_math_content
+from app.services.math_detector import detect_math_content
 
 
 def test_texto_comum_nao_e_classificado_como_matematica():

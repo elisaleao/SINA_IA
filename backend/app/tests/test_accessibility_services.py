@@ -11,21 +11,21 @@ import fitz
 import pytest
 from docx import Document
 
-from app.accessibility.extractor import (
-    DocumentExtractor,
-    ExtractionResult,
-    VisualCandidate,
-)
-from app.accessibility.pipeline import AccessibilityPipeline
-from app.accessibility.schemas import (
+from app.core.config import settings
+from app.schemas.accessibility import (
     AuditItem,
     AuditReport,
     ChartVisionResult,
 )
-from app.accessibility.storage import GeneratedFileStore
-from app.core.config import settings
 from app.services import gemini_service as gemini_module
 from app.services import tts_service as tts_module
+from app.services.accessibility_pipeline import AccessibilityPipeline
+from app.services.document_extractor import (
+    DocumentExtractor,
+    ExtractionResult,
+    VisualCandidate,
+)
+from app.services.file_store import GeneratedFileStore
 from app.services.gemini_service import GeminiService
 from app.services.tts_service import TTSService
 

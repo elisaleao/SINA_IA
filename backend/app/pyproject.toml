@@ -73,7 +73,7 @@ preview = true
 quote-style = 'single'
 
 [tool.typos.files]
-extend-exclude = ["*.md", "app/accessibility/prompts.py"]
+extend-exclude = ["*.md", "app/services/accessibility_prompts.py"]
 
 [tool.typos.default.extend-words]
 responde = "responde"

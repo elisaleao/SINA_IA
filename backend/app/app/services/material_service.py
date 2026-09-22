@@ -8,9 +8,9 @@ from typing import Optional
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.accessibility.pipeline import AccessibilityPipeline
-from app.accessibility.storage import GeneratedFileStore
 from app.database import DocumentRecord
+from app.services.accessibility_pipeline import AccessibilityPipeline
+from app.services.file_store import GeneratedFileStore
 
 logger = logging.getLogger(__name__)
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from .schemas import MathDetection
+from app.schemas.accessibility import MathDetection
 
 _MATH_SYMBOLS = re.compile(r'[∑∫√±≤≥≠∞∂∏⊂⊆∈∉∀∃⇒⇔∧∨¬π∆σμλθφωΣΠΔ°²³]')
 _MATH_PATTERNS = re.compile(

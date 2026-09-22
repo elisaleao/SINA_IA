@@ -2,18 +2,21 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 
-from app.services.gemini_service import GeminiService
-from app.services.tts_service import TTSService
-
-from .extractor import DocumentExtractor
-from .math_detector import detect_math_content
-from .prompts import LEVEL_LABELS, MASTER_PROMPT, MATH_PROMPT
-from .schemas import (
+from app.schemas.accessibility import (
     ChartDescription,
     PipelineEvent,
     ProcessResult,
 )
-from .storage import GeneratedFileStore
+from app.services.accessibility_prompts import (
+    LEVEL_LABELS,
+    MASTER_PROMPT,
+    MATH_PROMPT,
+)
+from app.services.document_extractor import DocumentExtractor
+from app.services.file_store import GeneratedFileStore
+from app.services.gemini_service import GeminiService
+from app.services.math_detector import detect_math_content
+from app.services.tts_service import TTSService
 
 
 class AccessibilityPipeline:
