@@ -1,96 +1,149 @@
-# SINA_IA — Plataforma Educacional Universalmente Acessível
+# SINA_IA
 
-O **SINA_IA** é uma plataforma educacional inclusiva e adaptativa (inspirada na dinâmica do NotebookLM) projetada sob os princípios do **Desenho Universal para a Aprendizagem (UDL)** e da **WCAG 2.2 AAA**. O sistema converte materiais acadêmicos e técnicos (PDF, imagens, Word, textos) em formatos personalizados para múltiplos perfis:
+Plataforma educacional que transforma material de estudo em versões acessíveis para cada aluno. O professor ou o próprio aluno envia um PDF, DOCX, TXT ou imagem, e o sistema devolve o conteúdo reestruturado em Markdown semântico, com as fórmulas matemáticas escritas por extenso em português e um áudio neural em pt-BR.
 
-* 👁️ **Deficiência Visual (Cegueira e Baixa Visão):** Leitura via leitores de tela (NVDA/JAWS), tradução fonética de expressões matemáticas em LaTeX para português falado e síntese de áudio neural.
-* 📖 **Dislexia:** Adaptação do texto segundo as normas de **Linguagem Simples (Plain Language)**, sentenças curtas na ordem direta, glossário explicativo de termos complexos e apoio visual bimodal.
-* ⚡ **TDAH (Déficit de Atenção):** Estruturação em micro-learning (*chunks* de 2 a 3 linhas), bullet points objetivos, destaque de ideias centrais e eliminação de sobrecarga cognitiva.
-* 🧠 **Apoio Cognitivo e Baixa Literacia:** Analogias concretas do cotidiano e decomposição de raciocínios em etapas passo a passo.
+O projeto nasceu para estudantes cegos ou com baixa visão em cursos de exatas, que esbarram em PDFs sem estrutura e em fórmulas LaTeX que o leitor de tela soletra símbolo por símbolo (`\frac{a}{b}` vira "barra invertida frac abre chaves..."). Depois do [ADR 0002](docs/adr/0002-pivot-acessibilidade-universal-e-neurodiversidade.md), passou a atender também:
 
----
+| Perfil | Como o conteúdo é adaptado |
+|---|---|
+| Deficiência visual | Hierarquia de títulos para NVDA/JAWS, equações convertidas para `[Equação: fração com numerador a e denominador b]`, áudio MP3 |
+| Dislexia | Linguagem Simples, frases curtas na ordem direta, glossário ao final, fonte e espaçamento ajustáveis |
+| TDAH | Blocos de 2 a 3 linhas, listas no lugar de parágrafos longos, conceitos centrais em destaque |
+| Apoio cognitivo | Analogias do cotidiano e resolução em passos numerados |
 
-## 🏗️ Arquitetura Poliglota
+A interface segue a WCAG 2.2 (meta AAA) e os princípios do Desenho Universal para a Aprendizagem (UDL). Ela tem barra de acessibilidade global (tamanho de fonte, alto contraste, espaçamento, tipografia para dislexia, áudio automático), tradutor de Libras VLibras sob demanda e navegação completa por teclado.
 
-O repositório é organizado em uma arquitetura monorepo poliglota com fronteiras e responsabilidades estritas:
+## O que já funciona
 
-* **`frontend/`**: Interface web acessível construída com **Next.js 16 (App Router)**, **React 19**, **TypeScript 5** e **TailwindCSS v4**.
-* **`backend/app/`**: API assíncrona robusta em **FastAPI (Python 3.13)** integrada com **Google Gemini** (`google-genai`), banco de dados relacional assíncrono (**SQLAlchemy** / `aiosqlite`), **SymPy**, **PyMuPDF**, **python-docx**, **OpenCV** e síntese vocal neural (**Edge-TTS**).
-* **`docs/`**: Governança viva do projeto com diretrizes temáticas (`docs/rules/`), registros de decisão de arquitetura (`docs/adr/`) e mapa de dependências de tarefas (`docs/roadmap.md`).
+- Upload e ingestão de documentos, com OCR via Google Gemini para páginas escaneadas e imagens.
+- Geração de resumo, quiz ou guia de estudo adaptado ao perfil do aluno e à calibração do professor (nível, detalhamento dos cálculos e tom).
+- Pipeline de acessibilidade com progresso em tempo real (`POST /api/accessibility/process-stream`), quatro níveis de adaptação e auditoria de fidelidade feita pela IA.
+- Síntese de voz com Edge-TTS.
+- Cadastro e login com JWT, refresh token rotativo e papéis `aluno`, `professor` e `admin`.
+- Quiz de Verdadeiro ou Falso com tempo controlado no servidor, maior para os perfis TDAH e apoio cognitivo. Questões geradas pela IA começam como rascunho e só entram no quiz depois que um professor publica.
 
----
+O andamento das próximas fases está em [docs/roadmap.md](docs/roadmap.md) e nas issues do repositório.
 
-## ⚙️ Pré-requisitos
+## Arquitetura
 
-* **Node.js** (versão 20 ou 22 LTS) e **npm**.
-* **Python** (versão 3.13 ou superior) e **Poetry**.
+Monorepo com duas aplicações que conversam só por HTTP/JSON ([ADR 0001](docs/adr/0001-arquitetura-monorepo-poliglota.md)):
 
----
-
-## 🚀 Como Configurar e Rodar o Projeto
-
-### 1. Variáveis de Ambiente
-
-#### Backend:
-Crie um arquivo `.env` dentro de `backend/app/` (baseie-se no `backend/app/.env.example`):
-```env
-GEMINI_API_KEY=sua_chave_gemini_aqui
-DATABASE_URL=sqlite+aiosqlite:///sina_ia.db
+```
+frontend/       Next.js 16 (App Router), React 19, TypeScript, TailwindCSS v4
+backend/app/    FastAPI (Python 3.13), SQLAlchemy assíncrono, Alembic,
+                google-genai, Edge-TTS, PyMuPDF, python-docx, OpenCV
+docs/           Arquitetura, ADRs, regras de domínio, acessibilidade e roadmap
 ```
 
-#### Frontend:
-Crie um arquivo `.env.local` na raiz de `frontend/`:
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8000
-```
+O backend guarda os dados em SQLite no desenvolvimento e aceita PostgreSQL pelo Docker Compose. A conversão de LaTeX para fala fica em `backend/app/app/services/math_speech_service.py`, um módulo sem I/O que o quality gate impede de importar banco ou framework web. Os detalhes estão em [docs/architecture.md](docs/architecture.md).
 
----
+## Como rodar na sua máquina
 
-### 2. Rodando o Backend (FastAPI)
+### Pré-requisitos
+
+- Node.js 22 e npm
+- Python 3.13 e [Poetry](https://python-poetry.org/docs/#installation) 2.x
+- Uma chave da API do Google Gemini, obtida em [aistudio.google.com](https://aistudio.google.com/apikey). Sem ela a API sobe, o upload de PDF com texto e de TXT funciona, mas OCR, geração de conteúdo e o pipeline de acessibilidade respondem com erro.
+- Acesso à internet, porque o Edge-TTS sintetiza o áudio num serviço remoto.
+
+### 1. Backend
 
 ```bash
 cd backend/app
-
-# Instale as dependências com Poetry
 poetry install
+cp .env.example .env
+```
 
-# Inicie a API com Uvicorn
+Edite o `backend/app/.env`. Para rodar sem Docker, use SQLite:
+
+```env
+GEMINI_API_KEY=sua_chave_aqui
+DATABASE_URL=sqlite+aiosqlite:///./sina_ia.db
+JWT_SECRET=troque-por-um-valor-aleatorio
+```
+
+Suba a API:
+
+```bash
 poetry run uvicorn app.main:app --reload
 ```
-A API estará disponível em `http://localhost:8000` (e Swagger em `http://localhost:8000/docs`).
 
----
+Na primeira execução a API cria as tabelas. Confira em http://localhost:8000/api/health e veja todos os endpoints em http://localhost:8000/docs.
 
-### 3. Rodando o Frontend (Next.js)
+Para ter questões no quiz, carregue o banco de exemplo (com a API já iniciada pelo menos uma vez):
+
+```bash
+poetry run python scripts/seed_exercicios.py
+```
+
+Se preferir criar o banco pelas migrações em vez da criação automática, rode `poetry run alembic upgrade head`, que usa a mesma `DATABASE_URL`.
+
+### 2. Frontend
+
+Em outro terminal:
 
 ```bash
 cd frontend
-
-# Instale as dependências
 npm install
-
-# Inicie o servidor de desenvolvimento
+echo "NEXT_PUBLIC_API_URL=http://localhost:8000" > .env.local
 npm run dev
 ```
-A aplicação estará disponível em `http://localhost:3000`.
 
----
+Abra http://localhost:3000. Crie uma conta em `/cadastro`, entre por `/entrar` e teste o envio de documentos em `/processar` e o quiz em `/quiz`.
 
-## 🧪 Quality Gate Unificado (CI Local)
+### Alternativa: Docker Compose
 
-O projeto conta com um validador unificado de integridade arquitetural na raiz. Ele executa os testes e checagens estritas de TypeScript, ESLint, Ruff, Typos e Pytest com cobertura:
+Com Docker instalado, na raiz do repositório:
 
 ```bash
-# Na raiz do projeto:
-./check.sh
+GEMINI_API_KEY=sua_chave_aqui docker compose up --build
 ```
 
----
+Isso sobe o backend na porta 8000, o frontend na 3000 e um PostgreSQL na 5432. Por padrão o backend usa SQLite em `./data/sina_ia.db`, e uploads e áudios também ficam em `./data`. Para usar o PostgreSQL, troque a linha `DATABASE_URL` do serviço `backend` no `docker-compose.yml` pela que está comentada logo abaixo dela.
 
-## 📚 Documentação e Governança
+## Testes e quality gate
 
-* [AGENTS.md](file:///home/nkk/Área%20de%20trabalho/User/projetos/SINA_IA/AGENTS.md): Ponto de entrada para agentes de IA e desenvolvedores.
-* [docs/architecture.md](file:///home/nkk/Área%20de%20trabalho/User/projetos/SINA_IA/docs/architecture.md): Visão detalhada da arquitetura e fluxo de processamento.
-* [docs/rules/accessibility.md](file:///home/nkk/Área%20de%20trabalho/User/projetos/SINA_IA/docs/rules/accessibility.md): Diretrizes WCAG 2.2 AAA, UDL, Dislexia e TDAH.
-* [docs/rules/domain.md](file:///home/nkk/Área%20de%20trabalho/User/projetos/SINA_IA/docs/rules/domain.md): Regras de domínio puro e determinismo.
-* [docs/rules/concurrency.md](file:///home/nkk/Área%20de%20trabalho/User/projetos/SINA_IA/docs/rules/concurrency.md): Idempotência e padrão outbox/job queue.
-* [docs/adr/](file:///home/nkk/Área%20de%20trabalho/User/projetos/SINA_IA/docs/adr/): Registros de Decisões de Arquitetura (ADRs).
+Todo commit precisa passar pelo `./check.sh`, que roda na raiz:
+
+| Parte | Verificações |
+|---|---|
+| Frontend | ESLint, `tsc --noEmit`, Vitest |
+| Backend | typos, Ruff (lint e formatação com aspas simples), pytest com cobertura mínima de 85% |
+| Arquitetura | O módulo de domínio matemático não pode importar banco nem framework web |
+
+Para rodar partes isoladas:
+
+```bash
+cd backend/app && poetry run pytest          # testes do backend
+cd backend/app && poetry run ruff format app tests   # formata o Python
+cd frontend && npm test                      # testes do frontend
+cd frontend && npm run build                 # build de produção
+```
+
+Os testes do backend usam SQLite em memória e clientes falsos de LLM e TTS (`app/services/fakes.py`), então não gastam cota do Gemini nem precisam de internet.
+
+Para que o Git rode o gate sozinho, ative os hooks versionados uma vez:
+
+```bash
+./scripts/install-hooks.sh
+```
+
+O `pre-commit` roda lint e checagem de tipos. O `pre-push` roda o `./check.sh` completo. No GitHub, o workflow `.github/workflows/quality-gate.yml` repete as verificações e também gera o build do frontend em todo pull request para a `main`.
+
+## Como contribuir
+
+1. Escolha uma issue e se atribua a ela.
+2. Crie uma branch a partir da `main`, por exemplo `feature/fase-3-quiz` ou `fix/descricao-curta`.
+3. Escreva os commits em inglês, no padrão [Conventional Commits](https://www.conventionalcommits.org/).
+4. Rode `./check.sh` antes de abrir o pull request e coloque `Closes #N` na descrição.
+
+Código, testes e commits ficam em inglês. Documentação e textos da interface ficam em português. As regras para agentes de IA e desenvolvedores estão em [AGENTS.md](AGENTS.md).
+
+## Documentação
+
+- [docs/architecture.md](docs/architecture.md): camadas, responsabilidades e fluxo de processamento
+- [docs/adr/](docs/adr/): decisões de arquitetura
+- [docs/rules/accessibility.md](docs/rules/accessibility.md): diretrizes WCAG, UDL e o catálogo de componentes acessíveis
+- [docs/rules/domain.md](docs/rules/domain.md): regras do domínio puro
+- [docs/rules/concurrency.md](docs/rules/concurrency.md): idempotência e processamento em segundo plano (planejado)
+- [docs/roadmap.md](docs/roadmap.md): fases, prioridades e dependências
