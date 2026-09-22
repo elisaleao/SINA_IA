@@ -33,7 +33,7 @@ services:
       - "8000:8000"
     environment:
       # Padrão: arquivo SQLite específico persistido diretamente na sua máquina em ./data/sina_ia.db
-      - DATABASE_URL=sqlite+aiosqlite:///app/data/sina_ia.db
+      - DATABASE_URL=sqlite+aiosqlite:////app/data/sina_ia.db
       # Para alternar para PostgreSQL, comente a linha acima e descomente a linha abaixo:
       # - DATABASE_URL=postgresql+asyncpg://sina:sina_secret@db:5432/sina_ia
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
