@@ -286,3 +286,37 @@ async def test_update_accessibility_preferences_vlibras(client):
     updated_prefs = me_resp_updated.json()['accessibility_preferences']
     assert updated_prefs['vlibras_active'] is True
     assert updated_prefs['high_contrast'] is True
+
+
+@pytest.mark.asyncio
+async def test_register_persists_every_accessibility_preference(client):
+    preferences = {
+        'profile': 'dyslexia',
+        'plain_language': True,
+        'include_glossary': True,
+        'highlight_key_points': False,
+        'font_family': 'opendyslexic',
+        'font_size': 'large',
+        'line_spacing': 'relaxed',
+        'high_contrast': True,
+        'vlibras_active': True,
+    }
+    reg = await client.post(
+        '/auth/register',
+        json={
+            'email': 'prefs_on_register@sina.edu.br',
+            'password': 'senhaForte123',
+            'full_name': 'Prefs User',
+            'role': 'aluno',
+            'accessibility_preferences': preferences,
+        },
+    )
+    assert reg.status_code == 201
+
+    me_resp = await client.get(
+        '/users/me',
+        headers={'Authorization': f'Bearer {reg.json()["access_token"]}'},
+    )
+    stored = me_resp.json()['accessibility_preferences']
+    for field, expected in preferences.items():
+        assert stored[field] == expected, field
