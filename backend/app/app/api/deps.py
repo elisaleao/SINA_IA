@@ -14,14 +14,17 @@ from app.core.protocols import LLMClientProtocol, TTSClientProtocol
 from app.core.security import decode_access_token
 from app.database import AsyncSessionLocal, DocumentRecord, UserRecord
 from app.schemas.user import UserRole
-from app.services.audio_service import AudioService
+from app.services.gemini_service import GeminiService
 from app.services.ingestion_service import IngestionService
 from app.services.llm_service import LLMService
 from app.services.material_service import MaterialStorage
+from app.services.tts_service import TTSService
 
-_default_llm = LLMService()
-_default_tts = AudioService()
-_default_ingestion = IngestionService()
+# Uma instância de cada integração externa, compartilhada por todas as rotas
+_default_gemini = GeminiService()
+_default_llm = LLMService(gemini=_default_gemini)
+_default_tts = TTSService()
+_default_ingestion = IngestionService(gemini=_default_gemini)
 security_scheme = HTTPBearer(auto_error=False)
 
 
@@ -41,11 +44,23 @@ def get_material_storage() -> MaterialStorage:
     return MaterialStorage(settings.materials_dir)
 
 
+def get_tts_service() -> TTSService:
+    """Serviço de voz completo, usado pelo pipeline de acessibilidade."""
+    return _default_tts
+
+
+def get_gemini_service() -> GeminiService:
+    """Cliente Gemini compartilhado (substituível via app.dependency_overrides)."""
+    return _default_gemini
+
+
 def get_material_pipeline(
     storage: MaterialStorage = Depends(get_material_storage),
 ) -> AccessibilityPipeline:
     """Pipeline de acessibilidade gravando resultados no armazenamento de materiais."""
-    return AccessibilityPipeline(store=storage.results)
+    return AccessibilityPipeline(
+        ai=_default_gemini, tts=_default_tts, store=storage.results
+    )
 
 
 def get_llm_client() -> LLMClientProtocol:

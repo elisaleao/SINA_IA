@@ -27,7 +27,7 @@ class TTSClientProtocol(Protocol):
     """Protocolo abstrato para clientes de síntese de voz neural (Text-to-Speech)."""
 
     async def text_to_speech(
-        self, text: str, voice: str = 'pt-BR-AntonioNeural'
+        self, text: str, voice: Optional[str] = None
     ) -> str:
         """Sintetiza texto falado em arquivo de áudio e retorna o filename relativo gerado."""
         ...

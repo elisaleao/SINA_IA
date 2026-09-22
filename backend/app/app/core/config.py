@@ -18,6 +18,20 @@ class Settings(BaseSettings):
     )
     CORS_ORIGINS: list[str] = ['*']
 
+    # IA generativa (um único cliente em app/services/gemini_service.py)
+    GEMINI_MODEL: str = 'gemini-1.5-flash'
+
+    # Síntese de voz (um único serviço em app/services/tts_service.py)
+    EDGE_TTS_VOICE: str = 'pt-BR-FranciscaNeural'
+    EDGE_TTS_RATE: str = '+0%'
+    EDGE_TTS_VOLUME: str = '+0%'
+    EDGE_TTS_PITCH: str = '+0Hz'
+
+    # Arquivos temporários do /api/accessibility/process-stream
+    ACCESSIBILITY_OUTPUT_DIR: str = ''
+    ACCESSIBILITY_FILE_TTL_SECONDS: int = 24 * 60 * 60
+    ACCESSIBILITY_MAX_UPLOAD_MB: int = 20
+
     # Envio de materiais (#15)
     MATERIAL_MAX_FILE_MB: int = 20
     MATERIAL_MAX_FILES: int = 10

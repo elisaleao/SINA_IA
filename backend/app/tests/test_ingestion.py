@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import cv2
 import docx
@@ -84,8 +84,7 @@ async def test_process_image_without_client(tmp_path):
     img = np.ones((50, 50, 3), dtype=np.uint8) * 255
     cv2.imwrite(str(img_path), img)
 
-    service = IngestionService()
-    service.client = None
+    service = IngestionService(gemini=MagicMock(is_configured=False))
 
     markdown, accessible, equations = await service.process_file(
         str(img_path), 'exemplo.png'
@@ -102,12 +101,11 @@ async def test_process_image_with_mocked_gemini(tmp_path):
     img = np.ones((60, 60, 3), dtype=np.uint8) * 128
     cv2.imwrite(str(img_path), img)
 
-    service = IngestionService()
-    mock_client = MagicMock()
-    mock_response = MagicMock()
-    mock_response.text = 'Transcrição OCR: Fórmula quadrática $x = \\frac{-b \\pm \\sqrt{\\Delta}}{2a}$.'
-    mock_client.models.generate_content.return_value = mock_response
-    service.client = mock_client
+    gemini = MagicMock(is_configured=True)
+    gemini.ocr_image = AsyncMock(
+        return_value='Transcrição OCR: Fórmula quadrática $x = \\frac{-b \\pm \\sqrt{\\Delta}}{2a}$.'
+    )
+    service = IngestionService(gemini=gemini)
 
     markdown, accessible, equations = await service.process_file(
         str(img_path), 'esquema.png'
@@ -128,12 +126,11 @@ async def test_process_scanned_pdf_page_triggers_gemini_ocr(tmp_path):
     doc.save(str(pdf_path))
     doc.close()
 
-    service = IngestionService()
-    mock_client = MagicMock()
-    mock_response = MagicMock()
-    mock_response.text = 'Texto recuperado via OCR da imagem da página 1.'
-    mock_client.models.generate_content.return_value = mock_response
-    service.client = mock_client
+    gemini = MagicMock(is_configured=True)
+    gemini.ocr_image = AsyncMock(
+        return_value='Texto recuperado via OCR da imagem da página 1.'
+    )
+    service = IngestionService(gemini=gemini)
 
     markdown, accessible, equations = await service.process_file(
         str(pdf_path), 'digitalizado.pdf'
@@ -141,4 +138,4 @@ async def test_process_scanned_pdf_page_triggers_gemini_ocr(tmp_path):
 
     assert '## Página 1' in markdown
     assert 'Texto recuperado via OCR' in markdown
-    mock_client.models.generate_content.assert_called_once()
+    gemini.ocr_image.assert_awaited_once()

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
@@ -10,6 +9,8 @@ from fastapi.responses import FileResponse, StreamingResponse
 from app.accessibility.extractor import SUPPORTED_EXTENSIONS
 from app.accessibility.pipeline import AccessibilityPipeline
 from app.accessibility.storage import GeneratedFileStore
+from app.api.deps import get_gemini_service, get_tts_service
+from app.core.config import settings
 
 router = APIRouter(prefix='/api/accessibility', tags=['accessibility'])
 
@@ -19,11 +20,9 @@ def get_generated_file_store() -> GeneratedFileStore:
 
 
 def get_accessibility_pipeline() -> AccessibilityPipeline:
-    return AccessibilityPipeline()
-
-
-MAX_UPLOAD_MB = int(os.getenv('ACCESSIBILITY_MAX_UPLOAD_MB', '20'))
-MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024
+    return AccessibilityPipeline(
+        ai=get_gemini_service(), tts=get_tts_service()
+    )
 
 
 @router.post('/process-stream')
@@ -47,12 +46,14 @@ async def process_document_stream(
             status_code=422, detail='Nível deve ser 1, 2, 3 ou 4.'
         )
 
-    data = await file.read(MAX_UPLOAD_BYTES + 1)
+    max_upload_mb = settings.ACCESSIBILITY_MAX_UPLOAD_MB
+    max_upload_bytes = max_upload_mb * 1024 * 1024
+    data = await file.read(max_upload_bytes + 1)
     await file.close()
-    if len(data) > MAX_UPLOAD_BYTES:
+    if len(data) > max_upload_bytes:
         raise HTTPException(
             status_code=413,
-            detail=f'Arquivo excede o limite de {MAX_UPLOAD_MB} MB.',
+            detail=f'Arquivo excede o limite de {max_upload_mb} MB.',
         )
     if not data:
         raise HTTPException(

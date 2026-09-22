@@ -73,7 +73,7 @@ class FakeTTSClient:
         self.calls: list[dict] = []
 
     async def text_to_speech(
-        self, text: str, voice: str = 'pt-BR-AntonioNeural'
+        self, text: str, voice: Optional[str] = None
     ) -> str:
         self.calls.append({'text': text, 'voice': voice})
         audio_filename = f'fake-{uuid.uuid4()}.mp3'
@@ -87,7 +87,7 @@ class FakeTTSClient:
 
 
 class FakeAccessibilityAI:
-    """Fake do GeminiAccessibilityService para o pipeline de acessibilidade."""
+    """Fake do GeminiService para o pipeline de acessibilidade."""
 
     def __init__(self, failure: Optional[Exception] = None):
         self.failure = failure
@@ -119,11 +119,13 @@ class FakeAccessibilityAI:
 
 
 class FakeEdgeTTS:
-    """Fake do EdgeTTSService que grava um MP3 de mentira."""
+    """Fake do TTSService que grava um MP3 de mentira."""
 
     def __init__(self):
         self.calls: list[str] = []
 
-    async def synthesize(self, text: str, output_path: Path) -> None:
+    async def synthesize(
+        self, text: str, output_path: Path, voice: Optional[str] = None
+    ) -> None:
         self.calls.append(text)
         Path(output_path).write_bytes(b'fake-mp3-audio-bytes-for-testing')

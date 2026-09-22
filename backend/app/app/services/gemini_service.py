@@ -1,17 +1,20 @@
-import os
 from typing import Optional
 
 from google import genai
 from google.genai import types
 
+from app.accessibility.prompts import (
+    AUDITOR_PROMPT,
+    CHART_PROMPT,
+    CORRECTOR_PROMPT,
+    OCR_PROMPT,
+)
+from app.accessibility.schemas import AuditReport, ChartVisionResult
 from app.core.config import settings
 
-from .prompts import AUDITOR_PROMPT, CHART_PROMPT, CORRECTOR_PROMPT, OCR_PROMPT
-from .schemas import AuditReport, ChartVisionResult
 
-
-class GeminiAccessibilityService:
-    """Centraliza todas as chamadas à IA; nenhuma chave fica no navegador."""
+class GeminiService:
+    """Único ponto de acesso ao Google Gemini (assíncrono); a chave fica no backend."""
 
     def __init__(
         self,
@@ -19,18 +22,18 @@ class GeminiAccessibilityService:
         api_key: Optional[str] = None,
         model: Optional[str] = None,
     ) -> None:
-        self.model = model or os.getenv('GEMINI_MODEL') or 'gemini-1.5-flash'
+        self.model = model or settings.GEMINI_MODEL
         if client:
             self.client = client
         else:
-            resolved_key = (
-                api_key
-                or settings.GEMINI_API_KEY
-                or os.getenv('GEMINI_API_KEY')
-            )
+            resolved_key = api_key or settings.GEMINI_API_KEY
             self.client = (
                 genai.Client(api_key=resolved_key) if resolved_key else None
             )
+
+    @property
+    def is_configured(self) -> bool:
+        return self.client is not None
 
     def _ensure_client(self) -> genai.Client:
         if not self.client:
@@ -42,7 +45,7 @@ class GeminiAccessibilityService:
     async def generate_text(
         self,
         *,
-        system_instruction: str,
+        system_instruction: Optional[str],
         user_text: str,
         temperature: float = 0.15,
     ) -> str:
@@ -61,12 +64,17 @@ class GeminiAccessibilityService:
             raise RuntimeError('A IA retornou uma resposta vazia.')
         return text
 
-    async def ocr_image(self, image_bytes: bytes, mime_type: str) -> str:
+    async def ocr_image(
+        self,
+        image_bytes: bytes,
+        mime_type: str,
+        prompt: str = OCR_PROMPT,
+    ) -> str:
         client = self._ensure_client()
         response = await client.aio.models.generate_content(
             model=self.model,
             contents=[
-                OCR_PROMPT,
+                prompt,
                 types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
             ],
             config=types.GenerateContentConfig(

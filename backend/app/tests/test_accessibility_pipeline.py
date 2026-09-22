@@ -15,7 +15,6 @@ from app.accessibility.extractor import (
     ExtractionResult,
     VisualCandidate,
 )
-from app.accessibility.gemini_service import GeminiAccessibilityService
 from app.accessibility.math_detector import detect_math_content
 from app.accessibility.pipeline import AccessibilityPipeline
 from app.accessibility.router import (
@@ -30,8 +29,9 @@ from app.accessibility.schemas import (
     ProcessResult,
 )
 from app.accessibility.storage import GeneratedFileStore
-from app.accessibility.tts_service import EdgeTTSService
 from app.main import app
+from app.services.gemini_service import GeminiService
+from app.services.tts_service import TTSService
 
 # ---------------------------------------------------------------------------
 # 1. Tests for GeneratedFileStore
@@ -83,19 +83,17 @@ def test_generated_file_store_cleanup(tmp_path: Path):
 
 
 # ---------------------------------------------------------------------------
-# 2. Tests for GeminiAccessibilityService
+# 2. Tests for GeminiService
 # ---------------------------------------------------------------------------
 
 
 def test_gemini_service_initialization():
-    service = GeminiAccessibilityService(
-        api_key='fake-key', model='test-model'
-    )
+    service = GeminiService(api_key='fake-key', model='test-model')
     assert service.model == 'test-model'
     assert service.client is not None
 
-    empty_service = GeminiAccessibilityService(api_key='', client=None)
-    with patch('app.accessibility.gemini_service.settings.GEMINI_API_KEY', ''):
+    empty_service = GeminiService(api_key='', client=None)
+    with patch('app.services.gemini_service.settings.GEMINI_API_KEY', ''):
         empty_service.client = None
         with pytest.raises(
             RuntimeError, match='GEMINI_API_KEY não configurada'
@@ -110,7 +108,7 @@ async def test_gemini_service_generate_text():
     mock_resp.text = 'Texto gerado acessível'
     mock_client.aio.models.generate_content = AsyncMock(return_value=mock_resp)
 
-    service = GeminiAccessibilityService(client=mock_client)
+    service = GeminiService(client=mock_client)
     res = await service.generate_text(
         system_instruction='Instrução', user_text='Original'
     )
@@ -131,7 +129,7 @@ async def test_gemini_service_ocr_image():
     mock_resp.text = 'Texto extraído da imagem'
     mock_client.aio.models.generate_content = AsyncMock(return_value=mock_resp)
 
-    service = GeminiAccessibilityService(client=mock_client)
+    service = GeminiService(client=mock_client)
     res = await service.ocr_image(b'fake-image-bytes', 'image/png')
     assert res == 'Texto extraído da imagem'
 
@@ -153,7 +151,7 @@ async def test_gemini_service_analyze_chart():
     mock_resp.parsed = chart_res
     mock_client.aio.models.generate_content = AsyncMock(return_value=mock_resp)
 
-    service = GeminiAccessibilityService(client=mock_client)
+    service = GeminiService(client=mock_client)
     res = await service.analyze_chart(
         image_bytes=b'chart-bytes',
         mime_type='image/png',
@@ -189,7 +187,7 @@ async def test_gemini_service_audit_and_correct():
     mock_resp.parsed = report
     mock_client.aio.models.generate_content = AsyncMock(return_value=mock_resp)
 
-    service = GeminiAccessibilityService(client=mock_client)
+    service = GeminiService(client=mock_client)
     audit = await service.audit('original', 'acessivel')
     assert audit.status == 'problemas_encontrados'
     assert len(audit.itens) == 1
@@ -203,20 +201,20 @@ async def test_gemini_service_audit_and_correct():
 
 
 # ---------------------------------------------------------------------------
-# 3. Tests for EdgeTTSService
+# 3. Tests for TTSService
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
 async def test_edge_tts_empty_text(tmp_path: Path):
-    tts = EdgeTTSService()
+    tts = TTSService()
     with pytest.raises(ValueError, match='Não há texto para gerar áudio.'):
         await tts.synthesize('   ', tmp_path / 'out.mp3')
 
 
 @pytest.mark.asyncio
 async def test_edge_tts_synthesize_success(tmp_path: Path):
-    tts = EdgeTTSService()
+    tts = TTSService()
     out_file = tmp_path / 'out.mp3'
 
     async def fake_save(path_str):
@@ -234,7 +232,7 @@ async def test_edge_tts_synthesize_success(tmp_path: Path):
 
 @pytest.mark.asyncio
 async def test_edge_tts_synthesize_failure_raises(tmp_path: Path):
-    tts = EdgeTTSService()
+    tts = TTSService()
     out_file = tmp_path / 'out.mp3'
 
     with patch('edge_tts.Communicate') as mock_communicate:
@@ -255,7 +253,7 @@ async def test_edge_tts_synthesize_failure_raises(tmp_path: Path):
 
 @pytest.mark.asyncio
 async def test_extractor_unsupported_format():
-    ai = MagicMock(spec=GeminiAccessibilityService)
+    ai = MagicMock(spec=GeminiService)
     extractor = DocumentExtractor(ai)
     with pytest.raises(ValueError, match='Formato não suportado'):
         await extractor.extract('planilha.xlsx', b'dummy-data')
@@ -263,7 +261,7 @@ async def test_extractor_unsupported_format():
 
 @pytest.mark.asyncio
 async def test_extractor_txt():
-    ai = MagicMock(spec=GeminiAccessibilityService)
+    ai = MagicMock(spec=GeminiService)
     extractor = DocumentExtractor(ai)
     content = 'Olá mundo! Este é um texto de teste em UTF-8.'
     res = await extractor.extract('teste.txt', content.encode('utf-8'))
@@ -273,7 +271,7 @@ async def test_extractor_txt():
 
 @pytest.mark.asyncio
 async def test_extractor_docx():
-    ai = MagicMock(spec=GeminiAccessibilityService)
+    ai = MagicMock(spec=GeminiService)
     extractor = DocumentExtractor(ai)
 
     # Cria um DOCX na memória
@@ -297,7 +295,7 @@ async def test_extractor_docx():
 
 @pytest.mark.asyncio
 async def test_extractor_pdf_with_native_text():
-    ai = MagicMock(spec=GeminiAccessibilityService)
+    ai = MagicMock(spec=GeminiService)
     extractor = DocumentExtractor(ai)
 
     # Cria PDF com texto nativo usando PyMuPDF
@@ -317,7 +315,7 @@ async def test_extractor_pdf_with_native_text():
 
 @pytest.mark.asyncio
 async def test_extractor_pdf_with_short_text_triggers_ocr():
-    ai = MagicMock(spec=GeminiAccessibilityService)
+    ai = MagicMock(spec=GeminiService)
     ai.ocr_image = AsyncMock(return_value='Texto vindo de OCR')
     extractor = DocumentExtractor(ai)
 
@@ -335,7 +333,7 @@ async def test_extractor_pdf_with_short_text_triggers_ocr():
 
 @pytest.mark.asyncio
 async def test_extractor_image():
-    ai = MagicMock(spec=GeminiAccessibilityService)
+    ai = MagicMock(spec=GeminiService)
     ai.ocr_image = AsyncMock(return_value='Texto reconhecido da imagem PNG')
     extractor = DocumentExtractor(ai)
 
@@ -365,7 +363,7 @@ async def test_accessibility_pipeline_invalid_level():
 
 @pytest.mark.asyncio
 async def test_accessibility_pipeline_empty_content_error():
-    ai = MagicMock(spec=GeminiAccessibilityService)
+    ai = MagicMock(spec=GeminiService)
     extractor = MagicMock(spec=DocumentExtractor)
     extractor.extract = AsyncMock(
         return_value=ExtractionResult(text='', visual_candidates=[])
@@ -387,7 +385,7 @@ async def test_accessibility_pipeline_empty_content_error():
 async def test_accessibility_pipeline_full_run_with_audit_correction(
     tmp_path: Path,
 ):
-    ai = MagicMock(spec=GeminiAccessibilityService)
+    ai = MagicMock(spec=GeminiService)
     ai.generate_text = AsyncMock(return_value='Texto acessível gerado.')
     ai.analyze_chart = AsyncMock(
         return_value=ChartVisionResult(
@@ -407,7 +405,7 @@ async def test_accessibility_pipeline_full_run_with_audit_correction(
         return_value='Texto acessível devidamente corrigido.'
     )
 
-    tts = MagicMock(spec=EdgeTTSService)
+    tts = MagicMock(spec=TTSService)
 
     async def fake_synth(text, path):
         Path(path).write_bytes(b'fake-mp3')

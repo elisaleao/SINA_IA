@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import time
 import uuid
 from pathlib import Path
@@ -17,7 +16,7 @@ class GeneratedFileStore:
         *,
         expires: bool = True,
     ) -> None:
-        configured = root_dir or os.getenv('ACCESSIBILITY_OUTPUT_DIR')
+        configured = root_dir or settings.ACCESSIBILITY_OUTPUT_DIR
         self.root = (
             Path(configured)
             if configured
@@ -26,9 +25,7 @@ class GeneratedFileStore:
         self.root.mkdir(parents=True, exist_ok=True)
         # Materiais (#15) guardam resultados permanentes: expires=False
         self.max_age_seconds: int | None = (
-            int(os.getenv('ACCESSIBILITY_FILE_TTL_SECONDS', str(24 * 60 * 60)))
-            if expires
-            else None
+            settings.ACCESSIBILITY_FILE_TTL_SECONDS if expires else None
         )
 
     def new_path(self, extension: str) -> Path:
