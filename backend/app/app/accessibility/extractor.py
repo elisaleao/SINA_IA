@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import mimetypes
 import re
 import zipfile
@@ -37,6 +38,15 @@ class VisualCandidate:
 
 
 @dataclass(slots=True)
+class _PdfPageScan:
+    number: int
+    native_text: str
+    has_visual_hint: bool
+    ocr_render: bytes | None
+    chart_render: bytes | None
+
+
+@dataclass(slots=True)
 class ExtractionResult:
     text: str
     visual_candidates: list[VisualCandidate] = field(default_factory=list)
@@ -67,7 +77,8 @@ class DocumentExtractor:
         if extension == '.txt':
             return ExtractionResult(text=self._decode_text(data))
         if extension == '.docx':
-            return self._extract_docx(data)
+            # python-docx e zipfile são CPU: fora do event loop
+            return await asyncio.to_thread(self._extract_docx, data)
         if extension == '.pdf':
             return await self._extract_pdf(data)
         return await self._extract_image(extension, data)
@@ -127,54 +138,76 @@ class DocumentExtractor:
         return ExtractionResult(text=text, visual_candidates=candidates)
 
     async def _extract_pdf(self, data: bytes) -> ExtractionResult:
-        pdf = fitz.open(stream=data, filetype='pdf')
+        # PyMuPDF roda numa thread; só as chamadas de OCR ficam no event loop
+        pages = await asyncio.to_thread(self._scan_pdf, data)
         page_texts: list[str] = []
         candidates: list[VisualCandidate] = []
 
-        try:
-            for page_number, page in enumerate(pdf, start=1):
-                native_text = page.get_text('text').strip()
-                rendered: bytes | None = None
+        for page in pages:
+            native_text = page.native_text
+            # OCR apenas quando há pouco texto selecionável.
+            if page.ocr_render is not None:
+                native_text = (
+                    await self.ai.ocr_image(page.ocr_render, 'image/png')
+                ).strip()
 
-                # OCR apenas quando há pouco texto selecionável.
-                if len(native_text) < 25:
-                    rendered = self._render_page(page, scale=2.0)
-                    native_text = (
-                        await self.ai.ocr_image(rendered, 'image/png')
-                    ).strip()
+            page_texts.append(f'[Página {page.number}]\n{native_text}'.strip())
 
-                page_texts.append(
-                    f'[Página {page_number}]\n{native_text}'.strip()
-                )
+            if len(candidates) >= self.max_visual_candidates:
+                continue
 
-                if len(candidates) >= self.max_visual_candidates:
-                    continue
-
-                image_count = len(page.get_images(full=True))
-                drawing_count = len(page.get_drawings())
-                likely_chart = bool(_CHART_WORDS.search(native_text))
-                likely_chart = (
-                    likely_chart or drawing_count >= 12 or image_count > 0
-                )
-
-                if likely_chart:
-                    if rendered is None:
-                        rendered = self._render_page(page, scale=1.6)
-                    candidates.append(
-                        VisualCandidate(
-                            label=f'Página {page_number}',
-                            image_bytes=rendered,
-                            mime_type='image/png',
-                            context_text=native_text[:6000],
-                        )
+            likely_chart = page.has_visual_hint or bool(
+                _CHART_WORDS.search(native_text)
+            )
+            rendered = page.ocr_render or page.chart_render
+            if likely_chart and rendered is not None:
+                candidates.append(
+                    VisualCandidate(
+                        label=f'Página {page.number}',
+                        image_bytes=rendered,
+                        mime_type='image/png',
+                        context_text=native_text[:6000],
                     )
-        finally:
-            pdf.close()
+                )
 
         return ExtractionResult(
             text='\n\n'.join(page_texts).strip(),
             visual_candidates=candidates,
         )
+
+    def _scan_pdf(self, data: bytes) -> list[_PdfPageScan]:
+        pdf = fitz.open(stream=data, filetype='pdf')
+        pages: list[_PdfPageScan] = []
+        chart_renders = 0
+        try:
+            for page_number, page in enumerate(pdf, start=1):
+                native_text = page.get_text('text').strip()
+                image_count = len(page.get_images(full=True))
+                drawing_count = len(page.get_drawings())
+                has_visual_hint = drawing_count >= 12 or image_count > 0
+
+                ocr_render: bytes | None = None
+                chart_render: bytes | None = None
+                if len(native_text) < 25:
+                    ocr_render = self._render_page(page, scale=2.0)
+                elif chart_renders < self.max_visual_candidates and (
+                    has_visual_hint or _CHART_WORDS.search(native_text)
+                ):
+                    chart_render = self._render_page(page, scale=1.6)
+                    chart_renders += 1
+
+                pages.append(
+                    _PdfPageScan(
+                        number=page_number,
+                        native_text=native_text,
+                        has_visual_hint=has_visual_hint,
+                        ocr_render=ocr_render,
+                        chart_render=chart_render,
+                    )
+                )
+        finally:
+            pdf.close()
+        return pages
 
     async def _extract_image(
         self, extension: str, data: bytes
