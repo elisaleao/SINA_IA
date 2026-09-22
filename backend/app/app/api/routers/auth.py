@@ -30,6 +30,7 @@ from app.schemas.auth import (
     UserResponse,
 )
 from app.schemas.user import (
+    AccessibilityPreferencesCreate,
     AccessibilityPreferencesResponse,
     AccessibilityPreferencesUpdate,
 )
@@ -68,20 +69,14 @@ async def register(
     db.add(user)
 
     # Cria preferências de acessibilidade iniciais
-    prefs_data = payload.accessibility_preferences
+    # model_dump garante que todo campo do schema chegue ao banco
+    prefs_data = (
+        payload.accessibility_preferences or AccessibilityPreferencesCreate()
+    )
     prefs = AccessibilityPreferencesRecord(
         id=str(uuid.uuid4()),
         user_id=user_id,
-        profile=prefs_data.profile.value if prefs_data else 'visual',
-        plain_language=prefs_data.plain_language if prefs_data else False,
-        include_glossary=prefs_data.include_glossary if prefs_data else False,
-        highlight_key_points=(
-            prefs_data.highlight_key_points if prefs_data else True
-        ),
-        font_family=prefs_data.font_family if prefs_data else 'system-ui',
-        font_size=prefs_data.font_size if prefs_data else 'medium',
-        line_spacing=prefs_data.line_spacing if prefs_data else 'normal',
-        high_contrast=prefs_data.high_contrast if prefs_data else False,
+        **prefs_data.model_dump(mode='json'),
     )
     db.add(prefs)
 
