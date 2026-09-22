@@ -92,6 +92,14 @@ jobs:
       - name: Instalar dependências
         run: cd backend/app && poetry install
 
+      - name: Migrações sincronizadas com os models (alembic check)
+        env:
+          DATABASE_URL: sqlite+aiosqlite:///${{ runner.temp }}/schema_check.db
+        run: |
+          cd backend/app
+          poetry run alembic upgrade head
+          poetry run alembic check
+
       - name: Executar suíte de testes com cobertura JSON
         run: |
           mkdir -p reports/unit
