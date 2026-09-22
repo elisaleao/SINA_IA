@@ -47,3 +47,28 @@ O **SINA_IA** fundamenta-se nos princípios do **Desenho Universal para a Aprend
   * Conceitos abstratos ou cálculos complexos devem ser acompanhados por metáforas do cotidiano.
 * **Decomposição Passo a Passo:**
   * Resoluções de exercícios e demonstrações teóricas devem ser enumeradas de forma linear e cronológica, sem saltos lógicos implícitos.
+
+---
+
+## 2. Primitivas de Componentes Reutilizáveis (Fase UX1)
+
+Todos os componentes interativos do SINA_IA em `frontend/src/components/ui/` seguem rigorosamente os critérios WCAG 2.2 AAA:
+
+1. **Alvo de Toque e Espaçamento (Critério 2.5.5 / 2.5.8):**
+   * Altura mínima de 44px (`min-h-[44px]` ou `min-h-[48px]`) em botões, abas e cartões de formulário.
+2. **Contraste Visual Elevado (Critério 1.4.6):**
+   * Razão de contraste mínima de 7:1 para textos normais e 4.5:1 para elementos gráficos essenciais.
+3. **Indicador de Foco Visível (Critério 2.4.7 / 2.4.11):**
+   * Anel de foco com espessura de 2px e deslocamento (`focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2`).
+4. **Independência de Cor (Critério 1.4.1):**
+   * Elementos de estado (`StatusBadge`) combinam texto explícito com ícone semântico, nunca sinalizando informação exclusivamente por cor.
+
+### Catálogo de Componentes Base:
+* **`RadioCard`**: Seleção única em formato de cartão com semântica nativa `input[type="radio"]` encapsulada.
+* **`CheckboxCard`**: Seleção múltipla em formato de cartão com semântica nativa `input[type="checkbox"]`.
+* **`ProgressSteps`**: Navegação sequencial de etapas com indicação acessível via `aria-current="step"`.
+* **`Dropzone`**: Zona de envio acessível tanto por teclado quanto por arrastar e soltar, associada por `aria-describedby` às instruções de formato.
+* **`StatusBadge`**: Tag de estado com texto e ícone (ex: Sucesso, Aviso, Erro, Informação).
+* **`EmptyState`**: Mensagem padronizada com ícone ilustrativo, título, descrição e botão de ação orientador.
+* **`Tabs`**: Sistema de abas em conformidade estrita com o padrão WAI-ARIA (`role="tablist"`, `role="tab"`, `role="tabpanel"` e controle por setas direcionais, Home e End).
+

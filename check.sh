@@ -33,6 +33,14 @@ else
     FAILED=1
 fi
 
+echo "  -> Executando testes do frontend (Vitest)..."
+if npm test; then
+    echo -e "  ${GREEN}✓ Testes do frontend passaram.${NC}"
+else
+    echo -e "  ${RED}✗ Falha nos testes do frontend.${NC}"
+    FAILED=1
+fi
+
 # 2. BACKEND: LINT, FORMATAÇÃO E TESTES COM COBERTURA
 echo -e "\n${BLUE}[2/3] Verificando Backend (Python 3.13 & FastAPI)...${NC}"
 cd "$ROOT_DIR/backend/app"

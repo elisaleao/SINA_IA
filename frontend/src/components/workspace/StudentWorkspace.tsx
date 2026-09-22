@@ -399,7 +399,7 @@ export function StudentWorkspace() {
   }
 
   return (
-    <main className="h-[calc(100vh-81px)] w-full overflow-hidden" aria-label="Ambiente do aluno">
+    <div role="region" className="h-[calc(100vh-81px)] w-full overflow-hidden" aria-label="Ambiente do aluno">
       <section
         className={`grid h-full w-full flex-1 overflow-hidden transition-[grid-template-columns] duration-300 ${
           isSidebarOpen
@@ -1014,6 +1014,6 @@ export function StudentWorkspace() {
           )}
         </section>
       </section>
-    </main>
+    </div>
   );
 }
