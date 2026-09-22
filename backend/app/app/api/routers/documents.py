@@ -109,7 +109,7 @@ async def get_document(
     return DocumentProcessResponse(
         document_id=doc.id,
         filename=doc.filename,
-        extracted_markdown=doc.raw_markdown,
-        accessible_text=doc.accessible_text,
+        extracted_markdown=doc.raw_markdown or '',
+        accessible_text=doc.accessible_text or '',
         equations_found=[],
     )

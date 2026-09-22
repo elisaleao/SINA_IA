@@ -11,7 +11,12 @@ from app.core.config import settings
 class GeneratedFileStore:
     """Armazena somente resultados gerados, nunca o upload original."""
 
-    def __init__(self, root_dir: str | Path | None = None) -> None:
+    def __init__(
+        self,
+        root_dir: str | Path | None = None,
+        *,
+        expires: bool = True,
+    ) -> None:
         configured = root_dir or os.getenv('ACCESSIBILITY_OUTPUT_DIR')
         self.root = (
             Path(configured)
@@ -19,8 +24,11 @@ class GeneratedFileStore:
             else Path(settings.OUTPUT_DIR) / 'accessibility'
         )
         self.root.mkdir(parents=True, exist_ok=True)
-        self.max_age_seconds = int(
-            os.getenv('ACCESSIBILITY_FILE_TTL_SECONDS', str(24 * 60 * 60))
+        # Materiais (#15) guardam resultados permanentes: expires=False
+        self.max_age_seconds: int | None = (
+            int(os.getenv('ACCESSIBILITY_FILE_TTL_SECONDS', str(24 * 60 * 60)))
+            if expires
+            else None
         )
 
     def new_path(self, extension: str) -> Path:
@@ -37,6 +45,8 @@ class GeneratedFileStore:
         return path
 
     def cleanup(self) -> None:
+        if self.max_age_seconds is None:
+            return
         cutoff = time.time() - self.max_age_seconds
         for path in self.root.glob('*'):
             try:

@@ -2,6 +2,7 @@ import datetime
 from typing import Optional
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     DateTime,
     Float,
@@ -151,8 +152,37 @@ class DocumentRecord(Base):
         index=True,
     )
     filename: Mapped[str] = mapped_column(String(255), nullable=False)
-    raw_markdown: Mapped[str] = mapped_column(Text, nullable=False)
-    accessible_text: Mapped[str] = mapped_column(Text, nullable=False)
+    # Nulos enquanto o material ainda não foi processado
+    raw_markdown: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    accessible_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # Ciclo de vida do material: enviado -> processando -> pronto | erro
+    status: Mapped[str] = mapped_column(
+        String(20),
+        default='pronto',
+        server_default='pronto',
+        nullable=False,
+        index=True,
+    )
+    erro_mensagem: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    mime: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    tamanho_bytes: Mapped[Optional[int]] = mapped_column(
+        Integer, nullable=True
+    )
+    sha256: Mapped[Optional[str]] = mapped_column(
+        String(64), nullable=True, index=True
+    )
+    nivel: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    caminho_armazenamento: Mapped[Optional[str]] = mapped_column(
+        String(500), nullable=True
+    )
+    audio_arquivo: Mapped[Optional[str]] = mapped_column(
+        String(255), nullable=True
+    )
+    resultado_json: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    # FK para ambientes entra na UX3 (#14)
+    ambiente_id: Mapped[Optional[str]] = mapped_column(
+        String(36), nullable=True, index=True
+    )
     version_id: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

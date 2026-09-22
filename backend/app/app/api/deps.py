@@ -5,9 +5,11 @@ from typing import AsyncGenerator, Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import selectinload
 
+from app.accessibility.pipeline import AccessibilityPipeline
+from app.core.config import settings
 from app.core.protocols import LLMClientProtocol, TTSClientProtocol
 from app.core.security import decode_access_token
 from app.database import AsyncSessionLocal, DocumentRecord, UserRecord
@@ -15,6 +17,7 @@ from app.schemas.user import UserRole
 from app.services.audio_service import AudioService
 from app.services.ingestion_service import IngestionService
 from app.services.llm_service import LLMService
+from app.services.material_service import MaterialStorage
 
 _default_llm = LLMService()
 _default_tts = AudioService()
@@ -26,6 +29,23 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """Injeta uma sessão assíncrona do SQLAlchemy no ciclo de vida da requisição."""
     async with AsyncSessionLocal() as session:
         yield session
+
+
+def get_session_maker() -> async_sessionmaker[AsyncSession]:
+    """Fábrica de sessões para tarefas em segundo plano (fora da requisição)."""
+    return AsyncSessionLocal
+
+
+def get_material_storage() -> MaterialStorage:
+    """Armazenamento de materiais (substituível nos testes)."""
+    return MaterialStorage(settings.materials_dir)
+
+
+def get_material_pipeline(
+    storage: MaterialStorage = Depends(get_material_storage),
+) -> AccessibilityPipeline:
+    """Pipeline de acessibilidade gravando resultados no armazenamento de materiais."""
+    return AccessibilityPipeline(store=storage.results)
 
 
 def get_llm_client() -> LLMClientProtocol:

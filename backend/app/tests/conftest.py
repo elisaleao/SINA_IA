@@ -8,7 +8,12 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.pool import StaticPool
 
-from app.api.deps import get_db, get_llm_client, get_tts_client
+from app.api.deps import (
+    get_db,
+    get_llm_client,
+    get_session_maker,
+    get_tts_client,
+)
 from app.database import Base
 from app.main import app
 from app.services.fakes import FakeLLMClient, FakeTTSClient
@@ -68,6 +73,8 @@ async def client(test_engine, fake_llm, fake_tts):
             yield session
 
     app.dependency_overrides[get_db] = override_get_db
+    # Tarefas em segundo plano abrem a própria sessão no mesmo banco de teste
+    app.dependency_overrides[get_session_maker] = lambda: session_maker
     app.dependency_overrides[get_llm_client] = lambda: fake_llm
     app.dependency_overrides[get_tts_client] = lambda: fake_tts
 

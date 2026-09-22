@@ -2,8 +2,10 @@
 
 import os
 import uuid
+from pathlib import Path
 from typing import Optional
 
+from app.accessibility.schemas import AuditReport, ChartVisionResult
 from app.core.config import settings
 from app.models import AccessibilityConfig, GenerationType, TeacherConfig
 from app.services.math_speech_service import MathToSpeechService
@@ -82,3 +84,46 @@ class FakeTTSClient:
                 f.write(b'fake-mp3-audio-bytes-for-testing')
 
         return audio_filename
+
+
+class FakeAccessibilityAI:
+    """Fake do GeminiAccessibilityService para o pipeline de acessibilidade."""
+
+    def __init__(self, failure: Optional[Exception] = None):
+        self.failure = failure
+        self.calls: list[str] = []
+
+    async def generate_text(
+        self, *, system_instruction: str, user_text: str, **_: object
+    ) -> str:
+        self.calls.append('generate_text')
+        if self.failure is not None:
+            raise self.failure
+        return f'Versão acessível: {user_text[:200]}'
+
+    async def ocr_image(self, image_bytes: bytes, mime_type: str) -> str:
+        self.calls.append('ocr_image')
+        return 'Texto reconhecido na imagem: a derivada de x ao quadrado.'
+
+    async def analyze_chart(self, **_: object) -> ChartVisionResult:
+        self.calls.append('analyze_chart')
+        return ChartVisionResult(is_chart=False)
+
+    async def audit(self, original: str, accessible: str) -> AuditReport:
+        self.calls.append('audit')
+        return AuditReport(status='ok')
+
+    async def correct(self, accessible: str, problems: list[str]) -> str:
+        self.calls.append('correct')
+        return accessible
+
+
+class FakeEdgeTTS:
+    """Fake do EdgeTTSService que grava um MP3 de mentira."""
+
+    def __init__(self):
+        self.calls: list[str] = []
+
+    async def synthesize(self, text: str, output_path: Path) -> None:
+        self.calls.append(text)
+        Path(output_path).write_bytes(b'fake-mp3-audio-bytes-for-testing')

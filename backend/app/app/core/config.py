@@ -18,12 +18,22 @@ class Settings(BaseSettings):
     )
     CORS_ORIGINS: list[str] = ['*']
 
+    # Envio de materiais (#15)
+    MATERIAL_MAX_FILE_MB: int = 20
+    MATERIAL_MAX_FILES: int = 10
+    DOCX_MAX_UNCOMPRESSED_MB: int = 100
+
     JWT_SECRET: str = os.getenv(
         'JWT_SECRET', 'insecure-dev-secret-change-me-in-production-sina-ia'
     )
     JWT_ALGORITHM: str = 'HS256'
     ACCESS_TOKEN_MINUTES: int = 15
     REFRESH_TOKEN_DAYS: int = 7
+
+    @property
+    def materials_dir(self) -> str:
+        """Originais e resultados dos materiais; nunca servido como estático."""
+        return os.path.join(self.UPLOAD_DIR, 'materiais')
 
     class Config:
         env_file = '.env'
