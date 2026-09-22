@@ -53,6 +53,12 @@ jobs:
       - name: Frontend — TypeScript Typecheck
         run: cd frontend && npx tsc --noEmit
 
+      - name: Frontend — Testes (Vitest)
+        run: cd frontend && npm test
+
+      - name: Frontend — Build de produção
+        run: cd frontend && npm run build
+
       - name: Backend — Ortografia técnica (typos)
         run: cd backend/app && poetry run typos
 
@@ -149,9 +155,9 @@ jobs:
             const covPct = cov && cov.totals ? cov.totals.percent_covered_display : null;
 
             const rows = [
-              ['Lint e tipos (TS + Py)', needs.static.result, 'Frontend (ESLint/tsc) + Backend (Ruff/Typos)'],
+              ['Lint e tipos (TS + Py)', needs.static.result, 'Frontend (ESLint/tsc/Vitest/build) + Backend (Ruff/Typos)'],
               ['Testes & Cobertura', needs.tests.result,
-                covPct ? `cobertura total de ${covPct}% (21 testes passando)` : 'sem dados de cobertura'],
+                covPct ? `cobertura total de ${covPct}%` : 'sem dados de cobertura'],
               ['Fronteiras de Domínio', needs.boundaries.result, 'Domínio puro isolado de I/O e Banco'],
             ];
 
