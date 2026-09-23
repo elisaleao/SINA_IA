@@ -1,32 +1,17 @@
 'use client';
 
-import React, { useSyncExternalStore } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 
+import { useSession } from '@/components/session/SessionProvider';
 import { systemName } from '@/lib/content';
 import { appRoutes } from '@/lib/routes';
-import { getStoredAccessToken, logoutUser } from '@/lib/auth';
-
-function subscribeToStorage(onChange: () => void): () => void {
-  window.addEventListener('storage', onChange);
-  return () => window.removeEventListener('storage', onChange);
-}
 
 export function AppHeader() {
   const pathname = usePathname();
-  const router = useRouter();
-  // Lido do localStorage a cada render (inclusive após navegação); no servidor é sempre false.
-  const isAuthenticated = useSyncExternalStore(
-    subscribeToStorage,
-    () => Boolean(getStoredAccessToken()),
-    () => false
-  );
-
-  const handleLogout = async () => {
-    await logoutUser();
-    router.push(appRoutes.home);
-  };
+  const { status, signOut } = useSession();
+  const isAuthenticated = status === 'authenticated';
 
   const isStudentArea = pathname.startsWith(appRoutes.student);
   const isTeacherArea = pathname.startsWith(appRoutes.teacher);
@@ -116,7 +101,7 @@ export function AppHeader() {
           {isAuthenticated ? (
             <button
               type="button"
-              onClick={handleLogout}
+              onClick={() => void signOut()}
               className="min-h-[44px] inline-flex items-center rounded-full border border-rose-300 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-800 transition hover:bg-rose-100 hover:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-500 cursor-pointer"
             >
               Sair
