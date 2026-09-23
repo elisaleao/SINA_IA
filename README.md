@@ -49,51 +49,68 @@ database.py     models do SQLAlchemy; o schema só muda por migração em alembi
 
 O backend guarda os dados em SQLite no desenvolvimento e aceita PostgreSQL pelo Docker Compose. A conversão de LaTeX para fala fica em `backend/app/app/services/math_speech_service.py`, um módulo sem I/O que o quality gate impede de importar banco ou framework web. Os detalhes estão em [docs/architecture.md](docs/architecture.md).
 
-## Como rodar na sua máquina
+## Como rodar
 
-### Pré-requisitos
+O banco de dados é o PostgreSQL. O SQLite só é usado pela suíte de testes, em memória.
 
-- Node.js 22 e npm
-- Python 3.13 e [Poetry](https://python-poetry.org/docs/#installation) 2.x
-- Uma chave do Groq para o servidor, grátis e sem cartão, em [console.groq.com](https://console.groq.com/keys). É a IA de quem não cadastrou chave própria. Sem ela a API sobe, o upload de PDF com texto e de TXT funciona, mas OCR, geração de conteúdo e o pipeline de acessibilidade respondem com erro para esses usuários.
-- Opcional: cada usuário pode cadastrar a própria chave do Google Gemini ([aistudio.google.com](https://aistudio.google.com/apikey)) em `PUT /users/me/llm-key`. A chave é testada antes de salvar e fica cifrada no banco.
-- Acesso à internet, porque o Edge-TTS sintetiza o áudio num serviço remoto.
+### Com Docker (recomendado)
 
-### 1. Backend
+Pré-requisitos: Docker com o Compose v2. Nada mais precisa estar instalado na máquina.
+
+```bash
+cp .env.example .env        # na raiz do repositório
+# edite o .env: GROQ_API_KEY e LLM_KEY_ENCRYPTION_SECRET
+docker compose up -d --build
+```
+
+Isso sobe três serviços:
+
+| Serviço | Endereço | Observação |
+| --- | --- | --- |
+| Frontend | http://localhost:3000 | Next.js em modo de desenvolvimento |
+| API | http://localhost:8000 (documentação em `/docs`) | Aplica as migrações (`alembic upgrade head`) antes de subir |
+| PostgreSQL | localhost:5432 | Usuário `sina`, senha `sina_secret`, banco `sina_ia` |
+
+Os dados ficam em `./data`: o banco em `./data/postgres`, e uploads e áudios em `./data/uploads` e `./data/outputs`.
+
+Comandos do dia a dia:
+
+```bash
+docker compose ps                                          # estado dos serviços
+docker compose logs -f backend                             # logs da API
+docker compose exec backend python -m scripts.seed_exercicios   # questões de exemplo do quiz
+docker compose up -d --build backend                       # depois de mudar o código do backend
+docker compose down                                        # para tudo e mantém os dados
+docker compose down && rm -rf data/postgres                # apaga o banco e começa do zero
+```
+
+O `.env` do `backend/app` não entra na imagem (está no `.dockerignore`). No Docker, as variáveis vêm do `.env` da raiz e do `docker-compose.yml`.
+
+### Sem Docker (desenvolvimento)
+
+Pré-requisitos: Node.js 22, Python 3.13, [Poetry](https://python-poetry.org/docs/#installation) 2.x e Docker, só para o PostgreSQL.
+
+Suba só o banco:
+
+```bash
+docker compose up -d db
+```
+
+Backend:
 
 ```bash
 cd backend/app
 poetry install
-cp .env.example .env
-```
-
-Edite o `backend/app/.env`. Para rodar sem Docker, use SQLite:
-
-```env
-GROQ_API_KEY=sua_chave_do_groq
-LLM_KEY_ENCRYPTION_SECRET=troque-por-outro-valor-aleatorio
-DATABASE_URL=sqlite+aiosqlite:///./sina_ia.db
-JWT_SECRET=troque-por-um-valor-aleatorio
-```
-
-Crie ou atualize as tabelas com as migrações e suba a API:
-
-```bash
+cp .env.example .env        # já aponta para o PostgreSQL em localhost:5432
+# edite o .env: GROQ_API_KEY, LLM_KEY_ENCRYPTION_SECRET e JWT_SECRET
 poetry run alembic upgrade head
+poetry run python -m scripts.seed_exercicios   # opcional: questões do quiz
 poetry run uvicorn app.main:app --reload
 ```
 
-A API não cria tabelas sozinha. Sempre que alguém adicionar uma migração em `alembic/versions/`, rode `alembic upgrade head` de novo depois do `git pull`. Confira em http://localhost:8000/api/health e veja todos os endpoints em http://localhost:8000/docs.
+A API não cria tabelas sozinha. Depois de um `git pull` que traga migração nova em `alembic/versions/`, rode `alembic upgrade head` de novo.
 
-Para ter questões no quiz, carregue o banco de exemplo:
-
-```bash
-poetry run python scripts/seed_exercicios.py
-```
-
-### 2. Frontend
-
-Em outro terminal:
+Frontend, em outro terminal:
 
 ```bash
 cd frontend
@@ -102,21 +119,11 @@ echo "NEXT_PUBLIC_API_URL=http://localhost:8000" > .env.local
 npm run dev
 ```
 
-Abra http://localhost:3000. Crie uma conta em `/cadastro`, entre por `/entrar` e teste o envio de documentos em `/processar` e o quiz em `/quiz`.
+### Chaves de IA
 
-### Alternativa: Docker Compose
-
-Com Docker instalado, na raiz do repositório:
-
-```bash
-GROQ_API_KEY=sua_chave_do_groq LLM_KEY_ENCRYPTION_SECRET=um-valor-aleatorio docker compose up --build
-```
-
-Isso sobe o backend na porta 8000, o frontend na 3000 e um PostgreSQL na 5432. O container do backend roda `alembic upgrade head` antes de iniciar a API. Por padrão ele usa SQLite em `./data/sina_ia.db`, e uploads e áudios também ficam em `./data`.
-
-Se o backend não subir com `table ... already exists` ou reclamar de uma coluna inexistente, o `./data/sina_ia.db` foi criado por uma versão antiga que não usava migrações. Em ambiente de desenvolvimento, renomeie o arquivo (`mv data/sina_ia.db data/sina_ia.db.bak`) e suba de novo.
-
-Para usar o PostgreSQL, troque a linha `DATABASE_URL` do serviço `backend` no `docker-compose.yml` pela que está comentada logo abaixo dela.
+- `GROQ_API_KEY` (servidor): IA gratuita de quem não cadastrou chave própria. Crie em [console.groq.com](https://console.groq.com/keys), sem cartão. Sem ela, o processamento com IA responde com erro para esses usuários.
+- Chave do Gemini (por usuário, opcional): cada pessoa cadastra a sua em `/configuracoes/chave-ia`. Gere em [aistudio.google.com](https://aistudio.google.com/apikey). A chave é testada antes de salvar e fica cifrada com `LLM_KEY_ENCRYPTION_SECRET`.
+- O Edge-TTS, que gera o áudio, precisa de acesso à internet e não usa chave.
 
 ## Testes e quality gate
 

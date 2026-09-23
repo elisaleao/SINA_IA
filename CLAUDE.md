@@ -16,6 +16,8 @@
 - Ainda há fluxos separados sobre esses módulos (`accessibility_pipeline.py` para /process-stream e
   /api/materiais; `llm_service.py` para /api/content; `ingestion_service.py` para /api/documents).
   A unificação num pipeline só está em andamento no refactor.
+- Banco: PostgreSQL (Docker, dev local e padrão do `config.py`). SQLite só na suíte de testes, em memória.
+  O CI roda as migrações num PostgreSQL de verdade (job `migrations`).
 - NÃO existe fila, outbox, `processing_jobs` nem `idempotency_key` (docs/rules/concurrency.md é alvo, não realidade).
 - Domínio puro fica em `app/services/` (`math_speech_service.py`, `math_detector.py`,
   `upload_validation.py`). NÃO existe `app/domain/` nem tipo Result (docs/rules/domain.md é alvo).
@@ -39,7 +41,7 @@
   Nunca chame Gemini, Groq ou Edge-TTS reais na suíte padrão (marcador `live` para isso).
   Para trocar o provedor de IA num teste de rota, sobrescreva `get_fallback_ai` e `get_personal_ai_factory`.
 - Rota nova → teste de rota + atualizar `tests/contract/openapi.baseline.json` se o contrato mudar.
-- Mudou modelo em `app/database.py` → criar migração em `alembic/versions/` (próximo: 0009).
+- Mudou modelo em `app/database.py` → criar migração em `alembic/versions/` (próximo: 0010).
   O `alembic check` do gate falha se o model mudar sem migração.
 
 ## Idioma
