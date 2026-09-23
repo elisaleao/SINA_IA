@@ -7,7 +7,6 @@ aqui só se acrescentam a lista de equações e a versão falada do texto.
 import asyncio
 import re
 from pathlib import Path
-from typing import Optional
 
 from app.services.document_extractor import DocumentExtractor
 from app.services.gemini_service import GeminiService
@@ -30,16 +29,11 @@ _EQUATION = re.compile(r'\$\$(.*?)\$\$|\$(.*?)\$', re.DOTALL)
 class IngestionService:
     def __init__(
         self,
-        gemini: Optional[GeminiService] = None,
-        extractor: Optional[DocumentExtractor] = None,
+        gemini: GeminiService,
+        extractor: DocumentExtractor,
     ):
-        self.gemini = gemini or GeminiService()
-        # Sem candidatos visuais: esta rota não descreve gráficos
-        self.extractor = extractor or DocumentExtractor(
-            self.gemini,
-            max_visual_candidates=0,
-            ocr_prompt=INGESTION_OCR_PROMPT,
-        )
+        self.gemini = gemini
+        self.extractor = extractor
 
     async def process_file(
         self, file_path: str, filename: str

@@ -9,7 +9,10 @@ from fastapi.responses import FileResponse, StreamingResponse
 from app.api.deps import get_gemini_service, get_tts_service
 from app.core.config import settings
 from app.services.accessibility_pipeline import AccessibilityPipeline
-from app.services.document_extractor import SUPPORTED_EXTENSIONS
+from app.services.document_extractor import (
+    SUPPORTED_EXTENSIONS,
+    DocumentExtractor,
+)
 from app.services.file_store import GeneratedFileStore
 
 router = APIRouter(prefix='/api/accessibility', tags=['accessibility'])
@@ -20,8 +23,12 @@ def get_generated_file_store() -> GeneratedFileStore:
 
 
 def get_accessibility_pipeline() -> AccessibilityPipeline:
+    ai = get_gemini_service()
     return AccessibilityPipeline(
-        ai=get_gemini_service(), tts=get_tts_service()
+        ai=ai,
+        tts=get_tts_service(),
+        store=get_generated_file_store(),
+        extractor=DocumentExtractor(ai, max_visual_candidates=4),
     )
 
 

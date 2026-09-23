@@ -22,17 +22,15 @@ from app.services.tts_service import TTSService
 class AccessibilityPipeline:
     def __init__(
         self,
-        ai: GeminiService | None = None,
-        tts: TTSService | None = None,
-        store: GeneratedFileStore | None = None,
-        extractor: DocumentExtractor | None = None,
+        ai: GeminiService,
+        tts: TTSService,
+        store: GeneratedFileStore,
+        extractor: DocumentExtractor,
     ) -> None:
-        self.ai = ai or GeminiService()
-        self.extractor = extractor or DocumentExtractor(
-            self.ai, max_visual_candidates=4
-        )
-        self.tts = tts or TTSService()
-        self.store = store or GeneratedFileStore()
+        self.ai = ai
+        self.extractor = extractor
+        self.tts = tts
+        self.store = store
 
     async def run(
         self,
