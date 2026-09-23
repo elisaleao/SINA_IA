@@ -7,6 +7,7 @@ import { RouteAnnouncer } from '@/components/layout/RouteAnnouncer';
 import { AccessibilityBar } from '@/components/accessibility/AccessibilityBar';
 import { AccessibilityProvider } from '@/components/accessibility/AccessibilityProvider';
 import { VLibrasWidgetLoader } from '@/components/accessibility/VLibrasWidgetLoader';
+import { SessionProvider } from '@/components/session/SessionProvider';
 import './globals.css';
 
 const geistSans = Geist({
@@ -37,19 +38,21 @@ export default function RootLayout({
     >
       <body className="min-h-full bg-[var(--background)] text-[var(--foreground)] flex flex-col">
         <AccessibilityProvider>
-          <SkipLink />
-          <RouteAnnouncer />
-          <AccessibilityBar />
-          <AppHeader />
-          <main
-            id="main-content"
-            tabIndex={-1}
-            className="flex min-h-0 flex-1 flex-col outline-none w-full"
-          >
-            {children}
-          </main>
-          <AppFooter />
-          <VLibrasWidgetLoader />
+          <SessionProvider>
+            <SkipLink />
+            <RouteAnnouncer />
+            <AccessibilityBar />
+            <AppHeader />
+            <main
+              id="main-content"
+              tabIndex={-1}
+              className="flex min-h-0 flex-1 flex-col outline-none w-full"
+            >
+              {children}
+            </main>
+            <AppFooter />
+            <VLibrasWidgetLoader />
+          </SessionProvider>
         </AccessibilityProvider>
       </body>
     </html>

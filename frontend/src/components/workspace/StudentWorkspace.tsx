@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { ChatPanel } from "@/components/workspace/ChatPanel";
-import { getRegistration } from "@/lib/auth-storage";
+import { useSession } from "@/components/session/SessionProvider";
 import {
   getStudentClassrooms,
   joinClassroomByCode,
@@ -158,6 +158,7 @@ function ArrowLeftIcon() {
 }
 
 export function StudentWorkspace() {
+  const { user } = useSession();
   const sidebarId = "student-workspace-sidebar";
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeView, setActiveView] = useState<StudentView>("chat");
@@ -207,18 +208,16 @@ export function StudentWorkspace() {
     : [];
 
   const syncStudentRooms = useCallback(() => {
-    const registration = getRegistration("student");
-
-    if (!registration || registration.role !== "student") {
+    if (!user) {
       setStudentProfile(null);
       setStudentRooms([]);
       setSelectedRoom(null);
       return;
     }
 
-    setStudentProfile({ email: registration.email });
+    setStudentProfile({ email: user.email });
 
-    const nextRooms = getStudentClassrooms(registration.email);
+    const nextRooms = getStudentClassrooms(user.email);
     setStudentRooms(nextRooms);
     setSelectedRoom((current) => {
       if (!current) {
@@ -233,7 +232,7 @@ export function StudentWorkspace() {
 
       return nextSelectedRoom;
     });
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const syncHandle = window.setTimeout(syncStudentRooms, 0);

@@ -1,32 +1,10 @@
-"use client";
-
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-
-import { StudentWorkspace } from "@/components/workspace/StudentWorkspace";
-import { getRegistration, getStudentLearningProfile } from "@/lib/auth-storage";
-import { appRoutes } from "@/lib/routes";
+import { RequireRole } from '@/components/session/RequireRole';
+import { StudentWorkspace } from '@/components/workspace/StudentWorkspace';
 
 export default function StudentChatPage() {
-  const router = useRouter();
-  const registration = getRegistration("student");
-  const learningProfile = getStudentLearningProfile();
-
-  useEffect(() => {
-    if (!registration || registration.role !== "student") {
-      router.replace(appRoutes.student);
-      return;
-    }
-
-    if (!learningProfile) {
-      router.replace(appRoutes.studentLearningProfile);
-    }
-
-  }, [learningProfile, registration, router]);
-
-  if (!registration || registration.role !== "student" || !learningProfile) {
-    return null;
-  }
-
-  return <StudentWorkspace />;
+  return (
+    <RequireRole allow={['aluno']}>
+      <StudentWorkspace />
+    </RequireRole>
+  );
 }

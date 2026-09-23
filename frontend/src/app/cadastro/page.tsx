@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { registerUser, UserRole } from '@/lib/auth';
+import { appRoutes } from '@/lib/routes';
 
 export default function CadastroPage() {
   const router = useRouter();
@@ -31,7 +32,7 @@ export default function CadastroPage() {
         password,
         role,
       });
-      router.push('/');
+      router.push(appRoutes.dashboard);
     } catch (err) {
       if (err instanceof Error) {
         setErrorMessage(err.message);
