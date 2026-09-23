@@ -10,6 +10,7 @@ export interface RequestOptions {
 
 export interface ApiClient {
   request<T>(path: string, init?: RequestOptions): Promise<T>;
+  stream(path: string, init?: RequestOptions): Promise<Response>;
   onSessionExpired(handler: () => void): () => void;
 }
 
@@ -135,35 +136,44 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
     throw new ApiError(await readErrorMessage(response), response.status);
   }
 
-  async function request<T>(path: string, init: RequestOptions = {}): Promise<T> {
+  async function sendWithAuthRetry(path: string, init: RequestOptions): Promise<Response> {
     const auth = init.auth !== false;
     const response = await rawFetch(path, init);
 
-    if (response.ok) {
-      return response.json() as Promise<T>;
-    }
-
-    if (response.status !== 401 || !auth || isAuthEndpoint(path)) {
-      return fail(response);
+    if (response.ok || response.status !== 401 || !auth || isAuthEndpoint(path)) {
+      return response;
     }
 
     const refreshed = await refreshSession();
     if (!refreshed) {
       tokenStore.clear();
       notifySessionExpired();
-      return fail(response);
+      return response;
     }
 
     const retryResponse = await rawFetch(path, init);
-    if (retryResponse.ok) {
-      return retryResponse.json() as Promise<T>;
-    }
-    if (retryResponse.status === 401) {
+    if (!retryResponse.ok && retryResponse.status === 401) {
       tokenStore.clear();
       notifySessionExpired();
     }
-    return fail(retryResponse);
+    return retryResponse;
   }
 
-  return { request, onSessionExpired };
+  async function request<T>(path: string, init: RequestOptions = {}): Promise<T> {
+    const response = await sendWithAuthRetry(path, init);
+    if (!response.ok) {
+      return fail(response);
+    }
+    return response.json() as Promise<T>;
+  }
+
+  async function stream(path: string, init: RequestOptions = {}): Promise<Response> {
+    const response = await sendWithAuthRetry(path, init);
+    if (!response.ok) {
+      return fail(response);
+    }
+    return response;
+  }
+
+  return { request, stream, onSessionExpired };
 }
