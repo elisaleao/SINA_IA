@@ -117,6 +117,50 @@ jobs:
           path: reports/unit/coverage.json
           if-no-files-found: ignore
 
+  # ------------------------------------------------- Migrações no PostgreSQL
+  migrations:
+    name: Migrações no PostgreSQL
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: sina
+          POSTGRES_PASSWORD: sina_secret
+          POSTGRES_DB: sina_ia
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sina -d sina_ia"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+asyncpg://sina:sina_secret@localhost:5432/sina_ia
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Instalar Poetry
+        run: pipx install poetry
+
+      - name: Instalar dependências
+        run: cd backend/app && poetry install
+
+      - name: Subir, conferir e reverter as migrações
+        run: |
+          cd backend/app
+          poetry run alembic upgrade head
+          poetry run alembic check
+          poetry run alembic downgrade base
+          poetry run alembic upgrade head
+          poetry run alembic check
+
   # --------------------------------------------------------- Fronteiras (Domínio Puro)
   boundaries:
     name: Fronteiras
@@ -142,7 +186,7 @@ jobs:
   report:
     name: Relatório
     if: ${{ !cancelled() }}
-    needs: [static, tests, boundaries]
+    needs: [static, tests, migrations, boundaries]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -168,6 +212,7 @@ jobs:
               ['Lint e tipos (TS + Py)', needs.static.result, 'Frontend (ESLint/tsc/Vitest/build) + Backend (Ruff/Typos)'],
               ['Testes & Cobertura', needs.tests.result,
                 covPct ? `cobertura total de ${covPct}%` : 'sem dados de cobertura'],
+              ['Migrações no PostgreSQL', needs.migrations.result, 'upgrade, alembic check e downgrade num PostgreSQL 16'],
               ['Fronteiras de Domínio', needs.boundaries.result, 'Domínio puro isolado de I/O e Banco'],
             ];
 
