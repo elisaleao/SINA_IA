@@ -1,4 +1,6 @@
-import { API_BASE_URL, AccessibilityConfig } from './api';
+import { AccessibilityConfig } from './api';
+import { apiClient } from './http';
+import { localStorageTokenStore } from './http/token-store';
 
 export type UserRole = 'aluno' | 'professor' | 'admin';
 
@@ -45,18 +47,14 @@ export type UserProfile = {
   accessibility_preferences: AccessibilityPreferences | null;
 };
 
-const ACCESS_TOKEN_KEY = 'sina_access_token';
-const REFRESH_TOKEN_KEY = 'sina_refresh_token';
 const VLIBRAS_STORAGE_KEY = 'sina_vlibras_ativo';
 
 export function getStoredAccessToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem(ACCESS_TOKEN_KEY);
+  return localStorageTokenStore.getAccessToken();
 }
 
 export function getStoredRefreshToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem(REFRESH_TOKEN_KEY);
+  return localStorageTokenStore.getRefreshToken();
 }
 
 export function getStoredVLibrasActive(): boolean {
@@ -71,47 +69,29 @@ export function setStoredVLibrasActive(active: boolean): void {
 }
 
 export function storeTokens(tokens: TokenResponse): void {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(ACCESS_TOKEN_KEY, tokens.access_token);
-  localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token);
+  localStorageTokenStore.setTokens(tokens.access_token, tokens.refresh_token);
 }
 
 export function clearStoredTokens(): void {
-  if (typeof window === 'undefined') return;
-  localStorage.removeItem(ACCESS_TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  localStorageTokenStore.clear();
 }
 
 export async function loginUser(credentials: LoginCredentials): Promise<TokenResponse> {
-  const response = await fetch(`${API_BASE_URL}/auth/login`, {
+  const data = await apiClient.request<TokenResponse>('/auth/login', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(credentials),
+    auth: false,
+    body: credentials,
   });
-
-  if (!response.ok) {
-    const errorData = (await response.json().catch(() => ({}))) as { detail?: string };
-    throw new Error(errorData.detail || 'Falha ao autenticar. Verifique seus dados.');
-  }
-
-  const data = (await response.json()) as TokenResponse;
   storeTokens(data);
   return data;
 }
 
 export async function registerUser(credentials: RegisterCredentials): Promise<TokenResponse> {
-  const response = await fetch(`${API_BASE_URL}/auth/register`, {
+  const data = await apiClient.request<TokenResponse>('/auth/register', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(credentials),
+    auth: false,
+    body: credentials,
   });
-
-  if (!response.ok) {
-    const errorData = (await response.json().catch(() => ({}))) as { detail?: string };
-    throw new Error(errorData.detail || 'Falha ao realizar cadastro.');
-  }
-
-  const data = (await response.json()) as TokenResponse;
   storeTokens(data);
   return data;
 }
@@ -121,37 +101,21 @@ export async function fetchUserProfile(): Promise<UserProfile> {
   if (!token) {
     throw new Error('Usuário não autenticado.');
   }
-
-  const response = await fetch(`${API_BASE_URL}/users/me`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok) {
-    if (response.status === 401) {
-      clearStoredTokens();
-    }
-    throw new Error('Não foi possível obter os dados do perfil.');
-  }
-
-  return (await response.json()) as UserProfile;
+  return apiClient.request<UserProfile>('/users/me');
 }
 
 export async function logoutUser(): Promise<void> {
   const refreshToken = getStoredRefreshToken();
-  if (refreshToken) {
-    try {
-      await fetch(`${API_BASE_URL}/auth/logout`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refresh_token: refreshToken }),
-      });
-    } catch {
-      // Ignora erro de rede no logout
-    }
-  }
   clearStoredTokens();
+  if (!refreshToken) return;
+
+  await apiClient
+    .request('/auth/logout', {
+      method: 'POST',
+      auth: false,
+      body: { refresh_token: refreshToken },
+    })
+    .catch(() => undefined);
 }
 
 export async function updateUserPreferences(
@@ -161,22 +125,8 @@ export async function updateUserPreferences(
   if (!token) {
     throw new Error('Usuário não autenticado.');
   }
-
-  const response = await fetch(`${API_BASE_URL}/users/me/preferences`, {
+  return apiClient.request<AccessibilityPreferences>('/users/me/preferences', {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(prefs),
+    body: prefs,
   });
-
-  if (!response.ok) {
-    const errorData = (await response.json().catch(() => ({}))) as { detail?: string };
-    throw new Error(errorData.detail || 'Não foi possível atualizar as preferências.');
-  }
-
-  return (await response.json()) as AccessibilityPreferences;
 }
-
-
