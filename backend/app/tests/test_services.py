@@ -2,14 +2,14 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from models import (
+
+from app.core.config import settings
+from app.models import (
     AccessibilityConfig,
     AccessibilityProfileType,
     GenerationType,
     TeacherConfig,
 )
-
-from app.core.config import settings
 from app.services.llm_service import LLMService
 from app.services.tts_service import TTSService
 
@@ -79,7 +79,7 @@ async def test_llm_service_generate_text_requires_api_key():
 
 def test_llm_service_build_system_prompt_dyslexia():
     """Build prompt for dyslexia with plain language and glossary."""
-    service = LLMService()
+    service = LLMService(gemini=_gemini())
     teacher_cfg = TeacherConfig()
     acc_cfg = AccessibilityConfig(
         profile=AccessibilityProfileType.DYSLEXIA,
@@ -94,7 +94,7 @@ def test_llm_service_build_system_prompt_dyslexia():
 
 def test_llm_service_build_system_prompt_adhd():
     """Build prompt for ADHD with micro-chunks."""
-    service = LLMService()
+    service = LLMService(gemini=_gemini())
     teacher_cfg = TeacherConfig()
     acc_cfg = AccessibilityConfig(profile=AccessibilityProfileType.ADHD)
 
@@ -105,7 +105,7 @@ def test_llm_service_build_system_prompt_adhd():
 
 def test_llm_service_build_system_prompt_cognitive_and_universal():
     """Build prompt for cognitive support and universal design."""
-    service = LLMService()
+    service = LLMService(gemini=_gemini())
     teacher_cfg = TeacherConfig()
 
     cog_cfg = AccessibilityConfig(profile=AccessibilityProfileType.COGNITIVE)
