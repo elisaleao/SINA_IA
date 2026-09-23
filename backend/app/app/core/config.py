@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     # IA generativa (um único cliente em app/services/gemini_service.py)
     GEMINI_MODEL: str = 'gemini-3.5-flash'
 
+    # IA gratuita de fallback (app/services/groq_service.py, ver ADR-0003)
+    GROQ_API_KEY: str = ''
+    GROQ_MODEL: str = 'qwen/qwen3.8-27b'
+
     # Síntese de voz (um único serviço em app/services/tts_service.py)
     EDGE_TTS_VOICE: str = 'pt-BR-FranciscaNeural'
     EDGE_TTS_RATE: str = '+0%'

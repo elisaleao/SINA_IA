@@ -25,7 +25,8 @@ dependencies = [
     "argon2-cffi (>=23.1.0)",
     "pyjwt (>=2.9.0)",
     "slowapi (>=0.1.9)",
-    "cryptography (>=50.0.1,<51.0.0)"
+    "cryptography (>=50.0.1,<51.0.0)",
+    "openai (>=3.19.0,<4.0.0)"
 ]
 
 [build-system]
