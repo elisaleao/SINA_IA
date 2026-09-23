@@ -11,7 +11,7 @@ As decisões que levaram a essa estrutura estão em [`docs/adr/`](adr/).
 O repositório é um monorepo com duas aplicações que conversam só por HTTP/JSON ([ADR 0001](adr/0001-arquitetura-monorepo-poliglota.md)):
 
 - **`frontend/`**: Next.js 16 (App Router), React 19, TypeScript estrito e TailwindCSS v4.
-- **`backend/app/`**: FastAPI (Python 3.13), SQLAlchemy assíncrono, Alembic, Google Gemini (`google-genai`), Edge-TTS, PyMuPDF e python-docx.
+- **`backend/app/`**: FastAPI (Python 3.13), SQLAlchemy assíncrono, Alembic, Google Gemini (`google-genai`), Groq (SDK `openai`), Edge-TTS, PyMuPDF e python-docx.
 
 ```mermaid
 flowchart TD
@@ -34,11 +34,13 @@ flowchart TD
         SERVICES --> DB
     end
 
-    GEMINI["Google Gemini"]
+    GEMINI["Google Gemini (chave do usuário)"]
+    GROQ["Groq (fallback gratuito)"]
     TTS["Edge-TTS"]
 
     LIB -->|REST / multipart / NDJSON| ROUTERS
     SERVICES --> GEMINI
+    SERVICES --> GROQ
     SERVICES --> TTS
 ```
 
@@ -66,7 +68,11 @@ backend/app/alembic/   migrações; o schema do banco só muda por elas
 
 | Módulo | Responsabilidade | Tipo |
 |---|---|---|
-| `gemini_service.py` | **Único** cliente do Google Gemini, assíncrono: texto, OCR, descrição de gráfico, auditoria e correção. Modelo em `Settings.GEMINI_MODEL`. | Integração |
+| `gemini_service.py` | Cliente do Google Gemini, assíncrono: texto, OCR, descrição de gráfico, auditoria e correção. Usa a chave pessoal do usuário. Modelo em `Settings.GEMINI_MODEL`. | Integração |
+| `groq_service.py` | Cliente do Groq pela API compatível com OpenAI, com a mesma superfície do Gemini. É o fallback gratuito. Modelo em `Settings.GROQ_MODEL`. | Integração |
+| `ai_provider.py` | `FallbackAIClient`: tenta a chave pessoal e cai para o Groq quando ela falha (401, 403, 429 ou 400 `API_KEY_INVALID`). Marca `used_fallback`. | Integração |
+| `llm_key_service.py` | Salva, testa, lê e remove a chave pessoal do Gemini. | Fluxo |
+| `crypto.py` | Cifra e decifra a chave pessoal com `Fernet`. | Domínio puro |
 | `tts_service.py` | **Único** serviço de voz (Edge-TTS). Voz, velocidade, volume e tom em `Settings.EDGE_TTS_*`. | Integração |
 | `document_extractor.py` | **Único** extrator de documentos: PDF (texto nativo ou OCR por página), DOCX (títulos, parágrafos, tabelas e imagens), TXT e imagens. PyMuPDF e python-docx rodam fora do event loop. | Integração |
 | `file_store.py` | Arquivos gerados, com `resolve_safe` contra path traversal e expiração opcional. | Integração |
@@ -84,11 +90,18 @@ Módulos de **domínio puro** não fazem I/O e não importam FastAPI, SQLAlchemy
 
 ### 2.2. Injeção de dependências
 
-`app/api/deps.py` cria **uma instância** de cada integração (`GeminiService`, `TTSService`, `LLMService`, `IngestionService`) e a entrega às rotas por `Depends`. Nos testes, `app.dependency_overrides` troca essas instâncias pelos fakes de `app/services/fakes.py`, então a suíte não chama o Gemini nem o Edge-TTS.
+`app/api/deps.py` entrega as integrações às rotas por `Depends`. O TTS e o Groq têm uma instância compartilhada. O cliente de IA é montado a cada requisição por `get_ai_client`: com a chave pessoal do usuário, se houver, e o Groq como fallback. Pipelines, `LLMService` e `IngestionService` recebem esse cliente. Nos testes, `app.dependency_overrides` troca essas instâncias pelos fakes de `app/services/fakes.py`, então a suíte não chama o Gemini nem o Edge-TTS.
 
 ### 2.3. Configuração
 
 Toda configuração fica em `app/core/config.py` (`Settings`, lido do `backend/app/.env`). Nenhum outro módulo lê variáveis de ambiente diretamente.
+
+Para a IA:
+
+- `GROQ_API_KEY`: chave do servidor para o fallback gratuito (console.groq.com, sem cartão). Sem ela, quem não tem chave pessoal fica sem IA.
+- `GROQ_MODEL`: modelo do Groq, com visão e saída estruturada (padrão `qwen/qwen3.8-27b`).
+- `LLM_KEY_ENCRYPTION_SECRET`: segredo que cifra as chaves pessoais. Obrigatório em produção. Trocar o valor invalida as chaves já salvas.
+- `GEMINI_API_KEY`: não é mais usada pelas rotas; o Gemini só roda com a chave pessoal de cada usuário ([ADR-0003](adr/0003-chave-de-ia-por-usuario-e-fallback-gratuito.md)).
 
 ---
 
@@ -124,7 +137,7 @@ O `./check.sh` e o job `static` do CI rodam os mesmos comandos e falham se algum
 
 ## 4. Fluxos de processamento
 
-Os fluxos compartilham o mesmo extrator, o mesmo cliente Gemini e o mesmo serviço de voz. A unificação dos fluxos num pipeline só está em andamento no refactor do backend.
+Os fluxos compartilham o mesmo extrator, o mesmo cliente de IA da requisição e o mesmo serviço de voz. A unificação dos fluxos num pipeline só está em andamento no refactor do backend.
 
 | Fluxo | Entrada | Etapas | Resultado |
 |---|---|---|---|
@@ -137,7 +150,7 @@ Os fluxos compartilham o mesmo extrator, o mesmo cliente Gemini e o mesmo servi�
 
 ## 5. Persistência
 
-- `database.py` define as tabelas `usuarios`, `preferencias_acessibilidade`, `documentos`, `refresh_tokens`, `exercicios`, `sessoes_exercicio` e `respostas_exercicio`.
+- `database.py` define as tabelas `usuarios`, `preferencias_acessibilidade`, `chave_gemini_usuario`, `documentos`, `refresh_tokens`, `exercicios`, `sessoes_exercicio` e `respostas_exercicio`.
 - O schema muda **só por migração** em `backend/app/alembic/versions/`. A API não cria tabelas ao iniciar, e o container do backend roda `alembic upgrade head` antes de subir.
 - O `./check.sh` e o CI rodam `alembic check`, que falha quando um model muda sem migração correspondente.
 - SQLite no desenvolvimento e nos testes; PostgreSQL opcional pelo `docker-compose.yml`.
