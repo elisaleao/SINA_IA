@@ -257,9 +257,7 @@ def make_gemini_service(
     )
     monkeypatch.setattr(settings, 'GEMINI_API_KEY', 'test-key')
     monkeypatch.setattr(settings, 'GEMINI_MODEL', 'test-model')
-    monkeypatch.setattr(
-        gemini_module.genai, 'Client', lambda api_key: fake_client
-    )
+    monkeypatch.setattr(gemini_module.genai, 'Client', lambda **_: fake_client)
     return GeminiService()
 
 
@@ -572,3 +570,18 @@ def test_docx_heading_styles_become_markdown(style, expected):
     assert DocumentExtractor._markdown_heading(paragraph, 'Derivadas') == (
         expected
     )
+
+
+def test_gemini_client_retries_transient_errors(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    created = {}
+    monkeypatch.setattr(
+        gemini_module.genai, 'Client', lambda **kwargs: created.update(kwargs)
+    )
+
+    GeminiService(api_key='test-key')
+
+    retry = created['http_options'].retry_options
+    assert retry.attempts > 1
+    assert {429, 503} <= set(retry.http_status_codes)

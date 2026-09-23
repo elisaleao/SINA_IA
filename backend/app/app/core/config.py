@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     CORS_ORIGINS: list[str] = ['*']
 
     # IA generativa (um único cliente em app/services/gemini_service.py)
-    GEMINI_MODEL: str = 'gemini-1.5-flash'
+    GEMINI_MODEL: str = 'gemini-3.5-flash'
 
     # Síntese de voz (um único serviço em app/services/tts_service.py)
     EDGE_TTS_VOICE: str = 'pt-BR-FranciscaNeural'
