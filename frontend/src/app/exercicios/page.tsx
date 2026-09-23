@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { getStoredAccessToken } from '@/lib/auth';
+import { useSession } from '@/components/session/SessionProvider';
 import {
   startExerciseSession,
   fetchNextQuestion,
@@ -34,9 +34,8 @@ export default function ExerciciosPage() {
   const [summary, setSummary] = useState<SessionResultResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [isAuthenticated] = useState<boolean>(() => {
-    return typeof window !== 'undefined' ? !!getStoredAccessToken() : true;
-  });
+  const { status } = useSession();
+  const isAuthenticated = status !== 'anonymous';
 
   // Controle de tempo
   const [tempoRestante, setTempoRestante] = useState<number>(13);
