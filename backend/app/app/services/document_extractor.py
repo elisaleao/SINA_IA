@@ -11,6 +11,7 @@ from pathlib import Path
 import fitz  # PyMuPDF
 from docx import Document
 
+from app.services.accessibility_prompts import OCR_PROMPT
 from app.services.gemini_service import GeminiService
 
 SUPPORTED_EXTENSIONS = {
@@ -22,6 +23,8 @@ SUPPORTED_EXTENSIONS = {
     '.jpeg',
     '.webp',
 }
+# Estilos de título do Word em inglês ou português ("Heading 2", "Título 2")
+_HEADING_STYLE = re.compile(r'^(heading|t[ií]tulo)\s*([1-6])$', re.IGNORECASE)
 _CHART_WORDS = re.compile(
     r'\b(gr[aá]fico|figura|eixo|eixos|histograma|dispers[aã]o|boxplot|'
     r'barras?|linhas?|pizza|percentual|porcentagem|legenda|s[eé]rie)\b',
@@ -63,9 +66,16 @@ class DocumentExtractor:
         ai: GeminiService,
         *,
         max_visual_candidates: int = 4,
+        ocr_prompt: str = OCR_PROMPT,
     ) -> None:
         self.ai = ai
         self.max_visual_candidates = max_visual_candidates
+        self.ocr_prompt = ocr_prompt
+
+    @property
+    def can_ocr(self) -> bool:
+        # Sem chave do Gemini, devolve o texto nativo em vez de falhar
+        return getattr(self.ai, 'is_configured', True)
 
     async def extract(self, filename: str, data: bytes) -> ExtractionResult:
         extension = Path(filename).suffix.lower()
@@ -99,7 +109,7 @@ class DocumentExtractor:
         for paragraph in document.paragraphs:
             text = paragraph.text.strip()
             if text:
-                parts.append(text)
+                parts.append(self._markdown_heading(paragraph, text))
 
         for table_index, table in enumerate(document.tables, start=1):
             parts.append(f'[Tabela {table_index}]')
@@ -137,6 +147,17 @@ class DocumentExtractor:
 
         return ExtractionResult(text=text, visual_candidates=candidates)
 
+    @staticmethod
+    def _markdown_heading(paragraph, text: str) -> str:
+        """Preserva a hierarquia do Word para navegação por títulos."""
+        style_name = (paragraph.style.name or '').strip()
+        if style_name.lower() == 'title':
+            return f'# {text}'
+        match = _HEADING_STYLE.match(style_name)
+        if match:
+            return f'{"#" * int(match.group(2))} {text}'
+        return text
+
     async def _extract_pdf(self, data: bytes) -> ExtractionResult:
         # PyMuPDF roda numa thread; só as chamadas de OCR ficam no event loop
         pages = await asyncio.to_thread(self._scan_pdf, data)
@@ -148,10 +169,14 @@ class DocumentExtractor:
             # OCR apenas quando há pouco texto selecionável.
             if page.ocr_render is not None:
                 native_text = (
-                    await self.ai.ocr_image(page.ocr_render, 'image/png')
+                    await self.ai.ocr_image(
+                        page.ocr_render, 'image/png', prompt=self.ocr_prompt
+                    )
                 ).strip()
 
-            page_texts.append(f'[Página {page.number}]\n{native_text}'.strip())
+            page_texts.append(
+                f'## Página {page.number}\n{native_text}'.strip()
+            )
 
             if len(candidates) >= self.max_visual_candidates:
                 continue
@@ -188,7 +213,7 @@ class DocumentExtractor:
 
                 ocr_render: bytes | None = None
                 chart_render: bytes | None = None
-                if len(native_text) < 25:
+                if len(native_text) < 25 and self.can_ocr:
                     ocr_render = self._render_page(page, scale=2.0)
                 elif chart_renders < self.max_visual_candidates and (
                     has_visual_hint or _CHART_WORDS.search(native_text)
@@ -218,7 +243,13 @@ class DocumentExtractor:
             '.jpeg': 'image/jpeg',
             '.webp': 'image/webp',
         }[extension]
-        text = (await self.ai.ocr_image(data, mime_type)).strip()
+        text = ''
+        if self.can_ocr:
+            text = (
+                await self.ai.ocr_image(
+                    data, mime_type, prompt=self.ocr_prompt
+                )
+            ).strip()
         return ExtractionResult(
             text=text,
             visual_candidates=[

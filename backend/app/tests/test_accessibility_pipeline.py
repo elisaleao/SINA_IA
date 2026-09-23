@@ -309,7 +309,7 @@ async def test_extractor_pdf_with_native_text():
     doc.close()
 
     res = await extractor.extract('documento.pdf', pdf_bytes)
-    assert '[Página 1]' in res.text
+    assert '## Página 1' in res.text
     assert 'Texto nativo suficientemente longo' in res.text
 
 
