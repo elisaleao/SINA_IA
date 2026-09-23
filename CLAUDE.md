@@ -5,9 +5,14 @@
 ## Estado real (prevalece sobre docs/ quando divergir)
 - Backend em três pastas: rotas em `app/api/routers/`, DTOs em `app/schemas/`, regras, fluxos e
   integrações em `app/services/`. Não existe mais `app/accessibility/`; não crie pacote paralelo.
-- Um único módulo por integração: `services/gemini_service.py` (Gemini, async),
-  `services/tts_service.py` (Edge-TTS) e `services/document_extractor.py` (PDF, DOCX, TXT, imagens).
-  Estenda o existente em vez de criar outro. Configuração só em `core/config.py` (sem `os.getenv`).
+- Um único módulo por integração: `services/tts_service.py` (Edge-TTS) e
+  `services/document_extractor.py` (PDF, DOCX, TXT, imagens). Estenda o existente em vez de criar outro.
+  Configuração só em `core/config.py` (sem `os.getenv`).
+- IA tem dois provedores sob `AccessibilityAIProtocol` (`core/protocols.py`), ver ADR-0003:
+  `services/gemini_service.py` com a chave pessoal do usuário (cifrada, `services/llm_key_service.py`)
+  e `services/groq_service.py` como fallback gratuito. `FallbackAIClient` (`services/ai_provider.py`)
+  escolhe por requisição; rotas recebem o cliente por `get_ai_client` em `api/deps.py`, nunca criam um.
+  `GEMINI_API_KEY` do servidor não é usada; o fallback exige `GROQ_API_KEY`.
 - Ainda há fluxos separados sobre esses módulos (`accessibility_pipeline.py` para /process-stream e
   /api/materiais; `llm_service.py` para /api/content; `ingestion_service.py` para /api/documents).
   A unificação num pipeline só está em andamento no refactor.
@@ -31,9 +36,10 @@
 
 ## Testes
 - Backend: fixture `client` em tests/conftest.py (SQLite em memória + FakeLLMClient/FakeTTSClient).
-  Nunca chame Gemini ou Edge-TTS reais na suíte padrão (marcador `live` para isso).
+  Nunca chame Gemini, Groq ou Edge-TTS reais na suíte padrão (marcador `live` para isso).
+  Para trocar o provedor de IA num teste de rota, sobrescreva `get_fallback_ai` e `get_personal_ai_factory`.
 - Rota nova → teste de rota + atualizar `tests/contract/openapi.baseline.json` se o contrato mudar.
-- Mudou modelo em `app/database.py` → criar migração em `alembic/versions/` (próximo: 0007).
+- Mudou modelo em `app/database.py` → criar migração em `alembic/versions/` (próximo: 0009).
   O `alembic check` do gate falha se o model mudar sem migração.
 
 ## Idioma
