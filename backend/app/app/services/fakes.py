@@ -101,7 +101,9 @@ class FakeAccessibilityAI:
             raise self.failure
         return f'Versão acessível: {user_text[:200]}'
 
-    async def ocr_image(self, image_bytes: bytes, mime_type: str) -> str:
+    async def ocr_image(
+        self, image_bytes: bytes, mime_type: str, prompt: str = ''
+    ) -> str:
         self.calls.append('ocr_image')
         return 'Texto reconhecido na imagem: a derivada de x ao quadrado.'
 

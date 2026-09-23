@@ -31,7 +31,9 @@ from app.services.tts_service import TTSService
 
 
 class FakeOCRAI:
-    async def ocr_image(self, image_bytes: bytes, mime_type: str) -> str:
+    async def ocr_image(
+        self, image_bytes: bytes, mime_type: str, prompt: str = ''
+    ) -> str:
         assert image_bytes
         assert mime_type.startswith('image/')
         return 'OCR extracted text'
@@ -551,3 +553,22 @@ async def test_pipeline_rejects_invalid_level(
     assert len(events) == 1
     assert events[0].type == 'error'
     assert 'Nível inválido' in (events[0].message or '')
+
+
+@pytest.mark.parametrize(
+    ('style', 'expected'),
+    [
+        ('Heading 1', '# Derivadas'),
+        ('Heading 3', '### Derivadas'),
+        ('Título 2', '## Derivadas'),
+        ('titulo 4', '#### Derivadas'),
+        ('Title', '# Derivadas'),
+        ('Normal', 'Derivadas'),
+        (None, 'Derivadas'),
+    ],
+)
+def test_docx_heading_styles_become_markdown(style, expected):
+    paragraph = SimpleNamespace(style=SimpleNamespace(name=style))
+    assert DocumentExtractor._markdown_heading(paragraph, 'Derivadas') == (
+        expected
+    )

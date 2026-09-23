@@ -6,6 +6,16 @@ Este documento estabelece as diretrizes para a modelagem e manutenção das regr
 
 ## 1. O que Constitui o Domínio Puro
 
+Hoje o domínio puro fica em `backend/app/app/services/`, nestes módulos:
+
+| Módulo | Regra |
+|---|---|
+| `math_speech_service.py` | Conversão determinística de LaTeX para fala em português |
+| `math_detector.py` | Heurística que decide se um texto tem matemática relevante |
+| `upload_validation.py` | Tipo do arquivo pela assinatura, limites e nome seguro para exibição |
+
+O `./check.sh` verifica automaticamente só o `math_speech_service.py`. A extensão da verificação aos outros módulos está prevista na UX7.4 (#18).
+
 No SINA_IA, o domínio engloba:
 1. **Tradução Fonética de Matemática:** Regras de conversão de expressões LaTeX para linguagem falada em português (ex: frações, raízes, expoentes, somatórios, integrais).
 2. **Normalização Semântica:** Limpeza e formatação de texto para leitores de tela sem caracteres ruidosos.
@@ -23,6 +33,8 @@ No SINA_IA, o domínio engloba:
 ---
 
 ## 3. Tratamento de Erros via Padrão Result
+
+> **Proposta, ainda não implementada:** não existe `app/domain/result.py` nem o tipo Result no código. Os módulos atuais sinalizam erro com exceções (por exemplo, `UploadValidationError`).
 
 Para evitar exceções soltas que quebram o fluxo de execução, erros previsíveis de domínio (como erro de sintaxe de fórmula matemática ou violação de invariante pedagógica) devem ser expressos através de tipos de retorno explícitos em vez de `raise Exception`:
 

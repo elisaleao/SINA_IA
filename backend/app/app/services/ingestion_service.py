@@ -1,108 +1,64 @@
-import os
+"""Ingestão síncrona usada por /api/documents/upload.
+
+A extração é a mesma do pipeline de acessibilidade (DocumentExtractor);
+aqui só se acrescentam a lista de equações e a versão falada do texto.
+"""
+
+import asyncio
+import re
+from pathlib import Path
 from typing import Optional
 
-import cv2
-import docx
-import pymupdf as fitz
-
+from app.services.document_extractor import DocumentExtractor
 from app.services.gemini_service import GeminiService
 from app.services.math_speech_service import MathToSpeechService
 
+# OCR que devolve fórmulas em LaTeX delimitado, para a conversão em fala
 INGESTION_OCR_PROMPT = """Transcreva o documento nesta imagem em formato Markdown limpo.
 Regras Estritas para Acessibilidade:
 1. Todas as equações e cálculos matemáticos DEVEM ser escritas em sintaxe LaTeX válida ($...$ para inline e $$...$$ para bloco).
 2. Para tabelas, use Markdown formatado com cabeçalho.
 3. Para diagramas ou esquemas gráficos, crie uma descrição textual detalhada (alt-text)."""
 
+OCR_UNAVAILABLE_MESSAGE = (
+    'Texto extraído via OCR indisponível (requer GEMINI_API_KEY no backend).'
+)
+IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.webp'}
+_EQUATION = re.compile(r'\$\$(.*?)\$\$|\$(.*?)\$', re.DOTALL)
+
 
 class IngestionService:
-    def __init__(self, gemini: Optional[GeminiService] = None):
+    def __init__(
+        self,
+        gemini: Optional[GeminiService] = None,
+        extractor: Optional[DocumentExtractor] = None,
+    ):
         self.gemini = gemini or GeminiService()
+        # Sem candidatos visuais: esta rota não descreve gráficos
+        self.extractor = extractor or DocumentExtractor(
+            self.gemini,
+            max_visual_candidates=0,
+            ocr_prompt=INGESTION_OCR_PROMPT,
+        )
 
     async def process_file(
         self, file_path: str, filename: str
-    ) -> tuple[str, str, list]:
-        ext = os.path.splitext(filename)[1].lower()
-        markdown_text = ''
+    ) -> tuple[str, str, list[str]]:
+        """Devolve (markdown, texto falado, equações encontradas)."""
+        data = await asyncio.to_thread(Path(file_path).read_bytes)
+        extraction = await self.extractor.extract(filename, data)
+        markdown_text = extraction.text
 
-        if ext == '.pdf':
-            markdown_text = await self._process_pdf(file_path)
-        elif ext in {'.docx', '.doc'}:
-            markdown_text = self._process_docx(file_path)
-        elif ext in {'.png', '.jpg', '.jpeg'}:
-            markdown_text = await self._process_image(file_path)
-        else:
-            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                markdown_text = f.read()
+        is_image = Path(filename).suffix.lower() in IMAGE_EXTENSIONS
+        if is_image and not markdown_text and not self.gemini.is_configured:
+            markdown_text = OCR_UNAVAILABLE_MESSAGE
 
-        # Extração de equações
-        equations = fitz.re.findall(r'\$\$(.*?)\$\$|\$(.*?)\$', markdown_text)
-        flat_equations = [eq[0] or eq[1] for eq in equations if eq[0] or eq[1]]
-
-        # Gera versão falada/acessível para leitores de tela
+        equations = [
+            inline or block
+            for block, inline in _EQUATION.findall(markdown_text)
+            if inline or block
+        ]
         accessible_text = MathToSpeechService.latex_to_spoken_portuguese(
             markdown_text
         )
-
-        return markdown_text, accessible_text, flat_equations
-
-    async def _process_pdf(self, file_path: str) -> str:
-        doc = fitz.open(file_path)
-        full_text = []
-
-        for page_num in range(len(doc)):
-            page = doc[page_num]
-            text = page.get_text('text')
-
-            # Se a página for escaneada/imagem sem texto
-            if len(text.strip()) < 50 and self.gemini.is_configured:
-                pix = page.get_pixmap(dpi=150)
-                img_path = f'{file_path}_p{page_num}.png'
-                pix.save(img_path)
-                ocr_text = await self._gemini_ocr(img_path)
-                full_text.append(f'## Página {page_num + 1}\n{ocr_text}')
-                if os.path.exists(img_path):
-                    os.remove(img_path)
-            else:
-                full_text.append(f'## Página {page_num + 1}\n{text}')
-
-        return '\n\n'.join(full_text)
-
-    @staticmethod
-    def _process_docx(file_path: str) -> str:
-        doc = docx.Document(file_path)
-        paragraphs = []
-        for p in doc.paragraphs:
-            if p.text.strip():
-                if p.style.name.startswith('Heading 1'):
-                    paragraphs.append(f'# {p.text}')
-                elif p.style.name.startswith('Heading 2'):
-                    paragraphs.append(f'## {p.text}')
-                else:
-                    paragraphs.append(p.text)
-        return '\n\n'.join(paragraphs)
-
-    async def _process_image(self, file_path: str) -> str:
-        # Pre-processamento com OpenCV
-        img = cv2.imread(file_path)
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        processed_path = f'{file_path}_processed.png'
-        cv2.imwrite(processed_path, gray)
-
-        if self.gemini.is_configured:
-            ocr_text = await self._gemini_ocr(processed_path)
-        else:
-            ocr_text = (
-                'Texto extraído via OCR local indisponível (requer API Key).'
-            )
-
-        if os.path.exists(processed_path):
-            os.remove(processed_path)
-        return ocr_text
-
-    async def _gemini_ocr(self, image_path: str) -> str:
-        with open(image_path, 'rb') as img_file:
-            image_bytes = img_file.read()
-        return await self.gemini.ocr_image(
-            image_bytes, 'image/png', prompt=INGESTION_OCR_PROMPT
-        )
+        return markdown_text, accessible_text, equations

@@ -26,8 +26,11 @@ Consulte a documentação temática antes de realizar alterações:
 |---|---|---|
 | Entender a arquitetura macro e decisões | Raiz | `docs/architecture.md` e `docs/adr/` |
 | Criar ou alterar telas, componentes e acessibilidade | `frontend/src/` | `docs/rules/accessibility.md` |
+| Criar ou alterar rotas HTTP | `backend/app/app/api/routers/` | `docs/architecture.md` |
+| Criar ou alterar contratos de entrada e saída (DTOs) | `backend/app/app/schemas/` | `docs/architecture.md` |
+| Alterar regras, fluxos, Gemini, TTS ou extração de documentos | `backend/app/app/services/` | `docs/architecture.md` |
 | Alterar regras de conversão matemática e didática | `backend/app/app/services/` | `docs/rules/domain.md` |
-| Criar ou modificar modelos de dados e migrações | `backend/app/app/database.py` | `docs/rules/concurrency.md` |
+| Criar ou modificar modelos de dados e migrações | `backend/app/app/database.py` e `backend/app/alembic/versions/` | `docs/rules/concurrency.md` |
 | Mexer em concorrência, jobs de OCR e áudio TTS | `backend/app/app/` | `docs/rules/concurrency.md` |
 | Consultar roadmap, prioridades e dependências | Raiz | `docs/roadmap.md` |
 | Validar a integridade geral do projeto | Raiz | `./check.sh` |
@@ -40,18 +43,20 @@ Consulte a documentação temática antes de realizar alterações:
 frontend/ (Cliente Next.js / Camada de Apresentação)
     │
     ▼ (HTTP / REST / JSON)
-backend/app/app/main.py (Gateway FastAPI / Rotas de Borda)
+backend/app/app/api/routers/ (Rotas HTTP; recebem serviços por api/deps.py e DTOs de schemas/)
     │
-    ├──► backend/app/app/services/ (Orquestração e Integrações Externas: Gemini, Edge-TTS, PyMuPDF)
+    ├──► backend/app/app/services/ (Fluxos e integrações: gemini_service, tts_service, document_extractor, pipelines)
     │        │
     │        ▼
-    │    backend/app/app/services/math_speech_service.py (Domínio Puro: Sem I/O, Sem Banco)
+    │    Domínio puro em services/: math_speech_service.py, math_detector.py, upload_validation.py (sem I/O, sem banco)
     │
-    └──► backend/app/app/database.py (Persistência com SQLAlchemy Assíncrono)
+    └──► backend/app/app/database.py (Persistência com SQLAlchemy assíncrono; schema só muda por migração Alembic)
 ```
 
+Cada integração externa tem **um único** módulo: Gemini em `services/gemini_service.py`, voz em `services/tts_service.py` e extração de documentos em `services/document_extractor.py`. Não crie outro cliente, outro serviço de voz nem outro extrator; estenda o existente.
+
 ### Regras de Fronteira:
-1. **Domínio Puro:** Módulos de regras matemáticas (como `math_speech_service.py`), cálculos e validações pedagógicas **não devem importar** SQLAlchemy, FastAPI, nem realizar chamadas de rede/disco.
+1. **Domínio Puro:** Módulos de regras matemáticas (como `math_speech_service.py` e `math_detector.py`), validações (`upload_validation.py`) e cálculos pedagógicos **não devem importar** SQLAlchemy, FastAPI, nem realizar chamadas de rede/disco.
 2. **Frontend Desacoplado:** O frontend interage exclusivamente via contratos HTTP/JSON com a API FastAPI.
 3. **Isolamento de Tipos:** O frontend deve manter TypeScript estrito (proibido o uso de `any`).
 

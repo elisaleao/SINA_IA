@@ -1,78 +1,130 @@
 # Arquitetura do Sistema SINA_IA
 
-Este documento descreve a visão geral da arquitetura de software, componentes e decisões estruturais do projeto **SINA_IA** — Plataforma Educacional Universalmente Acessível.
+Este documento descreve como o **SINA_IA** está organizado hoje: as aplicações, as pastas do backend, a responsabilidade de cada módulo e os fluxos que transformam um material de estudo em conteúdo acessível.
+
+As decisões que levaram a essa estrutura estão em [`docs/adr/`](adr/).
 
 ---
 
-## 1. Visão Geral
+## 1. Visão geral
 
-O SINA_IA adota uma arquitetura em **Monorepo Poliglota**, projetada para transformar materiais de estudo em múltiplos formatos acessíveis adaptados a diferentes perfis sensoriais e neurodivergentes.
+O repositório é um monorepo com duas aplicações que conversam só por HTTP/JSON ([ADR 0001](adr/0001-arquitetura-monorepo-poliglota.md)):
+
+- **`frontend/`**: Next.js 16 (App Router), React 19, TypeScript estrito e TailwindCSS v4.
+- **`backend/app/`**: FastAPI (Python 3.13), SQLAlchemy assíncrono, Alembic, Google Gemini (`google-genai`), Edge-TTS, PyMuPDF e python-docx.
 
 ```mermaid
 flowchart TD
-    subgraph ClientLayer["Camada de Apresentação (Frontend Next.js)"]
-        UI["Next.js 16 (React 19 + TailwindCSS)"]
-        ACC_BAR["Barra de Acessibilidade (Lexend, Contraste, Régua)"]
-        SR["Leitores de Tela (NVDA / JAWS)"]
-        UI <--> SR
-        UI <--> ACC_BAR
+    subgraph Frontend["frontend/ (Next.js)"]
+        UI["Telas e componentes acessíveis"]
+        LIB["src/lib/*: clientes HTTP"]
+        UI --> LIB
     end
 
-    subgraph EdgeLayer["Camada de Borda e API (Backend FastAPI)"]
-        API["FastAPI HTTP Endpoints (/upload, /generate, /audio)"]
+    subgraph Backend["backend/app/app"]
+        ROUTERS["api/routers/*: rotas HTTP"]
+        DEPS["api/deps.py: injeção de dependências"]
+        SCHEMAS["schemas/*: contratos (Pydantic)"]
+        SERVICES["services/*: regras, fluxos e integrações"]
+        DB["database.py + alembic/: persistência"]
+        ROUTERS --> DEPS
+        ROUTERS --> SCHEMAS
+        DEPS --> SERVICES
+        ROUTERS --> SERVICES
+        SERVICES --> DB
     end
 
-    subgraph ServiceLayer["Camada de Orquestração e IA Adaptativa"]
-        INGEST["IngestionService (PyMuPDF, docx, OpenCV, Gemini OCR)"]
-        LLM["LLMService (Gemini 1.5 Flash + Motor Multi-Perfil)"]
-        AUDIO["AudioService (Edge-TTS Neural PT-BR)"]
-    end
+    GEMINI["Google Gemini"]
+    TTS["Edge-TTS"]
 
-    subgraph DomainLayer["Camada de Domínio Puro (Zero I/O)"]
-        M2S["MathToSpeechService (Parsing LaTeX -> Fonética PT-BR)"]
-        PROFILES["Motor de Perfis (Visual, Dislexia, TDAH, Cognitivo)"]
-    end
-
-    subgraph PersistenceLayer["Camada de Dados e Persistência"]
-        DB["SQLAlchemy (aiosqlite / PostgreSQL)"]
-        STORAGE["Armazenamento de Arquivos (/uploads, /outputs)"]
-    end
-
-    UI -->|REST / Multipart / JSON| API
-    API --> INGEST
-    API --> LLM
-    API --> AUDIO
-    API --> DB
-    INGEST --> STORAGE
-    AUDIO --> STORAGE
-    INGEST --> M2S
-    LLM --> M2S
-    LLM --> PROFILES
+    LIB -->|REST / multipart / NDJSON| ROUTERS
+    SERVICES --> GEMINI
+    SERVICES --> TTS
 ```
 
 ---
 
-## 2. Responsabilidades por Camada
+## 2. Organização do backend
 
-### 2.1. Frontend (`frontend/`)
-* **Responsabilidade:** Interface inclusiva universal com controles de acessibilidade visual, auditiva e cognitiva.
-* **Tecnologias:** Next.js 16 (App Router), React 19, TypeScript 5, TailwindCSS v4.
-* **Recursos:** Tipografia adaptativa para dislexia (`Lexend`), ajustes de espaçamento e contraste, réguas de leitura para TDAH, suporte estrito a leitores de tela e áudio sincronizado.
+Cada responsabilidade tem um único lugar. Não existe outro pacote de serviços fora de `app/services/`.
 
-### 2.2. Gateway e Rotas de Borda (`backend/app/app/main.py`)
-* **Responsabilidade:** Roteamento HTTP, injeção de dependência do banco de dados, validação de requisições com esquemas Pydantic (`GenerateRequest` com `AccessibilityConfig`) e entrega de mídias.
+```
+backend/app/app/
+  main.py              cria o FastAPI, o CORS e registra os routers
+  core/                config.py (Settings), security.py (JWT, Argon2), protocols.py
+  database.py          engine, sessão e models do SQLAlchemy
+  models.py            DTOs de geração de conteúdo (AccessibilityConfig, GenerateRequest)
+  schemas/             DTOs das rotas: auth, user, exercise, material, accessibility
+  api/
+    deps.py            sessão do banco, usuário logado, RBAC e as instâncias dos serviços
+    routers/           uma rota HTTP por arquivo (lista na seção 3)
+  services/            regras, fluxos e integrações externas (lista abaixo)
+backend/app/alembic/   migrações; o schema do banco só muda por elas
+```
 
-### 2.3. Serviços de IA e Orquestração (`backend/app/app/services/`)
-* **`IngestionService`:** Extração estruturada de documentos (.pdf, .docx, .png, .jpg, .txt), pré-processamento de imagens e OCR multimodal via Gemini Vision.
-* **`LLMService`:** Orquestração pedagógica e multimodal no Google Gemini (`google-genai`). Modula os prompts conforme a necessidade do aluno:
-  * **Visual:** Preservação estrita de LaTeX e hierarquia para leitor de tela.
-  * **Dislexia:** Aplicação de Linguagem Simples (Plain Language), sentenças curtas e glossários.
-  * **TDAH:** Fragmentação em micro-conteúdos concisos (*chunks* de leitura) e eliminação de rodeios.
-  * **Cognitivo:** Analogias concretas e passos sequenciais simplificados.
-* **`AudioService`:** Síntese neural de voz em português brasileiro (`pt-BR-AntonioNeural`) via `edge-tts`.
+### 2.1. `app/services/`
 
-### 2.4. Domínio Puro (`backend/app/app/services/math_speech_service.py`)
-* **Responsabilidade:** Conversão determinística de fórmulas matemáticas em descrições por extenso no padrão `[Equação: ...]`. Não realiza I/O nem chamadas de rede.
+| Módulo | Responsabilidade | Tipo |
+|---|---|---|
+| `gemini_service.py` | **Único** cliente do Google Gemini, assíncrono: texto, OCR, descrição de gráfico, auditoria e correção. Modelo em `Settings.GEMINI_MODEL`. | Integração |
+| `tts_service.py` | **Único** serviço de voz (Edge-TTS). Voz, velocidade, volume e tom em `Settings.EDGE_TTS_*`. | Integração |
+| `document_extractor.py` | **Único** extrator de documentos: PDF (texto nativo ou OCR por página), DOCX (títulos, parágrafos, tabelas e imagens), TXT e imagens. PyMuPDF e python-docx rodam fora do event loop. | Integração |
+| `file_store.py` | Arquivos gerados, com `resolve_safe` contra path traversal e expiração opcional. | Integração |
+| `accessibility_pipeline.py` | Fluxo completo de acessibilidade: extração, detecção de matemática, adaptação por nível (1 a 4), auditoria, correção e MP3. | Fluxo |
+| `accessibility_prompts.py` | Prompts do pipeline (mestre, matemática, OCR, gráficos, auditoria e correção). | Fluxo |
+| `llm_service.py` | Geração de resumo, quiz ou guia por perfil de acessibilidade e configuração do professor. | Fluxo |
+| `ingestion_service.py` | Extração síncrona usada por `/api/documents/upload`; usa o `DocumentExtractor`. | Fluxo |
+| `material_service.py` | Armazenamento e processamento em segundo plano dos materiais (`/api/materiais`), com cache por `sha256 + nível`. | Fluxo |
+| `math_speech_service.py` | Conversão determinística de LaTeX para fala em português (`[Equação: ...]`). | Domínio puro |
+| `math_detector.py` | Heurística que decide se um texto tem matemática relevante. | Domínio puro |
+| `upload_validation.py` | Tipo do arquivo pela assinatura (não pela extensão), limites e nome seguro para exibição. | Domínio puro |
+| `fakes.py` | Implementações falsas do LLM, do Gemini e do TTS para os testes. | Testes |
 
-### 2.5. Persistência (`backend/app/app/database.py`)
-* **Responsabilidade:** Persistência relacional assíncrona com SQLAlchemy (`aiosqlite`/PostgreSQL).
+Módulos de **domínio puro** não fazem I/O e não importam FastAPI, SQLAlchemy nem clientes externos (ver [`docs/rules/domain.md`](rules/domain.md)).
+
+### 2.2. Injeção de dependências
+
+`app/api/deps.py` cria **uma instância** de cada integração (`GeminiService`, `TTSService`, `LLMService`, `IngestionService`) e a entrega às rotas por `Depends`. Nos testes, `app.dependency_overrides` troca essas instâncias pelos fakes de `app/services/fakes.py`, então a suíte não chama o Gemini nem o Edge-TTS.
+
+### 2.3. Configuração
+
+Toda configuração fica em `app/core/config.py` (`Settings`, lido do `backend/app/.env`). Nenhum outro módulo lê variáveis de ambiente diretamente.
+
+---
+
+## 3. Rotas HTTP
+
+| Router | Prefixo | Uso |
+|---|---|---|
+| `health.py` | `/health`, `/api/health` | Verificação de saúde |
+| `auth.py` | `/auth/*`, `/users/me*` | Cadastro (só `aluno` e `professor`), login, refresh token, logout e preferências |
+| `documents.py` | `/api/documents` | Upload síncrono (legado, usado pelo `TeacherWorkspace`) |
+| `materials.py` | `/api/materiais` | Upload com processamento em segundo plano, status, áudio protegido, reprocessar e apagar |
+| `content.py` | `/api/content/generate` | Resumo, quiz ou guia por perfil (usado pelo `StudentWorkspace`) |
+| `audio.py` | `/api/audio/{arquivo}` | MP3 gerado pelo `/api/content/generate` |
+| `accessibility.py` | `/api/accessibility` | Pipeline com progresso em NDJSON (tela `/processar`) e download dos arquivos gerados |
+| `exercises.py` | `/api/exercicios` | Sessões de quiz, respostas, resultado, geração por IA e publicação pelo professor |
+
+Documentos e materiais com dono só são acessíveis pelo dono ou por um admin (`deps.can_access_document`). Para qualquer outra pessoa a resposta é 404, sem revelar que o recurso existe.
+
+---
+
+## 4. Fluxos de processamento
+
+Os fluxos compartilham o mesmo extrator, o mesmo cliente Gemini e o mesmo serviço de voz. A unificação dos fluxos num pipeline só está em andamento no refactor do backend.
+
+| Fluxo | Entrada | Etapas | Resultado |
+|---|---|---|---|
+| Pipeline de acessibilidade | `POST /api/accessibility/process-stream` | extração, detecção de matemática, adaptação por nível, auditoria, correção, MP3 | Eventos NDJSON; arquivos temporários com expiração |
+| Materiais | `POST /api/materiais` | o mesmo pipeline, em tarefa de fundo | Linha em `documentos` com `status` (`enviado`, `processando`, `pronto`, `erro`) e MP3 permanente |
+| Documento legado | `POST /api/documents/upload` | extração e matemática falada | Linha em `documentos` com `status = pronto` |
+| Conteúdo | `POST /api/content/generate` | prompt por perfil, Gemini, matemática falada, MP3 | Texto, texto falado e URL do áudio |
+
+---
+
+## 5. Persistência
+
+- `database.py` define as tabelas `usuarios`, `preferencias_acessibilidade`, `documentos`, `refresh_tokens`, `exercicios`, `sessoes_exercicio` e `respostas_exercicio`.
+- O schema muda **só por migração** em `backend/app/alembic/versions/`. A API não cria tabelas ao iniciar, e o container do backend roda `alembic upgrade head` antes de subir.
+- O `./check.sh` e o CI rodam `alembic check`, que falha quando um model muda sem migração correspondente.
+- SQLite no desenvolvimento e nos testes; PostgreSQL opcional pelo `docker-compose.yml`.

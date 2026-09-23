@@ -1,12 +1,14 @@
 from unittest.mock import AsyncMock, MagicMock
 
-import cv2
 import docx
-import numpy as np
 import pymupdf as fitz
 import pytest
+from PIL import Image
 
-from app.services.ingestion_service import IngestionService
+from app.services.ingestion_service import (
+    INGESTION_OCR_PROMPT,
+    IngestionService,
+)
 
 
 @pytest.mark.asyncio
@@ -78,58 +80,65 @@ async def test_process_plain_text(tmp_path):
     assert isinstance(accessible, str)
 
 
+def _png_file(path, color=(255, 255, 255)) -> str:
+    Image.new('RGB', (60, 60), color).save(path, format='PNG')
+    return str(path)
+
+
+def _fake_gemini(ocr_text: str | None = None) -> MagicMock:
+    gemini = MagicMock()
+    gemini.is_configured = ocr_text is not None
+    gemini.ocr_image = AsyncMock(return_value=ocr_text or '')
+    return gemini
+
+
 @pytest.mark.asyncio
 async def test_process_image_without_client(tmp_path):
-    img_path = tmp_path / 'exemplo.png'
-    img = np.ones((50, 50, 3), dtype=np.uint8) * 255
-    cv2.imwrite(str(img_path), img)
-
-    service = IngestionService(gemini=MagicMock(is_configured=False))
+    img_path = _png_file(tmp_path / 'exemplo.png')
+    gemini = _fake_gemini(ocr_text=None)
+    service = IngestionService(gemini=gemini)
 
     markdown, accessible, equations = await service.process_file(
-        str(img_path), 'exemplo.png'
+        img_path, 'exemplo.png'
     )
 
     assert 'indisponível' in markdown.lower()
     assert equations == []
     assert isinstance(accessible, str)
+    gemini.ocr_image.assert_not_called()
 
 
 @pytest.mark.asyncio
 async def test_process_image_with_mocked_gemini(tmp_path):
-    img_path = tmp_path / 'esquema.png'
-    img = np.ones((60, 60, 3), dtype=np.uint8) * 128
-    cv2.imwrite(str(img_path), img)
-
-    gemini = MagicMock(is_configured=True)
-    gemini.ocr_image = AsyncMock(
-        return_value='Transcrição OCR: Fórmula quadrática $x = \\frac{-b \\pm \\sqrt{\\Delta}}{2a}$.'
+    img_path = _png_file(tmp_path / 'esquema.png', color=(128, 128, 128))
+    gemini = _fake_gemini(
+        'Transcrição OCR: Fórmula quadrática '
+        '$x = \\frac{-b \\pm \\sqrt{\\Delta}}{2a}$.'
     )
     service = IngestionService(gemini=gemini)
 
     markdown, accessible, equations = await service.process_file(
-        str(img_path), 'esquema.png'
+        img_path, 'esquema.png'
     )
 
     assert 'Transcrição OCR' in markdown
     assert len(equations) > 0
     assert isinstance(accessible, str)
+    # O OCR recebe o prompt que pede fórmulas em LaTeX delimitado
+    assert gemini.ocr_image.await_args.kwargs['prompt'] == INGESTION_OCR_PROMPT
 
 
 @pytest.mark.asyncio
 async def test_process_scanned_pdf_page_triggers_gemini_ocr(tmp_path):
     pdf_path = tmp_path / 'digitalizado.pdf'
 
-    # Cria PDF com página em branco (< 50 caracteres) para disparar OCR
+    # Página em branco: sem texto nativo, dispara o OCR
     doc = fitz.open()
     doc.new_page()
     doc.save(str(pdf_path))
     doc.close()
 
-    gemini = MagicMock(is_configured=True)
-    gemini.ocr_image = AsyncMock(
-        return_value='Texto recuperado via OCR da imagem da página 1.'
-    )
+    gemini = _fake_gemini('Texto recuperado via OCR da imagem da página 1.')
     service = IngestionService(gemini=gemini)
 
     markdown, accessible, equations = await service.process_file(
@@ -139,3 +148,33 @@ async def test_process_scanned_pdf_page_triggers_gemini_ocr(tmp_path):
     assert '## Página 1' in markdown
     assert 'Texto recuperado via OCR' in markdown
     gemini.ocr_image.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_scanned_pdf_without_client_keeps_native_text(tmp_path):
+    pdf_path = tmp_path / 'digitalizado.pdf'
+    doc = fitz.open()
+    doc.new_page()
+    doc.save(str(pdf_path))
+    doc.close()
+
+    gemini = _fake_gemini(ocr_text=None)
+    service = IngestionService(gemini=gemini)
+
+    markdown, _, _ = await service.process_file(
+        str(pdf_path), 'digitalizado.pdf'
+    )
+
+    assert markdown == '## Página 1'
+    gemini.ocr_image.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_unsupported_extension_is_rejected(tmp_path):
+    csv_path = tmp_path / 'notas.csv'
+    csv_path.write_text('a,b\n1,2', encoding='utf-8')
+
+    with pytest.raises(ValueError, match='Formato não suportado'):
+        await IngestionService(gemini=_fake_gemini()).process_file(
+            str(csv_path), 'notas.csv'
+        )

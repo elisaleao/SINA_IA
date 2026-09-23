@@ -9,11 +9,9 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# Instala dependências de sistema necessárias para OpenCV e PyMuPDF
+# Só o curl, para instalar o Poetry; PyMuPDF e Pillow trazem as próprias bibliotecas
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
-    libgl1 \
-    libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 # Instala o Poetry

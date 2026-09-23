@@ -1,5 +1,7 @@
 # Plataforma de Acessbilidade Backend
 
+> **Documento histórico.** Descreve o projeto antes do pivô para acessibilidade universal (ADR 0002) e dos refactors de setembro de 2026. Pastas, serviços e tecnologias citados aqui podem não existir mais. Para o estado atual, veja o [`README.md`](../../README.md) e o [`docs/architecture.md`](../../docs/architecture.md).
+
 Backend assíncrono em Python projetado para atuar como uma plataforma de estudos inteligente e adaptativa, inspirada no NotebookLM, com **foco prioritário em acessibilidade para estudantes com deficiência visual (baixa visão e cegueira total)**.
 
 O sistema resolve um dos maiores gargalos de tecnologia assistiva na área de ciências exatas: a **ingestão e verbalização semântica de equações matemáticas (LaTeX/MathML)**, geração de *alt-text* para gráficos e diagramas, e conversão fluida de materiais acadêmicos em áudio neural com calibração pedagógica para professores.
