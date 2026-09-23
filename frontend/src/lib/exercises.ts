@@ -1,5 +1,4 @@
-import { API_BASE_URL } from './api';
-import { getStoredAccessToken } from './auth';
+import { ApiError, apiClient } from './http';
 
 export type ExercisePublicQuestion = {
   id: string;
@@ -49,98 +48,43 @@ export type SessionResultResponse = {
   detalhes: AnswerFeedbackResponse[];
 };
 
-function getAuthHeaders(): HeadersInit {
-  const token = getStoredAccessToken();
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  return headers;
-}
-
 export async function startExerciseSession(
   materia_id?: string,
   total_questoes: number = 5
 ): Promise<SessionResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/exercicios/sessoes`, {
+  return apiClient.request<SessionResponse>('/api/exercicios/sessoes', {
     method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({
-      materia_id: materia_id || null,
-      total_questoes,
-    }),
+    body: { materia_id: materia_id || null, total_questoes },
   });
-
-  if (!response.ok) {
-    const err = (await response.json().catch(() => ({}))) as { detail?: string };
-    throw new Error(err.detail || 'Não foi possível iniciar a sessão de exercícios.');
-  }
-
-  return (await response.json()) as SessionResponse;
 }
 
 export async function fetchNextQuestion(
   sessao_id: string
 ): Promise<ExercisePublicQuestion | null> {
-  const response = await fetch(
-    `${API_BASE_URL}/api/exercicios/sessoes/${sessao_id}/proxima`,
-    {
-      method: 'GET',
-      headers: getAuthHeaders(),
-    }
-  );
-
-  if (response.status === 404) {
-    return null;
+  try {
+    return await apiClient.request<ExercisePublicQuestion>(
+      `/api/exercicios/sessoes/${sessao_id}/proxima`
+    );
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
   }
-
-  if (!response.ok) {
-    const err = (await response.json().catch(() => ({}))) as { detail?: string };
-    throw new Error(err.detail || 'Erro ao carregar a próxima questão.');
-  }
-
-  return (await response.json()) as ExercisePublicQuestion;
 }
 
 export async function submitExerciseAnswer(
   sessao_id: string,
   payload: SubmitAnswerRequest
 ): Promise<AnswerFeedbackResponse> {
-  const response = await fetch(
-    `${API_BASE_URL}/api/exercicios/sessoes/${sessao_id}/respostas`,
-    {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(payload),
-    }
+  return apiClient.request<AnswerFeedbackResponse>(
+    `/api/exercicios/sessoes/${sessao_id}/respostas`,
+    { method: 'POST', body: payload }
   );
-
-  if (!response.ok) {
-    const err = (await response.json().catch(() => ({}))) as { detail?: string };
-    throw new Error(err.detail || 'Erro ao enviar resposta.');
-  }
-
-  return (await response.json()) as AnswerFeedbackResponse;
 }
 
 export async function fetchSessionResult(
   sessao_id: string
 ): Promise<SessionResultResponse> {
-  const response = await fetch(
-    `${API_BASE_URL}/api/exercicios/sessoes/${sessao_id}/resultado`,
-    {
-      method: 'GET',
-      headers: getAuthHeaders(),
-    }
+  return apiClient.request<SessionResultResponse>(
+    `/api/exercicios/sessoes/${sessao_id}/resultado`
   );
-
-  if (!response.ok) {
-    const err = (await response.json().catch(() => ({}))) as { detail?: string };
-    throw new Error(err.detail || 'Erro ao obter resultado da sessão.');
-  }
-
-  return (await response.json()) as SessionResultResponse;
 }
-
