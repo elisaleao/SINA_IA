@@ -34,6 +34,17 @@ describe('createApiClient request', () => {
     expect(headers.get('Authorization')).toBe('Bearer abc123');
   });
 
+  it('resolves to undefined on 204 without reading a body', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+    const client = createApiClient({
+      baseUrl: 'https://api.test',
+      tokenStore: createTokenStore({ getAccessToken: () => 'abc123' }),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+    });
+
+    await expect(client.request('/users/me/llm-key', { method: 'DELETE' })).resolves.toBeUndefined();
+  });
+
   it('does not send an Authorization header when there is no token', async () => {
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }));
     const client = createApiClient({

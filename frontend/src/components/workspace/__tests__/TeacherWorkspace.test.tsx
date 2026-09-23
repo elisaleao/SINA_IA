@@ -33,6 +33,7 @@ describe('TeacherWorkspace', () => {
       role: 'professor',
       is_active: true,
       accessibility_preferences: null,
+      llm_key_configurada: false,
     };
   });
 
