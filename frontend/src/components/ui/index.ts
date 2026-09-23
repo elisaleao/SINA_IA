@@ -6,3 +6,4 @@ export * from './EmptyState';
 export * from './Dropzone';
 export * from './Tabs';
 
+export * from './FallbackNotice';

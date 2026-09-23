@@ -164,6 +164,9 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
     if (!response.ok) {
       return fail(response);
     }
+    if (response.status === 204) {
+      return undefined as T;
+    }
     return response.json() as Promise<T>;
   }
 

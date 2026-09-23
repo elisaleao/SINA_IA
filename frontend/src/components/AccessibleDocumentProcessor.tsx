@@ -18,6 +18,7 @@ import {
   type StageName,
   type StageStatus,
 } from "@/lib/accessibility-api";
+import { FallbackNotice } from "@/components/ui";
 
 
 const STAGE_LABELS: Record<StageName, string> = {
@@ -326,6 +327,8 @@ export default function AccessibleDocumentProcessor() {
           <h3 id="results-title" className="text-xl font-bold">
             Resultado
           </h3>
+
+          {result.chave_pessoal_falhou && <FallbackNotice />}
 
           <p className="mt-2 text-sm text-zinc-500">
             {result.math_detection.is_math

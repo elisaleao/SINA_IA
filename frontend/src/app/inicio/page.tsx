@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
+import { LlmKeyNotice } from '@/components/session/LlmKeyNotice';
 import { appRoutes, subjectDetailRoute } from '@/lib/routes';
 
 export const metadata: Metadata = {
@@ -26,6 +27,8 @@ export default function InicioPage() {
           Bem-vindo ao seu espaço acessível e adaptativo. Continue seus estudos ou inicie um novo módulo.
         </p>
       </header>
+
+      <LlmKeyNotice />
 
       {/* Seção: Ações Rápidas */}
       <section aria-labelledby="acoes-rapidas-title">

@@ -45,6 +45,7 @@ export type UserProfile = {
   role: UserRole;
   is_active: boolean;
   accessibility_preferences: AccessibilityPreferences | null;
+  llm_key_configurada: boolean;
 };
 
 const VLIBRAS_STORAGE_KEY = 'sina_vlibras_ativo';

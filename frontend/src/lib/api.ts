@@ -42,6 +42,7 @@ export type GenerationResponse = {
   spoken_content: string;
   audio_url: string | null;
   accessibility_profile?: string | null;
+  chave_pessoal_falhou?: boolean;
 };
 
 /**
