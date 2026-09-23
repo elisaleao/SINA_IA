@@ -13,6 +13,17 @@ class UserRole(str, Enum):
     ADMIN = 'admin'
 
 
+class FontSize(str, Enum):
+    NORMAL = 'normal'
+    LARGE = 'large'
+    LARGER = 'larger'
+
+
+class LineSpacing(str, Enum):
+    NORMAL = 'normal'
+    RELAXED = 'relaxed'
+
+
 class AccessibilityPreferencesBase(BaseModel):
     profile: AccessibilityProfileType = Field(
         default=AccessibilityProfileType.VISUAL,
@@ -34,17 +45,25 @@ class AccessibilityPreferencesBase(BaseModel):
         default='system-ui',
         description='Família tipográfica adaptada (ex: opendyslexic)',
     )
-    font_size: str = Field(
-        default='medium',
-        description='Tamanho da fonte (small, medium, large, extra-large)',
+    font_size: FontSize = Field(
+        default=FontSize.NORMAL,
+        description='Tamanho da fonte (normal, large, larger)',
     )
-    line_spacing: str = Field(
-        default='normal',
-        description='Espaçamento entre linhas (normal, relaxed, double)',
+    line_spacing: LineSpacing = Field(
+        default=LineSpacing.NORMAL,
+        description='Espaçamento entre linhas (normal, relaxed)',
     )
     high_contrast: bool = Field(
         default=False,
         description='Modo de alto contraste para baixa visão',
+    )
+    dyslexia_font: bool = Field(
+        default=False,
+        description='Fonte adaptada para dislexia',
+    )
+    auto_audio: bool = Field(
+        default=False,
+        description='Reprodução automática do áudio gerado',
     )
     vlibras_active: bool = Field(
         default=False,
@@ -62,9 +81,11 @@ class AccessibilityPreferencesUpdate(BaseModel):
     include_glossary: Optional[bool] = None
     highlight_key_points: Optional[bool] = None
     font_family: Optional[str] = None
-    font_size: Optional[str] = None
-    line_spacing: Optional[str] = None
+    font_size: Optional[FontSize] = None
+    line_spacing: Optional[LineSpacing] = None
     high_contrast: Optional[bool] = None
+    dyslexia_font: Optional[bool] = None
+    auto_audio: Optional[bool] = None
     vlibras_active: Optional[bool] = None
 
 

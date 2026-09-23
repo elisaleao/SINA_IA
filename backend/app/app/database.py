@@ -112,12 +112,18 @@ class AccessibilityPreferencesRecord(Base):
         String(50), default='system-ui', nullable=False
     )
     font_size: Mapped[str] = mapped_column(
-        String(20), default='medium', nullable=False
+        String(20), default='normal', nullable=False
     )
     line_spacing: Mapped[str] = mapped_column(
         String(20), default='normal', nullable=False
     )
     high_contrast: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
+    dyslexia_font: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
+    auto_audio: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False
     )
     vlibras_active: Mapped[bool] = mapped_column(

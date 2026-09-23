@@ -112,6 +112,19 @@ if [ -n "$RUN_CMD" ] || [ -n "$VENV_BIN" ]; then
         echo -e "  ${RED}✗ Falha na execução dos testes do backend.${NC}"
         FAILED=1
     fi
+
+    PYTHON_BIN="${RUN_CMD:+$RUN_CMD python}"
+    PYTHON_BIN="${PYTHON_BIN:-$VENV_BIN/python}"
+
+    echo "  -> Verificando se os tipos da API estão atualizados..."
+    if PYTHONPATH=. $PYTHON_BIN scripts/export_openapi.py ../../frontend/src/lib/openapi.json \
+        && (cd "$ROOT_DIR/frontend" && npm run --silent api:types >/dev/null) \
+        && git -C "$ROOT_DIR" diff --exit-code -- frontend/src/lib/openapi.json frontend/src/lib/api-types.ts; then
+        echo -e "  ${GREEN}✓ Tipos da API em dia com o backend.${NC}"
+    else
+        echo -e "  ${RED}✗ Tipos da API desatualizados. Rode em backend/app: PYTHONPATH=. poetry run python scripts/export_openapi.py ../../frontend/src/lib/openapi.json; depois, em frontend: npm run api:types. Commite os dois arquivos.${NC}"
+        FAILED=1
+    fi
 fi
 
 # 3. FRONTEIRAS ARQUITETURAIS (DOMÍNIO PURO)

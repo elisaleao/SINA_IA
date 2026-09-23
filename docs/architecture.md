@@ -107,6 +107,19 @@ Toda configuração fica em `app/core/config.py` (`Settings`, lido do `backend/a
 
 Documentos e materiais com dono só são acessíveis pelo dono ou por um admin (`deps.can_access_document`). Para qualquer outra pessoa a resposta é 404, sem revelar que o recurso existe.
 
+### 3.1. Tipos da API
+
+O backend é a fonte da verdade do contrato. O OpenAPI exportado fica em `frontend/src/lib/openapi.json`, e os tipos TypeScript gerados a partir dele ficam em `frontend/src/lib/api-types.ts`. Os dois arquivos são versionados.
+
+Depois de mudar uma rota ou um schema, regenere os dois arquivos e faça o commit deles:
+
+```bash
+cd backend/app && PYTHONPATH=. poetry run python scripts/export_openapi.py ../../frontend/src/lib/openapi.json
+cd frontend && npm run api:types
+```
+
+O `./check.sh` e o job `static` do CI rodam os mesmos comandos e falham se algum dos arquivos mudar. O `PYTHONPATH=.` garante que o script importe o `app` da pasta atual, e não outra cópia instalada no ambiente virtual.
+
 ---
 
 ## 4. Fluxos de processamento

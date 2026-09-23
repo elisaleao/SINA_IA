@@ -299,6 +299,8 @@ async def test_register_persists_every_accessibility_preference(client):
         'font_size': 'large',
         'line_spacing': 'relaxed',
         'high_contrast': True,
+        'dyslexia_font': True,
+        'auto_audio': True,
         'vlibras_active': True,
     }
     reg = await client.post(
@@ -320,6 +322,80 @@ async def test_register_persists_every_accessibility_preference(client):
     stored = me_resp.json()['accessibility_preferences']
     for field, expected in preferences.items():
         assert stored[field] == expected, field
+
+
+@pytest.mark.asyncio
+async def test_update_accessibility_preferences_dyslexia_and_audio(client):
+    reg = await client.post(
+        '/auth/register',
+        json={
+            'email': 'dyslexia_audio_user@sina.edu.br',
+            'password': 'senhaForte123',
+            'full_name': 'Dyslexia Audio User',
+            'role': 'aluno',
+        },
+    )
+    assert reg.status_code == 201
+    token = reg.json()['access_token']
+
+    # Inicialmente, dyslexia_font e auto_audio são False
+    me_resp = await client.get(
+        '/users/me',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+    assert me_resp.status_code == 200
+    prefs = me_resp.json()['accessibility_preferences']
+    assert prefs['dyslexia_font'] is False
+    assert prefs['auto_audio'] is False
+
+    # Atualiza as duas preferências
+    patch_resp = await client.patch(
+        '/users/me/preferences',
+        headers={'Authorization': f'Bearer {token}'},
+        json={'dyslexia_font': True, 'auto_audio': True},
+    )
+    assert patch_resp.status_code == 200
+    patch_data = patch_resp.json()
+    assert patch_data['dyslexia_font'] is True
+    assert patch_data['auto_audio'] is True
+
+    # Verifica persistência ao consultar /users/me novamente
+    me_resp_updated = await client.get(
+        '/users/me',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+    assert me_resp_updated.status_code == 200
+    updated_prefs = me_resp_updated.json()['accessibility_preferences']
+    assert updated_prefs['dyslexia_font'] is True
+    assert updated_prefs['auto_audio'] is True
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ('field', 'invalid_value'),
+    [('font_size', 'medium'), ('line_spacing', 'double')],
+)
+async def test_patch_preferences_rejects_invalid_vocabulary(
+    client, field, invalid_value
+):
+    reg = await client.post(
+        '/auth/register',
+        json={
+            'email': f'invalid_{field}@sina.edu.br',
+            'password': 'senhaForte123',
+            'full_name': 'Invalid Vocab User',
+            'role': 'aluno',
+        },
+    )
+    assert reg.status_code == 201
+    token = reg.json()['access_token']
+
+    patch_resp = await client.patch(
+        '/users/me/preferences',
+        headers={'Authorization': f'Bearer {token}'},
+        json={field: invalid_value},
+    )
+    assert patch_resp.status_code == 422
 
 
 @pytest.mark.asyncio
