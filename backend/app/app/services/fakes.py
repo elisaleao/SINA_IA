@@ -89,6 +89,8 @@ class FakeTTSClient:
 class FakeAccessibilityAI:
     """Fake do GeminiService para o pipeline de acessibilidade."""
 
+    is_configured = True
+
     def __init__(self, failure: Optional[Exception] = None):
         self.failure = failure
         self.calls: list[str] = []
