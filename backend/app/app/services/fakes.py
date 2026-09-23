@@ -5,9 +5,9 @@ import uuid
 from pathlib import Path
 from typing import Optional
 
-from app.accessibility.schemas import AuditReport, ChartVisionResult
 from app.core.config import settings
 from app.models import AccessibilityConfig, GenerationType, TeacherConfig
+from app.schemas.accessibility import AuditReport, ChartVisionResult
 from app.services.math_speech_service import MathToSpeechService
 
 

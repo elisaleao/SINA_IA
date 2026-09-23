@@ -1,6 +1,6 @@
 """Roteadores da API."""
 
-from app.accessibility.router import router as accessibility_router
+from app.api.routers.accessibility import router as accessibility_router
 from app.api.routers.audio import router as audio_router
 from app.api.routers.auth import router as auth_router
 from app.api.routers.content import router as content_router

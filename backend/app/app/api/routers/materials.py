@@ -19,8 +19,6 @@ from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.accessibility.pipeline import AccessibilityPipeline
-from app.accessibility.prompts import LEVEL_LABELS
 from app.api.deps import (
     can_access_document,
     get_current_user,
@@ -36,6 +34,8 @@ from app.schemas.material import (
     MaterialSummary,
     MaterialUploadResponse,
 )
+from app.services.accessibility_pipeline import AccessibilityPipeline
+from app.services.accessibility_prompts import LEVEL_LABELS
 from app.services.material_service import (
     MaterialStorage,
     find_cached_result,

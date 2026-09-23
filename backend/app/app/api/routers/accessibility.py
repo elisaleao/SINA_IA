@@ -6,11 +6,11 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 
-from app.accessibility.extractor import SUPPORTED_EXTENSIONS
-from app.accessibility.pipeline import AccessibilityPipeline
-from app.accessibility.storage import GeneratedFileStore
 from app.api.deps import get_gemini_service, get_tts_service
 from app.core.config import settings
+from app.services.accessibility_pipeline import AccessibilityPipeline
+from app.services.document_extractor import SUPPORTED_EXTENSIONS
+from app.services.file_store import GeneratedFileStore
 
 router = APIRouter(prefix='/api/accessibility', tags=['accessibility'])
 

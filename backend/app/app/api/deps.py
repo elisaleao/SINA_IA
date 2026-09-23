@@ -8,12 +8,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import selectinload
 
-from app.accessibility.pipeline import AccessibilityPipeline
 from app.core.config import settings
 from app.core.protocols import LLMClientProtocol, TTSClientProtocol
 from app.core.security import decode_access_token
 from app.database import AsyncSessionLocal, DocumentRecord, UserRecord
 from app.schemas.user import UserRole
+from app.services.accessibility_pipeline import AccessibilityPipeline
 from app.services.gemini_service import GeminiService
 from app.services.ingestion_service import IngestionService
 from app.services.llm_service import LLMService

@@ -10,27 +10,27 @@ import fitz
 import pytest
 from httpx import AsyncClient
 
-from app.accessibility.extractor import (
-    DocumentExtractor,
-    ExtractionResult,
-    VisualCandidate,
-)
-from app.accessibility.math_detector import detect_math_content
-from app.accessibility.pipeline import AccessibilityPipeline
-from app.accessibility.router import (
+from app.api.routers.accessibility import (
     get_accessibility_pipeline,
     get_generated_file_store,
 )
-from app.accessibility.schemas import (
+from app.main import app
+from app.schemas.accessibility import (
     AuditItem,
     AuditReport,
     ChartVisionResult,
     PipelineEvent,
     ProcessResult,
 )
-from app.accessibility.storage import GeneratedFileStore
-from app.main import app
+from app.services.accessibility_pipeline import AccessibilityPipeline
+from app.services.document_extractor import (
+    DocumentExtractor,
+    ExtractionResult,
+    VisualCandidate,
+)
+from app.services.file_store import GeneratedFileStore
 from app.services.gemini_service import GeminiService
+from app.services.math_detector import detect_math_content
 from app.services.tts_service import TTSService
 
 # ---------------------------------------------------------------------------

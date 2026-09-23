@@ -8,11 +8,11 @@ import pymupdf
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.accessibility.pipeline import AccessibilityPipeline
 from app.api.deps import get_material_pipeline, get_material_storage
 from app.core.config import settings
 from app.database import DocumentRecord
 from app.main import app
+from app.services.accessibility_pipeline import AccessibilityPipeline
 from app.services.fakes import FakeAccessibilityAI, FakeEdgeTTS
 from app.services.material_service import (
     MaterialStorage,
