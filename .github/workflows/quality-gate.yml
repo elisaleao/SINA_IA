@@ -53,6 +53,13 @@ jobs:
       - name: Frontend — TypeScript Typecheck
         run: cd frontend && npx tsc --noEmit
 
+      - name: Contrato — Tipos da API atualizados
+        run: |
+          cd backend/app
+          PYTHONPATH=. poetry run python scripts/export_openapi.py ../../frontend/src/lib/openapi.json
+          cd ../../frontend && npm run api:types
+          git diff --exit-code -- src/lib/openapi.json src/lib/api-types.ts
+
       - name: Frontend — Testes (Vitest)
         run: cd frontend && npm test
 
