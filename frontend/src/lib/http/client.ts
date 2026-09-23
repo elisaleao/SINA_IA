@@ -10,6 +10,7 @@ export interface RequestOptions {
 
 export interface ApiClient {
   request<T>(path: string, init?: RequestOptions): Promise<T>;
+  onSessionExpired(handler: () => void): () => void;
 }
 
 export class ApiError extends Error {
@@ -28,9 +29,60 @@ export interface CreateApiClientOptions {
   fetchImpl?: typeof fetch;
 }
 
+const AUTH_ENDPOINTS = ['/auth/login', '/auth/register', '/auth/refresh'];
+
+interface RefreshTokenResponse {
+  access_token: string;
+  refresh_token: string;
+}
+
 export function createApiClient(options: CreateApiClientOptions): ApiClient {
   const { baseUrl, tokenStore } = options;
   const fetchImpl = options.fetchImpl ?? fetch;
+  const sessionExpiredHandlers = new Set<() => void>();
+  let refreshPromise: Promise<boolean> | null = null;
+
+  function isAuthEndpoint(path: string): boolean {
+    return AUTH_ENDPOINTS.some(
+      (endpoint) => path === endpoint || path.startsWith(`${endpoint}?`)
+    );
+  }
+
+  function notifySessionExpired(): void {
+    sessionExpiredHandlers.forEach((handler) => handler());
+  }
+
+  function onSessionExpired(handler: () => void): () => void {
+    sessionExpiredHandlers.add(handler);
+    return () => sessionExpiredHandlers.delete(handler);
+  }
+
+  async function performRefresh(): Promise<boolean> {
+    const currentRefreshToken = tokenStore.getRefreshToken();
+    if (!currentRefreshToken) return false;
+    try {
+      const response = await fetchImpl(buildUrl('/auth/refresh'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: currentRefreshToken }),
+      });
+      if (!response.ok) return false;
+      const data = (await response.json()) as RefreshTokenResponse;
+      tokenStore.setTokens(data.access_token, data.refresh_token);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function refreshSession(): Promise<boolean> {
+    if (!refreshPromise) {
+      refreshPromise = performRefresh().finally(() => {
+        refreshPromise = null;
+      });
+    }
+    return refreshPromise;
+  }
 
   function buildUrl(path: string): string {
     return `${baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
@@ -84,12 +136,34 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
   }
 
   async function request<T>(path: string, init: RequestOptions = {}): Promise<T> {
+    const auth = init.auth !== false;
     const response = await rawFetch(path, init);
-    if (!response.ok) {
+
+    if (response.ok) {
+      return response.json() as Promise<T>;
+    }
+
+    if (response.status !== 401 || !auth || isAuthEndpoint(path)) {
       return fail(response);
     }
-    return response.json() as Promise<T>;
+
+    const refreshed = await refreshSession();
+    if (!refreshed) {
+      tokenStore.clear();
+      notifySessionExpired();
+      return fail(response);
+    }
+
+    const retryResponse = await rawFetch(path, init);
+    if (retryResponse.ok) {
+      return retryResponse.json() as Promise<T>;
+    }
+    if (retryResponse.status === 401) {
+      tokenStore.clear();
+      notifySessionExpired();
+    }
+    return fail(retryResponse);
   }
 
-  return { request };
+  return { request, onSessionExpired };
 }
