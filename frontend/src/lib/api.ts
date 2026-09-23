@@ -1,4 +1,6 @@
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import { API_BASE_URL, apiClient } from "./http";
+
+export { API_BASE_URL };
 
 export type GenerationType = "summary" | "quiz" | "study_guide";
 
@@ -42,23 +44,6 @@ export type GenerationResponse = {
   accessibility_profile?: string | null;
 };
 
-export type HealthCheckResponse = {
-  status: string;
-  service: string;
-  version: string;
-};
-
-/**
- * Checks the operational health and readiness of the backend API.
- */
-export async function checkHealth(): Promise<HealthCheckResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/health`);
-  if (!response.ok) {
-    throw new Error(`Health check failed with status ${response.status}`);
-  }
-  return response.json();
-}
-
 /**
  * Uploads a document to the backend for OCR and processing.
  */
@@ -66,29 +51,19 @@ export async function uploadDocument(file: File): Promise<DocumentProcessRespons
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch(`${API_BASE_URL}/api/documents/upload`, {
+  return apiClient.request<DocumentProcessResponse>("/api/documents/upload", {
     method: "POST",
     body: formData,
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ detail: "Unknown error" }));
-    throw new Error(errorData.detail || `HTTP error ${response.status}`);
-  }
-
-  return response.json();
 }
 
 /**
  * Requests generation of summaries, quizzes, or study guides from a processed document.
  */
 export async function generateStudyContent(request: GenerateRequest): Promise<GenerationResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/content/generate`, {
+  return apiClient.request<GenerationResponse>("/api/content/generate", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
+    body: {
       document_id: request.document_id,
       generation_type: request.generation_type,
       teacher_config: request.teacher_config || {
@@ -99,15 +74,8 @@ export async function generateStudyContent(request: GenerateRequest): Promise<Ge
       accessibility_config: request.accessibility_config,
       generate_audio: request.generate_audio ?? true,
       voice: request.voice || "pt-BR-AntonioNeural",
-    }),
+    },
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ detail: "Unknown error" }));
-    throw new Error(errorData.detail || `HTTP error ${response.status}`);
-  }
-
-  return response.json();
 }
 
 /**

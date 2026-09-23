@@ -1,3 +1,5 @@
+import { API_BASE_URL, apiClient } from "./http";
+
 export type StageName =
   | "upload"
   | "extract"
@@ -51,13 +53,9 @@ export type PipelineEvent =
   | { type: "result"; result: ProcessResult }
   | { type: "error"; message: string };
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ??
-  "http://localhost:8000";
-
 export function apiUrl(path: string): string {
   if (/^https?:\/\//i.test(path)) return path;
-  return `${API_URL}${path.startsWith("/") ? path : `/${path}`}`;
+  return `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
 export async function processAccessibleDocument(
@@ -70,22 +68,11 @@ export async function processAccessibleDocument(
   body.append("file", file);
   body.append("level", String(level));
 
-  const response = await fetch(apiUrl("/api/accessibility/process-stream"), {
+  const response = await apiClient.stream("/api/accessibility/process-stream", {
     method: "POST",
     body,
     signal,
   });
-
-  if (!response.ok) {
-    let message = `Falha no processamento (${response.status}).`;
-    try {
-      const payload = await response.json();
-      if (payload?.detail) message = String(payload.detail);
-    } catch {
-      // mantém a mensagem padrão
-    }
-    throw new Error(message);
-  }
 
   if (!response.body) {
     throw new Error("O navegador não recebeu o fluxo de processamento.");
