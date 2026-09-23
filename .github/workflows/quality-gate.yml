@@ -81,11 +81,6 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Dependências de sistema (OpenCV / Áudio)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgl1 libglib2.0-0 ffmpeg
-
       - name: Instalar Poetry
         run: pipx install poetry
 
