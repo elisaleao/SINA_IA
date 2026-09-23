@@ -1,7 +1,5 @@
 """Router de envio de materiais com processamento em segundo plano (#15)."""
 
-import hashlib
-import uuid
 from typing import Optional
 
 from fastapi import (
@@ -27,7 +25,6 @@ from app.api.deps import (
     get_material_storage,
     get_session_maker,
 )
-from app.core.config import settings
 from app.database import DocumentRecord, UserRecord
 from app.schemas.material import (
     MaterialDetail,
@@ -35,17 +32,12 @@ from app.schemas.material import (
     MaterialUploadResponse,
 )
 from app.services.accessibility_pipeline import AccessibilityPipeline
-from app.services.accessibility_prompts import LEVEL_LABELS
 from app.services.material_service import (
     MaterialStorage,
-    find_cached_result,
-    nivel_para_perfil,
+    MaterialUploadService,
+    UploadLimitExceeded,
+    UploadRejected,
     process_material,
-)
-from app.services.upload_validation import (
-    UploadValidationError,
-    safe_display_name,
-    validate_upload,
 )
 
 router = APIRouter(prefix='/api/materiais', tags=['Materiais'])
@@ -119,106 +111,33 @@ async def upload_materials(
     ),
 ) -> MaterialUploadResponse:
     """Valida todos os arquivos antes de gravar qualquer um e responde 202."""
-    if len(files) > settings.MATERIAL_MAX_FILES:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=(
-                f'Envie no máximo {settings.MATERIAL_MAX_FILES} '
-                'arquivos por vez.'
-            ),
-        )
-    if nivel is not None and nivel not in LEVEL_LABELS:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail='O nível de adaptação deve ser 1, 2, 3 ou 4.',
-        )
-
-    prefs = current_user.accessibility_preferences
-    nivel_efetivo = nivel or nivel_para_perfil(
-        prefs.profile if prefs else None
-    )
-    max_bytes = settings.MATERIAL_MAX_FILE_MB * 1024 * 1024
-    max_docx = settings.DOCX_MAX_UNCOMPRESSED_MB * 1024 * 1024
-
-    validated = []
-    errors = []
-    for upload in files:
-        name = safe_display_name(upload.filename)
-        data = await upload.read(max_bytes + 1)
-        await upload.close()
-        try:
-            detected = validate_upload(
-                data,
-                max_bytes=max_bytes,
-                max_docx_uncompressed_bytes=max_docx,
-            )
-        except UploadValidationError as exc:
-            errors.append({'arquivo': name, 'erro': str(exc)})
-            continue
-        validated.append((name, data, detected))
-
-    if errors:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail={
-                'mensagem': 'Nenhum arquivo foi enviado. Corrija os itens abaixo.',
-                'arquivos': errors,
-            },
-        )
-
-    created: list[DocumentRecord] = []
-    to_process: list[str] = []
-    for name, data, detected in validated:
-        material_id = str(uuid.uuid4())
-        digest = hashlib.sha256(data).hexdigest()
-        record = DocumentRecord(
-            id=material_id,
-            user_id=current_user.id,
-            filename=name,
-            mime=detected.mime,
-            tamanho_bytes=len(data),
-            sha256=digest,
-            nivel=nivel_efetivo,
+    try:
+        outcome = await MaterialUploadService(storage).receive(
+            files=files,
+            nivel=nivel,
             ambiente_id=ambiente_id,
+            user=current_user,
+            db=db,
         )
+    except UploadLimitExceeded as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=exc.message,
+        ) from exc
+    except UploadRejected as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={'mensagem': str(exc), 'arquivos': exc.errors},
+        ) from exc
 
-        cached = await find_cached_result(db, digest, nivel_efetivo)
-        audio_copy = None
-        if cached is not None:
-            try:
-                audio_copy = storage.copy_audio(cached.audio_arquivo or '')
-            except (FileNotFoundError, ValueError):
-                audio_copy = None
-
-        if cached is not None and audio_copy is not None:
-            record.raw_markdown = cached.raw_markdown
-            record.accessible_text = cached.accessible_text
-            record.audio_arquivo = audio_copy
-            record.resultado_json = {
-                **(cached.resultado_json or {}),
-                'reaproveitado_de': cached.id,
-            }
-            record.status = 'pronto'
-        else:
-            record.caminho_armazenamento = storage.save_original(
-                material_id, detected.extension, data
-            )
-            record.status = 'enviado'
-            to_process.append(material_id)
-
-        db.add(record)
-        created.append(record)
-
-    await db.commit()
-    # created_at vem do banco (server_default); carrega antes de responder
-    for record in created:
-        await db.refresh(record)
-    for material_id in to_process:
+    for material_id in outcome.to_process:
         background_tasks.add_task(
             process_material, material_id, session_maker, pipeline, storage
         )
 
-    return MaterialUploadResponse(materiais=[_summary(r) for r in created])
+    return MaterialUploadResponse(
+        materiais=[_summary(r) for r in outcome.created]
+    )
 
 
 @router.get(
