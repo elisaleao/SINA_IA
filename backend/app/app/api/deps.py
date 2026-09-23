@@ -1,6 +1,6 @@
 """Provedores de dependências reutilizáveis para rotas FastAPI."""
 
-from typing import AsyncGenerator, Optional
+from typing import AsyncGenerator, Callable, Optional
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -9,14 +9,20 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import selectinload
 
 from app.core.config import settings
-from app.core.protocols import LLMClientProtocol, TTSClientProtocol
+from app.core.protocols import (
+    AccessibilityAIProtocol,
+    LLMClientProtocol,
+    TTSClientProtocol,
+)
 from app.core.security import decode_access_token
 from app.database import AsyncSessionLocal, DocumentRecord, UserRecord
 from app.schemas.user import UserRole
 from app.services.accessibility_pipeline import AccessibilityPipeline
+from app.services.ai_provider import FallbackAIClient
 from app.services.document_extractor import DocumentExtractor
 from app.services.file_store import GeneratedFileStore
 from app.services.gemini_service import GeminiService
+from app.services.groq_service import GroqService
 from app.services.ingestion_service import (
     INGESTION_OCR_PROMPT,
     IngestionService,
@@ -29,18 +35,9 @@ from app.services.material_service import (
 )
 from app.services.tts_service import TTSService
 
-# Uma instância de cada integração externa, compartilhada por todas as rotas
-_default_gemini = GeminiService()
-_default_llm = LLMService(gemini=_default_gemini)
+# Integrações compartilhadas; o cliente de IA é montado por requisição (ADR-0003)
+_default_groq = GroqService()
 _default_tts = TTSService()
-_default_ingestion = IngestionService(
-    gemini=_default_gemini,
-    extractor=DocumentExtractor(
-        _default_gemini,
-        max_visual_candidates=0,
-        ocr_prompt=INGESTION_OCR_PROMPT,
-    ),
-)
 security_scheme = HTTPBearer(auto_error=False)
 
 
@@ -65,23 +62,6 @@ def get_tts_service() -> TTSService:
     return _default_tts
 
 
-def get_gemini_service() -> GeminiService:
-    """Cliente Gemini compartilhado (substituível via app.dependency_overrides)."""
-    return _default_gemini
-
-
-def get_material_pipeline(
-    storage: MaterialStorage = Depends(get_material_storage),
-) -> AccessibilityPipeline:
-    """Pipeline de acessibilidade gravando resultados no armazenamento de materiais."""
-    return AccessibilityPipeline(
-        ai=_default_gemini,
-        tts=_default_tts,
-        store=storage.results,
-        extractor=DocumentExtractor(_default_gemini, max_visual_candidates=4),
-    )
-
-
 def get_material_upload_service(
     storage: MaterialStorage = Depends(get_material_storage),
 ) -> MaterialUploadService:
@@ -94,36 +74,9 @@ def get_generated_file_store() -> GeneratedFileStore:
     return GeneratedFileStore()
 
 
-def get_accessibility_pipeline(
-    store: GeneratedFileStore = Depends(get_generated_file_store),
-) -> AccessibilityPipeline:
-    """Pipeline de /process-stream com as integrações compartilhadas."""
-    return AccessibilityPipeline(
-        ai=_default_gemini,
-        tts=_default_tts,
-        store=store,
-        extractor=DocumentExtractor(_default_gemini, max_visual_candidates=4),
-    )
-
-
-def get_llm_key_service() -> LLMKeyService:
-    """Caso de uso da chave pessoal do Gemini (substituível nos testes)."""
-    return LLMKeyService()
-
-
-def get_llm_client() -> LLMClientProtocol:
-    """Retorna o cliente LLM padrão (substituível via app.dependency_overrides)."""
-    return _default_llm
-
-
 def get_tts_client() -> TTSClientProtocol:
     """Retorna o cliente TTS padrão (substituível via app.dependency_overrides)."""
     return _default_tts
-
-
-def get_ingestion_service() -> IngestionService:
-    """Retorna o serviço de ingestão e OCR (substituível via app.dependency_overrides)."""
-    return _default_ingestion
 
 
 async def get_current_user(
@@ -228,3 +181,87 @@ def can_access_document(
     if user is None:
         return False
     return user.id == document.user_id or user.role == UserRole.ADMIN.value
+
+
+def get_llm_key_service() -> LLMKeyService:
+    """Caso de uso da chave pessoal do Gemini (substituível nos testes)."""
+    return LLMKeyService()
+
+
+def get_fallback_ai() -> AccessibilityAIProtocol:
+    """IA gratuita usada sem chave pessoal ou quando ela falha."""
+    return _default_groq
+
+
+def build_personal_ai(api_key: str) -> AccessibilityAIProtocol:
+    """Cliente do Gemini com a chave do usuário."""
+    return GeminiService(api_key=api_key)
+
+
+def get_personal_ai_factory() -> Callable[[str], AccessibilityAIProtocol]:
+    """Fábrica do cliente pessoal (substituível nos testes)."""
+    return build_personal_ai
+
+
+async def get_ai_client(
+    user: Optional[UserRecord] = Depends(get_optional_user),
+    db: AsyncSession = Depends(get_db),
+    llm_keys: LLMKeyService = Depends(get_llm_key_service),
+    fallback: AccessibilityAIProtocol = Depends(get_fallback_ai),
+    personal_ai: Callable[[str], AccessibilityAIProtocol] = Depends(
+        get_personal_ai_factory
+    ),
+) -> FallbackAIClient:
+    """Chave pessoal do Gemini quando existe; senão, o fallback gratuito."""
+    api_key = await llm_keys.get_decrypted(user, db)
+    primary = personal_ai(api_key) if api_key else None
+    return FallbackAIClient(primary=primary, fallback=fallback)
+
+
+def get_material_pipeline(
+    storage: MaterialStorage = Depends(get_material_storage),
+    ai: FallbackAIClient = Depends(get_ai_client),
+    tts: TTSService = Depends(get_tts_service),
+) -> AccessibilityPipeline:
+    """Pipeline de acessibilidade gravando resultados no armazenamento de materiais."""
+    return AccessibilityPipeline(
+        ai=ai,
+        tts=tts,
+        store=storage.results,
+        extractor=DocumentExtractor(ai, max_visual_candidates=4),
+    )
+
+
+def get_accessibility_pipeline(
+    store: GeneratedFileStore = Depends(get_generated_file_store),
+    ai: FallbackAIClient = Depends(get_ai_client),
+    tts: TTSService = Depends(get_tts_service),
+) -> AccessibilityPipeline:
+    """Pipeline de /process-stream com o cliente de IA da requisição."""
+    return AccessibilityPipeline(
+        ai=ai,
+        tts=tts,
+        store=store,
+        extractor=DocumentExtractor(ai, max_visual_candidates=4),
+    )
+
+
+def get_llm_client(
+    ai: FallbackAIClient = Depends(get_ai_client),
+) -> LLMClientProtocol:
+    """Geração de conteúdo com o cliente de IA da requisição."""
+    return LLMService(gemini=ai)
+
+
+def get_ingestion_service(
+    ai: FallbackAIClient = Depends(get_ai_client),
+) -> IngestionService:
+    """Ingestão e OCR de /api/documents com o cliente de IA da requisição."""
+    return IngestionService(
+        gemini=ai,
+        extractor=DocumentExtractor(
+            ai,
+            max_visual_candidates=0,
+            ocr_prompt=INGESTION_OCR_PROMPT,
+        ),
+    )

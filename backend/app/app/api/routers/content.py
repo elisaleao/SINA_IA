@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import (
     can_access_document,
+    get_ai_client,
     get_db,
     get_llm_client,
     get_optional_user,
@@ -16,6 +17,7 @@ from app.api.deps import (
 from app.core.protocols import LLMClientProtocol, TTSClientProtocol
 from app.database import DocumentRecord, UserRecord
 from app.models import GenerateRequest, GenerationResponse
+from app.services.ai_provider import FallbackAIClient
 
 router = APIRouter(tags=['Geração e Acessibilidade'])
 
@@ -30,6 +32,7 @@ async def generate_study_content(
     llm: LLMClientProtocol = Depends(get_llm_client),
     tts: TTSClientProtocol = Depends(get_tts_client),
     current_user: Optional[UserRecord] = Depends(get_optional_user),
+    ai: FallbackAIClient = Depends(get_ai_client),
 ):
     result = await db.execute(
         select(DocumentRecord).where(DocumentRecord.id == req.document_id)
@@ -77,6 +80,7 @@ async def generate_study_content(
             spoken_content=spoken_output,
             audio_url=audio_url,
             accessibility_profile=profile_val,
+            chave_pessoal_falhou=ai.used_fallback,
         )
 
     except HTTPException:

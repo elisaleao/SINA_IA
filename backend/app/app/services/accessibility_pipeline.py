@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 
+from app.core.protocols import AccessibilityAIProtocol
 from app.schemas.accessibility import (
     ChartDescription,
     PipelineEvent,
@@ -14,7 +15,6 @@ from app.services.accessibility_prompts import (
 )
 from app.services.document_extractor import DocumentExtractor
 from app.services.file_store import GeneratedFileStore
-from app.services.gemini_service import GeminiService
 from app.services.math_detector import detect_math_content
 from app.services.tts_service import TTSService
 
@@ -22,7 +22,7 @@ from app.services.tts_service import TTSService
 class AccessibilityPipeline:
     def __init__(
         self,
-        ai: GeminiService,
+        ai: AccessibilityAIProtocol,
         tts: TTSService,
         store: GeneratedFileStore,
         extractor: DocumentExtractor,
@@ -163,6 +163,7 @@ class AccessibilityPipeline:
                 audit=audit,
                 text_download_url=f'/api/accessibility/files/{text_path.name}',
                 audio_url=f'/api/accessibility/files/{audio_path.name}',
+                chave_pessoal_falhou=getattr(self.ai, 'used_fallback', False),
             )
             yield PipelineEvent(type='result', result=result)
 

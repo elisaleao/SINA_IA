@@ -1,17 +1,17 @@
 from typing import Optional
 
+from app.core.protocols import AccessibilityAIProtocol
 from app.models import (
     AccessibilityConfig,
     GenerationType,
     TeacherConfig,
 )
-from app.services.gemini_service import GeminiService
 from app.services.math_speech_service import MathToSpeechService
 from app.services.prompt_strategies import GENERATION_TASKS, guidelines_for
 
 
 class LLMService:
-    def __init__(self, gemini: GeminiService):
+    def __init__(self, gemini: AccessibilityAIProtocol):
         self.gemini = gemini
 
     def _build_system_prompt(

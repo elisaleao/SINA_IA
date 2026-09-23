@@ -888,6 +888,11 @@ export interface components {
             accessibility_profile?: string | null;
             /** Audio Url */
             audio_url?: string | null;
+            /**
+             * Chave Pessoal Falhou
+             * @default false
+             */
+            chave_pessoal_falhou: boolean;
             /** Document Id */
             document_id: string;
             /** Generation Type */
@@ -959,6 +964,11 @@ export interface components {
             /** Audio Url */
             audio_url?: string | null;
             /**
+             * Chave Pessoal Falhou
+             * @default false
+             */
+            chave_pessoal_falhou: boolean;
+            /**
              * Criado Em
              * Format: date-time
              */
@@ -998,6 +1008,11 @@ export interface components {
         MaterialSummary: {
             /** Ambiente Id */
             ambiente_id?: string | null;
+            /**
+             * Chave Pessoal Falhou
+             * @default false
+             */
+            chave_pessoal_falhou: boolean;
             /**
              * Criado Em
              * Format: date-time

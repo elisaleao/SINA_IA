@@ -45,7 +45,7 @@ frontend/ (Cliente Next.js / Camada de Apresentação)
     ▼ (HTTP / REST / JSON)
 backend/app/app/api/routers/ (Rotas HTTP; recebem serviços por api/deps.py e DTOs de schemas/)
     │
-    ├──► backend/app/app/services/ (Fluxos e integrações: gemini_service, tts_service, document_extractor, pipelines)
+    ├──► backend/app/app/services/ (Fluxos e integrações: gemini_service, groq_service, ai_provider, tts_service, document_extractor, pipelines)
     │        │
     │        ▼
     │    Domínio puro em services/: math_speech_service.py, math_detector.py, upload_validation.py (sem I/O, sem banco)
@@ -53,7 +53,9 @@ backend/app/app/api/routers/ (Rotas HTTP; recebem serviços por api/deps.py e DT
     └──► backend/app/app/database.py (Persistência com SQLAlchemy assíncrono; schema só muda por migração Alembic)
 ```
 
-Cada integração externa tem **um único** módulo: Gemini em `services/gemini_service.py`, voz em `services/tts_service.py` e extração de documentos em `services/document_extractor.py`. Não crie outro cliente, outro serviço de voz nem outro extrator; estenda o existente.
+Cada integração externa tem **um único** módulo: voz em `services/tts_service.py` e extração de documentos em `services/document_extractor.py`. Não crie outro serviço de voz nem outro extrator; estenda o existente.
+
+A camada de IA tem dois provedores sob o mesmo contrato, `AccessibilityAIProtocol` (`core/protocols.py`): o Gemini com a chave pessoal do usuário (`services/gemini_service.py`) e o Groq como fallback gratuito (`services/groq_service.py`). O `FallbackAIClient` (`services/ai_provider.py`) escolhe entre os dois a cada requisição. Um provedor novo só entra com um ADR que substitua o [ADR-0003](docs/adr/0003-chave-de-ia-por-usuario-e-fallback-gratuito.md).
 
 ### Regras de Fronteira:
 1. **Domínio Puro:** Módulos de regras matemáticas (como `math_speech_service.py` e `math_detector.py`), validações (`upload_validation.py`) e cálculos pedagógicos **não devem importar** SQLAlchemy, FastAPI, nem realizar chamadas de rede/disco.

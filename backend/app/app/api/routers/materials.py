@@ -60,6 +60,10 @@ def _summary(record: DocumentRecord) -> MaterialSummary:
             record.resultado_json
             and record.resultado_json.get('reaproveitado_de')
         ),
+        chave_pessoal_falhou=bool(
+            record.resultado_json
+            and record.resultado_json.get('chave_pessoal_falhou')
+        ),
         criado_em=record.created_at,
     )
 

@@ -8,8 +8,8 @@ import asyncio
 import re
 from pathlib import Path
 
+from app.core.protocols import AccessibilityAIProtocol
 from app.services.document_extractor import DocumentExtractor
-from app.services.gemini_service import GeminiService
 from app.services.math_speech_service import MathToSpeechService
 
 # OCR que devolve fórmulas em LaTeX delimitado, para a conversão em fala
@@ -29,7 +29,7 @@ _EQUATION = re.compile(r'\$\$(.*?)\$\$|\$(.*?)\$', re.DOTALL)
 class IngestionService:
     def __init__(
         self,
-        gemini: GeminiService,
+        gemini: AccessibilityAIProtocol,
         extractor: DocumentExtractor,
     ):
         self.gemini = gemini

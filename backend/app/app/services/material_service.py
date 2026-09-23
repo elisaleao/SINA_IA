@@ -232,8 +232,13 @@ class MaterialUploadService:
                 record.raw_markdown = cached.raw_markdown
                 record.accessible_text = cached.accessible_text
                 record.audio_arquivo = audio_copy
+                inherited = {
+                    key: value
+                    for key, value in (cached.resultado_json or {}).items()
+                    if key != 'chave_pessoal_falhou'
+                }
                 record.resultado_json = {
-                    **(cached.resultado_json or {}),
+                    **inherited,
                     'reaproveitado_de': cached.id,
                 }
                 record.status = 'pronto'
@@ -316,6 +321,7 @@ async def process_material(
             'math_detection': result.math_detection.model_dump(mode='json'),
             'charts': [c.model_dump(mode='json') for c in result.charts],
             'audit': result.audit.model_dump(mode='json'),
+            'chave_pessoal_falhou': result.chave_pessoal_falhou,
         }
         record.status = 'pronto'
         await session.commit()
