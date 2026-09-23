@@ -23,6 +23,7 @@ from app.api.deps import (
     get_db,
     get_material_pipeline,
     get_material_storage,
+    get_material_upload_service,
     get_session_maker,
 )
 from app.database import DocumentRecord, UserRecord
@@ -105,6 +106,9 @@ async def upload_materials(
     db: AsyncSession = Depends(get_db),
     current_user: UserRecord = Depends(get_current_user),
     storage: MaterialStorage = Depends(get_material_storage),
+    upload_service: MaterialUploadService = Depends(
+        get_material_upload_service
+    ),
     pipeline: AccessibilityPipeline = Depends(get_material_pipeline),
     session_maker: async_sessionmaker[AsyncSession] = Depends(
         get_session_maker
@@ -112,7 +116,7 @@ async def upload_materials(
 ) -> MaterialUploadResponse:
     """Valida todos os arquivos antes de gravar qualquer um e responde 202."""
     try:
-        outcome = await MaterialUploadService(storage).receive(
+        outcome = await upload_service.receive(
             files=files,
             nivel=nivel,
             ambiente_id=ambiente_id,
