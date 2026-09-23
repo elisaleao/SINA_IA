@@ -59,6 +59,15 @@ describe('SessionProvider', () => {
     localStorage.clear();
   });
 
+  it('purges legacy local registration data on mount', async () => {
+    localStorage.setItem('pia.student.registration', '{}');
+
+    renderSession();
+    await screen.findByText('status:anonymous');
+
+    expect(localStorage.getItem('pia.student.registration')).toBeNull();
+  });
+
   it('becomes anonymous without calling the api when there is no token', async () => {
     renderSession();
 

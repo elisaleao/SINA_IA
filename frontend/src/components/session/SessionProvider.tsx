@@ -17,6 +17,7 @@ import {
   type UserRole,
 } from '@/lib/auth';
 import { apiClient } from '@/lib/http';
+import { purgeLegacyLocalData } from '@/lib/legacy-storage';
 import { appRoutes } from '@/lib/routes';
 
 export type SessionStatus = 'loading' | 'authenticated' | 'anonymous';
@@ -59,6 +60,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   }, [applyProfile, router]);
 
   useEffect(() => {
+    purgeLegacyLocalData();
     void loadProfile().then(applyProfile);
   }, [applyProfile]);
 
