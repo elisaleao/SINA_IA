@@ -8,7 +8,7 @@ Este documento estabelece a governança de controle de concorrência e processam
 
 O sistema executa tarefas intensivas em CPU e latência externa:
 1. Extração de PDFs e renderização de imagens de alta resolução.
-2. OCR via visão computacional e chamadas de API ao Gemini.
+2. OCR via visão computacional e chamadas de API ao provedor de IA (Gemini do usuário ou Groq).
 3. Síntese assíncrona de arquivos MP3 via Edge-TTS.
 
 A execução dessas etapas diretamente no ciclo síncrono da requisição HTTP bloqueia workers da API e expõe a aplicação a timeouts de gateway em momentos de alta demanda.

@@ -15,7 +15,8 @@ A interface segue a WCAG 2.2 (meta AAA) e os princípios do Desenho Universal pa
 
 ## O que já funciona
 
-- Upload e ingestão de documentos, com OCR via Google Gemini para páginas escaneadas e imagens.
+- Upload e ingestão de documentos, com OCR por IA para páginas escaneadas e imagens.
+- IA com a chave do próprio usuário (Google Gemini) ou, sem ela, um provedor gratuito (Groq). Se a chave pessoal falhar, a mesma chamada segue no Groq ([ADR-0003](docs/adr/0003-chave-de-ia-por-usuario-e-fallback-gratuito.md)).
 - Geração de resumo, quiz ou guia de estudo adaptado ao perfil do aluno e à calibração do professor (nível, detalhamento dos cálculos e tom).
 - Pipeline de acessibilidade com progresso em tempo real (`POST /api/accessibility/process-stream`), quatro níveis de adaptação e auditoria de fidelidade feita pela IA.
 - Síntese de voz com Edge-TTS.
@@ -40,7 +41,7 @@ Dentro do backend (`backend/app/app/`), cada responsabilidade tem um único luga
 ```
 api/routers/    rotas HTTP, uma por arquivo
 schemas/        contratos de entrada e saída (Pydantic)
-services/       regras, fluxos e integrações: um cliente Gemini, um serviço de voz,
+services/       regras, fluxos e integrações: IA (Gemini e Groq), um serviço de voz,
                 um extrator de documentos, os pipelines e o domínio puro
 core/           configuração (Settings), segurança e protocolos
 database.py     models do SQLAlchemy; o schema só muda por migração em alembic/
@@ -54,7 +55,8 @@ O backend guarda os dados em SQLite no desenvolvimento e aceita PostgreSQL pelo 
 
 - Node.js 22 e npm
 - Python 3.13 e [Poetry](https://python-poetry.org/docs/#installation) 2.x
-- Uma chave da API do Google Gemini, obtida em [aistudio.google.com](https://aistudio.google.com/apikey). Sem ela a API sobe, o upload de PDF com texto e de TXT funciona, mas OCR, geração de conteúdo e o pipeline de acessibilidade respondem com erro.
+- Uma chave do Groq para o servidor, grátis e sem cartão, em [console.groq.com](https://console.groq.com/keys). É a IA de quem não cadastrou chave própria. Sem ela a API sobe, o upload de PDF com texto e de TXT funciona, mas OCR, geração de conteúdo e o pipeline de acessibilidade respondem com erro para esses usuários.
+- Opcional: cada usuário pode cadastrar a própria chave do Google Gemini ([aistudio.google.com](https://aistudio.google.com/apikey)) em `PUT /users/me/llm-key`. A chave é testada antes de salvar e fica cifrada no banco.
 - Acesso à internet, porque o Edge-TTS sintetiza o áudio num serviço remoto.
 
 ### 1. Backend
@@ -68,7 +70,8 @@ cp .env.example .env
 Edite o `backend/app/.env`. Para rodar sem Docker, use SQLite:
 
 ```env
-GEMINI_API_KEY=sua_chave_aqui
+GROQ_API_KEY=sua_chave_do_groq
+LLM_KEY_ENCRYPTION_SECRET=troque-por-outro-valor-aleatorio
 DATABASE_URL=sqlite+aiosqlite:///./sina_ia.db
 JWT_SECRET=troque-por-um-valor-aleatorio
 ```
@@ -106,7 +109,7 @@ Abra http://localhost:3000. Crie uma conta em `/cadastro`, entre por `/entrar` e
 Com Docker instalado, na raiz do repositório:
 
 ```bash
-GEMINI_API_KEY=sua_chave_aqui docker compose up --build
+GROQ_API_KEY=sua_chave_do_groq LLM_KEY_ENCRYPTION_SECRET=um-valor-aleatorio docker compose up --build
 ```
 
 Isso sobe o backend na porta 8000, o frontend na 3000 e um PostgreSQL na 5432. O container do backend roda `alembic upgrade head` antes de iniciar a API. Por padrão ele usa SQLite em `./data/sina_ia.db`, e uploads e áudios também ficam em `./data`.
@@ -134,7 +137,7 @@ cd frontend && npm test                      # testes do frontend
 cd frontend && npm run build                 # build de produção
 ```
 
-Os testes do backend usam SQLite em memória e clientes falsos de LLM e TTS (`app/services/fakes.py`), então não gastam cota do Gemini nem precisam de internet.
+Os testes do backend usam SQLite em memória e clientes falsos de IA e TTS (`app/services/fakes.py`), então não gastam cota do Gemini nem do Groq e não precisam de internet.
 
 Para que o Git rode o gate sozinho, ative os hooks versionados uma vez:
 
