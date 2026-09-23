@@ -830,6 +830,34 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "LLMKeyStatus": {
+        "properties": {
+          "llm_key_configurada": {
+            "title": "Llm Key Configurada",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "llm_key_configurada"
+        ],
+        "title": "LLMKeyStatus",
+        "type": "object"
+      },
+      "LLMKeyUpdate": {
+        "properties": {
+          "gemini_api_key": {
+            "description": "Chave pessoal do Gemini; vazio remove a chave salva",
+            "maxLength": 512,
+            "title": "Gemini Api Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "gemini_api_key"
+        ],
+        "title": "LLMKeyUpdate",
+        "type": "object"
+      },
       "LineSpacing": {
         "enum": [
           "normal",
@@ -1428,6 +1456,12 @@
           "is_active": {
             "default": true,
             "title": "Is Active",
+            "type": "boolean"
+          },
+          "llm_key_configurada": {
+            "default": false,
+            "description": "Indica se o usuário tem chave pessoal do Gemini salva",
+            "title": "Llm Key Configurada",
             "type": "boolean"
           },
           "role": {
@@ -2588,6 +2622,71 @@
           }
         ],
         "summary": "Obter dados e preferências do usuário logado",
+        "tags": [
+          "Autenticação"
+        ]
+      }
+    },
+    "/users/me/llm-key": {
+      "delete": {
+        "description": "Apaga a chave cifrada; as próximas chamadas usam o fallback.",
+        "operationId": "delete_my_llm_key_users_me_llm_key_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Remover a chave pessoal do Gemini do usuário logado",
+        "tags": [
+          "Autenticação"
+        ]
+      },
+      "put": {
+        "description": "Testa a chave no Gemini antes de gravar; string vazia remove a chave.",
+        "operationId": "save_my_llm_key_users_me_llm_key_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LLMKeyUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LLMKeyStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Salvar a chave pessoal do Gemini do usuário logado",
         "tags": [
           "Autenticação"
         ]

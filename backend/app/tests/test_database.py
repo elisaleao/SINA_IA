@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.database import (
     AccessibilityPreferencesRecord,
+    ChaveGeminiUsuarioRecord,
     DocumentRecord,
     UserRecord,
 )
@@ -171,3 +172,32 @@ async def test_document_linked_to_user(test_db_session):
     assert saved_doc is not None
     assert saved_doc.user_id == user_id
     assert saved_doc.version_id == 1
+
+
+@pytest.mark.asyncio
+async def test_deleting_user_deletes_their_gemini_key(test_db_session):
+    """Apagar o usuário apaga junto a chave pessoal cifrada (cascade)."""
+    user_id = str(uuid.uuid4())
+    user = UserRecord(
+        id=user_id,
+        email='chave@sina.edu.br',
+        hashed_password='hash',
+        full_name='Dona da Chave',
+    )
+    user.chave_gemini = ChaveGeminiUsuarioRecord(
+        id=str(uuid.uuid4()),
+        user_id=user_id,
+        gemini_api_key_cifrada='cifrado',
+    )
+    test_db_session.add(user)
+    await test_db_session.commit()
+
+    await test_db_session.delete(user)
+    await test_db_session.commit()
+
+    remaining = await test_db_session.execute(
+        select(ChaveGeminiUsuarioRecord).where(
+            ChaveGeminiUsuarioRecord.user_id == user_id
+        )
+    )
+    assert remaining.scalar_one_or_none() is None

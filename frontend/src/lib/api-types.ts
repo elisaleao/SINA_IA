@@ -444,6 +444,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/users/me/llm-key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Salvar a chave pessoal do Gemini do usuário logado
+         * @description Testa a chave no Gemini antes de gravar; string vazia remove a chave.
+         */
+        put: operations["save_my_llm_key_users_me_llm_key_put"];
+        post?: never;
+        /**
+         * Remover a chave pessoal do Gemini do usuário logado
+         * @description Apaga a chave cifrada; as próximas chamadas usam o fallback.
+         */
+        delete: operations["delete_my_llm_key_users_me_llm_key_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/users/me/preferences": {
         parameters: {
             query?: never;
@@ -883,6 +907,19 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** LLMKeyStatus */
+        LLMKeyStatus: {
+            /** Llm Key Configurada */
+            llm_key_configurada: boolean;
+        };
+        /** LLMKeyUpdate */
+        LLMKeyUpdate: {
+            /**
+             * Gemini Api Key
+             * @description Chave pessoal do Gemini; vazio remove a chave salva
+             */
+            gemini_api_key: string;
+        };
         /**
          * LineSpacing
          * @enum {string}
@@ -1151,6 +1188,12 @@ export interface components {
              * @default true
              */
             is_active: boolean;
+            /**
+             * Llm Key Configurada
+             * @description Indica se o usuário tem chave pessoal do Gemini salva
+             * @default false
+             */
+            llm_key_configurada: boolean;
             /** @default aluno */
             role: components["schemas"]["UserRole"];
             /**
@@ -1949,6 +1992,57 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["UserResponse"];
                 };
+            };
+        };
+    };
+    save_my_llm_key_users_me_llm_key_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LLMKeyUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LLMKeyStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_my_llm_key_users_me_llm_key_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

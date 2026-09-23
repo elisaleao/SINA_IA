@@ -81,6 +81,13 @@ class UserRecord(Base):
         cascade='all, delete-orphan',
         lazy='selectin',
     )
+    chave_gemini: Mapped[Optional['ChaveGeminiUsuarioRecord']] = relationship(
+        'ChaveGeminiUsuarioRecord',
+        back_populates='user',
+        uselist=False,
+        cascade='all, delete-orphan',
+        lazy='selectin',
+    )
 
 
 class AccessibilityPreferencesRecord(Base):
@@ -142,6 +149,36 @@ class AccessibilityPreferencesRecord(Base):
     user: Mapped['UserRecord'] = relationship(
         'UserRecord',
         back_populates='accessibility_preferences',
+    )
+
+
+class ChaveGeminiUsuarioRecord(Base):
+    """Chave pessoal do Gemini do usuário, sempre cifrada (1:1)."""
+
+    __tablename__ = 'chave_gemini_usuario'
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey('usuarios.id', ondelete='CASCADE'),
+        unique=True,
+        nullable=False,
+        index=True,
+    )
+    gemini_api_key_cifrada: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    user: Mapped['UserRecord'] = relationship(
+        'UserRecord',
+        back_populates='chave_gemini',
     )
 
 

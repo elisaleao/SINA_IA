@@ -10,6 +10,7 @@ from app.schemas.user import (
     AccessibilityPreferencesUpdate,
     FontSize,
     LineSpacing,
+    LLMKeyUpdate,
     UserCreate,
     UserResponse,
     UserRole,
@@ -145,3 +146,30 @@ def test_accessibility_preferences_update_accepts_new_fields():
     assert update.line_spacing == LineSpacing.RELAXED
     assert update.dyslexia_font is True
     assert update.auto_audio is True
+
+
+def test_llm_key_accepts_up_to_512_characters():
+    assert len(LLMKeyUpdate(gemini_api_key='k' * 512).gemini_api_key) == 512
+
+
+def test_llm_key_rejects_more_than_512_characters():
+    with pytest.raises(ValidationError):
+        LLMKeyUpdate(gemini_api_key='k' * 513)
+
+
+def test_llm_key_accepts_empty_string_to_remove_the_key():
+    assert not LLMKeyUpdate(gemini_api_key='').gemini_api_key
+
+
+def test_user_response_reports_no_llm_key_by_default():
+    now = datetime.datetime.now(datetime.timezone.utc)
+    user_resp = UserResponse(
+        id='user-1',
+        email='aluno@sina.edu.br',
+        full_name='Aluno',
+        version_id=1,
+        created_at=now,
+        updated_at=now,
+    )
+
+    assert user_resp.llm_key_configurada is False

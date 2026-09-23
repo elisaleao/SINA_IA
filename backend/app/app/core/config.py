@@ -41,6 +41,9 @@ class Settings(BaseSettings):
         'JWT_SECRET', 'insecure-dev-secret-change-me-in-production-sina-ia'
     )
     JWT_ALGORITHM: str = 'HS256'
+    LLM_KEY_ENCRYPTION_SECRET: str = (
+        'insecure-dev-llm-key-secret-change-me-in-production'
+    )
     ACCESS_TOKEN_MINUTES: int = 15
     REFRESH_TOKEN_DAYS: int = 7
 

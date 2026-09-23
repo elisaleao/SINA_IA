@@ -246,3 +246,6 @@ backend/app/data/
 
 # Artefatos locais do fluxo spec-driven
 .specs/
+
+# Arquivos gerados para teste manual E2E (não versionados)
+backend/app/tests/e2e/fixtures/

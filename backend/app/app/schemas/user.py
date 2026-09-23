@@ -125,5 +125,20 @@ class UserResponse(UserBase):
     accessibility_preferences: Optional[AccessibilityPreferencesResponse] = (
         None
     )
+    llm_key_configurada: bool = Field(
+        default=False,
+        description='Indica se o usuário tem chave pessoal do Gemini salva',
+    )
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class LLMKeyUpdate(BaseModel):
+    gemini_api_key: str = Field(
+        max_length=512,
+        description='Chave pessoal do Gemini; vazio remove a chave salva',
+    )
+
+
+class LLMKeyStatus(BaseModel):
+    llm_key_configurada: bool
