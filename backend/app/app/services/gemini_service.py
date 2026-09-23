@@ -12,6 +12,14 @@ from app.services.accessibility_prompts import (
     OCR_PROMPT,
 )
 
+RETRY_ON_TRANSIENT_ERRORS = types.HttpOptions(
+    retry_options=types.HttpRetryOptions(
+        attempts=4,
+        max_delay=10,
+        http_status_codes=[429, 500, 502, 503, 504],
+    )
+)
+
 
 class GeminiService:
     """Único ponto de acesso ao Google Gemini (assíncrono); a chave fica no backend."""
@@ -28,7 +36,12 @@ class GeminiService:
         else:
             resolved_key = api_key or settings.GEMINI_API_KEY
             self.client = (
-                genai.Client(api_key=resolved_key) if resolved_key else None
+                genai.Client(
+                    api_key=resolved_key,
+                    http_options=RETRY_ON_TRANSIENT_ERRORS,
+                )
+                if resolved_key
+                else None
             )
 
     @property
