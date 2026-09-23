@@ -43,3 +43,66 @@
 ## Acessibilidade (frontend)
 - Primitivas em `frontend/src/components/ui/` (alvo ≥44px, foco visível `ring-2`, contraste 7:1,
   estado nunca só por cor). Reutilize antes de criar componente novo. Detalhes: docs/rules/accessibility.md.
+
+# Regras de trabalho (12 regras)
+
+Estas regras valem para toda tarefa neste projeto, salvo quando forem substituídas explicitamente.
+Viés: cautela acima de velocidade em trabalho não trivial. Use bom senso em tarefas triviais.
+
+## Regra 1: Pense antes de codar
+Declare as premissas explicitamente. Na dúvida, pergunte em vez de chutar.
+Quando houver ambiguidade, apresente as interpretações possíveis.
+Discorde quando existir um caminho mais simples.
+Pare quando estiver confuso e diga o que não está claro.
+
+## Regra 2: Simplicidade primeiro
+O mínimo de código que resolve o problema. Nada especulativo.
+Nenhuma funcionalidade além do que foi pedido. Nenhuma abstração para código de uso único.
+Teste: um engenheiro sênior acharia isso complicado demais? Se sim, simplifique.
+
+## Regra 3: Mudanças mínimas e localizadas
+Mexa só no que for preciso. Limpe só a sua própria bagunça.
+Não "melhore" código, comentários ou formatação vizinhos.
+Não refatore o que não está quebrado. Siga o estilo existente.
+
+## Regra 4: Execução guiada por objetivo
+Defina critérios de sucesso. Repita até verificar.
+Em vez de seguir passos, defina o sucesso e itere.
+Critérios de sucesso fortes permitem iterar com autonomia.
+
+## Regra 5: Use o modelo só para decisões de julgamento
+Use o modelo para: classificação, rascunhos, resumos, extração.
+NÃO use o modelo para: roteamento, retentativas, transformações determinísticas.
+Se o código consegue responder, o código responde.
+
+## Regra 6: Orçamento de tokens é obrigatório
+Por tarefa: 4.000 tokens. Por sessão: 30.000 tokens.
+Perto do limite, resuma e comece de novo.
+Avise quando estourar. Nunca ultrapasse em silêncio.
+
+## Regra 7: Exponha conflitos, sem misturar
+Se dois padrões se contradizem, escolha um (o mais recente ou o mais testado).
+Explique o motivo. Sinalize o outro para limpeza.
+Não misture padrões conflitantes.
+
+## Regra 8: Leia antes de escrever
+Antes de adicionar código, leia as exportações, quem chama diretamente e os utilitários compartilhados.
+"Parece independente" é perigoso. Se não entender por que o código está estruturado assim, pergunte.
+
+## Regra 9: Testes verificam a intenção
+Testes devem registrar POR QUE o comportamento importa, além de O QUE ele faz.
+Um teste que não falha quando a regra de negócio muda está errado.
+
+## Regra 10: Ponto de controle a cada passo relevante
+Resuma o que foi feito, o que foi verificado e o que falta.
+Não continue a partir de um estado que você não consegue descrever.
+Se perder o fio, pare e reformule.
+
+## Regra 11: Siga as convenções do código, mesmo discordando
+Conformidade vale mais que gosto pessoal dentro do código.
+Se achar que uma convenção é prejudicial, diga. Não crie um caminho paralelo em silêncio.
+
+## Regra 12: Falhe de forma visível
+"Concluído" está errado se algo foi pulado em silêncio.
+"Testes passam" está errado se algum teste foi pulado.
+Por padrão, exponha a incerteza em vez de escondê-la.
