@@ -31,8 +31,19 @@ Monorepo com duas aplicações que conversam só por HTTP/JSON ([ADR 0001](docs/
 ```
 frontend/       Next.js 16 (App Router), React 19, TypeScript, TailwindCSS v4
 backend/app/    FastAPI (Python 3.13), SQLAlchemy assíncrono, Alembic,
-                google-genai, Edge-TTS, PyMuPDF, python-docx, OpenCV
+                google-genai, Edge-TTS, PyMuPDF, python-docx
 docs/           Arquitetura, ADRs, regras de domínio, acessibilidade e roadmap
+```
+
+Dentro do backend (`backend/app/app/`), cada responsabilidade tem um único lugar:
+
+```
+api/routers/    rotas HTTP, uma por arquivo
+schemas/        contratos de entrada e saída (Pydantic)
+services/       regras, fluxos e integrações: um cliente Gemini, um serviço de voz,
+                um extrator de documentos, os pipelines e o domínio puro
+core/           configuração (Settings), segurança e protocolos
+database.py     models do SQLAlchemy; o schema só muda por migração em alembic/
 ```
 
 O backend guarda os dados em SQLite no desenvolvimento e aceita PostgreSQL pelo Docker Compose. A conversão de LaTeX para fala fica em `backend/app/app/services/math_speech_service.py`, um módulo sem I/O que o quality gate impede de importar banco ou framework web. Os detalhes estão em [docs/architecture.md](docs/architecture.md).

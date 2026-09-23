@@ -1,5 +1,7 @@
 # Documento de Contexto Técnico: Plataforma de Estudos Acessível (Estilo NotebookLM)
 
+> **Documento histórico.** Descreve o projeto antes do pivô para acessibilidade universal (ADR 0002) e dos refactors de setembro de 2026. Pastas, serviços e tecnologias citados aqui podem não existir mais. Para o estado atual, veja o [`README.md`](../../README.md) e o [`docs/architecture.md`](../../docs/architecture.md).
+
 ---
 
 ## 1. Visão geral do projeto

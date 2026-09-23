@@ -1,5 +1,7 @@
 # SINA_IA — Relatório Executivo e Técnico da Aplicação
 
+> **Documento histórico.** Retrato do projeto em 20/09/2026, antes dos refactors do backend (remoção do OpenCV, cliente Gemini único e fim da pasta `app/accessibility/`). Pastas, serviços e tecnologias citados aqui podem não existir mais. Para o estado atual, veja o [`README.md`](../README.md) e o [`docs/architecture.md`](architecture.md).
+
 > **Documento de Visão Geral, Arquitetura e Diferenciais Competitivos**  
 > *Versão:* 1.2  
 > *Data:* Setembro de 2026  
