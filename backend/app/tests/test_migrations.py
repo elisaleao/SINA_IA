@@ -131,3 +131,34 @@ def test_migration_0007_converts_old_vocabulary_and_reverts():
     finally:
         if os.path.exists(db_path):
             os.remove(db_path)
+
+
+def test_migration_0008_creates_and_drops_user_key_table():
+    """Migração 0008 cria a tabela da chave pessoal e o downgrade a remove."""
+    with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as tmp:
+        db_path = tmp.name
+
+    def tables() -> set[str]:
+        connection = sqlite3.connect(db_path)
+        try:
+            rows = connection.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            ).fetchall()
+        finally:
+            connection.close()
+        return {name for (name,) in rows}
+
+    try:
+        alembic_cfg = _alembic_config(f'sqlite:///{db_path}')
+
+        command.upgrade(alembic_cfg, '0008_chave_gemini_usuario')
+        assert 'chave_gemini_usuario' in tables()
+
+        command.downgrade(alembic_cfg, '0007_preferencias_vocabulario')
+        assert 'chave_gemini_usuario' not in tables()
+
+        command.upgrade(alembic_cfg, 'head')
+        assert 'chave_gemini_usuario' in tables()
+    finally:
+        if os.path.exists(db_path):
+            os.remove(db_path)
