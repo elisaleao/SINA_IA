@@ -8,6 +8,7 @@ export const appRoutes = {
   environments: '/ambientes',
   quizHub: '/quiz',
   accessibilitySettings: '/configuracoes/acessibilidade',
+  aiKeySettings: '/configuracoes/chave-ia',
   learnMore: '/conhecer-mais',
   exercises: '/exercicios',
   processDocument: '/processar',
