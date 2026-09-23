@@ -15,3 +15,7 @@ uploads/
 outputs/
 data/
 
+.env
+.env.*
+!.env.example
+*.db.bak*
