@@ -1,6 +1,6 @@
 services:
   # -------------------------------------------------------------
-  # 1. Banco de Dados PostgreSQL (Opcional se desejar usar Postgres)
+  # 1. Banco de Dados PostgreSQL
   # -------------------------------------------------------------
   db:
     image: postgres:16-alpine
@@ -32,22 +32,17 @@ services:
     ports:
       - "8000:8000"
     environment:
-      # Padrão: arquivo SQLite específico persistido diretamente na sua máquina em ./data/sina_ia.db
-      - DATABASE_URL=sqlite+aiosqlite:////app/data/sina_ia.db
-      # Para alternar para PostgreSQL, comente a linha acima e descomente a linha abaixo:
-      # - DATABASE_URL=postgresql+asyncpg://sina:sina_secret@db:5432/sina_ia
+      - DATABASE_URL=postgresql+asyncpg://sina:sina_secret@db:5432/sina_ia
       - GROQ_API_KEY=${GROQ_API_KEY:-}
       - LLM_KEY_ENCRYPTION_SECRET=${LLM_KEY_ENCRYPTION_SECRET:-insecure-dev-llm-key-secret-change-me-in-production}
       - UPLOAD_DIR=/app/data/uploads
       - OUTPUT_DIR=/app/data/outputs
     volumes:
-      # Mapeia a pasta ./data do seu computador para dentro do container
-      # Dessa forma, o arquivo de banco (sina_ia.db), uploads e áudios MP3 persistem na sua máquina
+      # Uploads e áudios MP3 persistem em ./data na sua máquina
       - ./data:/app/data
     depends_on:
       db:
         condition: service_healthy
-        required: false
 
   # -------------------------------------------------------------
   # 3. Frontend Next.js (Interface Web e Acessibilidade)
