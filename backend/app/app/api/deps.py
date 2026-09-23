@@ -14,17 +14,32 @@ from app.core.security import decode_access_token
 from app.database import AsyncSessionLocal, DocumentRecord, UserRecord
 from app.schemas.user import UserRole
 from app.services.accessibility_pipeline import AccessibilityPipeline
+from app.services.document_extractor import DocumentExtractor
+from app.services.file_store import GeneratedFileStore
 from app.services.gemini_service import GeminiService
-from app.services.ingestion_service import IngestionService
+from app.services.ingestion_service import (
+    INGESTION_OCR_PROMPT,
+    IngestionService,
+)
 from app.services.llm_service import LLMService
-from app.services.material_service import MaterialStorage
+from app.services.material_service import (
+    MaterialStorage,
+    MaterialUploadService,
+)
 from app.services.tts_service import TTSService
 
 # Uma instância de cada integração externa, compartilhada por todas as rotas
 _default_gemini = GeminiService()
 _default_llm = LLMService(gemini=_default_gemini)
 _default_tts = TTSService()
-_default_ingestion = IngestionService(gemini=_default_gemini)
+_default_ingestion = IngestionService(
+    gemini=_default_gemini,
+    extractor=DocumentExtractor(
+        _default_gemini,
+        max_visual_candidates=0,
+        ocr_prompt=INGESTION_OCR_PROMPT,
+    ),
+)
 security_scheme = HTTPBearer(auto_error=False)
 
 
@@ -59,7 +74,34 @@ def get_material_pipeline(
 ) -> AccessibilityPipeline:
     """Pipeline de acessibilidade gravando resultados no armazenamento de materiais."""
     return AccessibilityPipeline(
-        ai=_default_gemini, tts=_default_tts, store=storage.results
+        ai=_default_gemini,
+        tts=_default_tts,
+        store=storage.results,
+        extractor=DocumentExtractor(_default_gemini, max_visual_candidates=4),
+    )
+
+
+def get_material_upload_service(
+    storage: MaterialStorage = Depends(get_material_storage),
+) -> MaterialUploadService:
+    """Caso de uso de envio de materiais sobre o armazenamento injetado."""
+    return MaterialUploadService(storage)
+
+
+def get_generated_file_store() -> GeneratedFileStore:
+    """Pasta dos arquivos gerados pelo pipeline de /process-stream."""
+    return GeneratedFileStore()
+
+
+def get_accessibility_pipeline(
+    store: GeneratedFileStore = Depends(get_generated_file_store),
+) -> AccessibilityPipeline:
+    """Pipeline de /process-stream com as integrações compartilhadas."""
+    return AccessibilityPipeline(
+        ai=_default_gemini,
+        tts=_default_tts,
+        store=store,
+        extractor=DocumentExtractor(_default_gemini, max_visual_candidates=4),
     )
 
 

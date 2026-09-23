@@ -6,30 +6,20 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 
-from app.api.deps import get_gemini_service, get_tts_service
+from app.api.deps import get_accessibility_pipeline, get_generated_file_store
 from app.core.config import settings
-from app.services.accessibility_pipeline import AccessibilityPipeline
+from app.core.protocols import DocumentPipelineProtocol
 from app.services.document_extractor import SUPPORTED_EXTENSIONS
 from app.services.file_store import GeneratedFileStore
 
 router = APIRouter(prefix='/api/accessibility', tags=['accessibility'])
 
 
-def get_generated_file_store() -> GeneratedFileStore:
-    return GeneratedFileStore()
-
-
-def get_accessibility_pipeline() -> AccessibilityPipeline:
-    return AccessibilityPipeline(
-        ai=get_gemini_service(), tts=get_tts_service()
-    )
-
-
 @router.post('/process-stream')
 async def process_document_stream(
     file: UploadFile = File(...),
     level: int = Form(2),
-    pipeline: AccessibilityPipeline = Depends(get_accessibility_pipeline),
+    pipeline: DocumentPipelineProtocol = Depends(get_accessibility_pipeline),
 ):
     filename = Path(file.filename or 'documento').name
     extension = Path(filename).suffix.lower()

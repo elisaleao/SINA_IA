@@ -13,6 +13,7 @@ from app.core.config import settings
 from app.database import DocumentRecord
 from app.main import app
 from app.services.accessibility_pipeline import AccessibilityPipeline
+from app.services.document_extractor import DocumentExtractor
 from app.services.fakes import FakeAccessibilityAI, FakeEdgeTTS
 from app.services.material_service import (
     MaterialStorage,
@@ -57,7 +58,10 @@ def materials(client, tmp_path):
     def pipeline() -> AccessibilityPipeline:
         # DocumentExtractor real; só o Gemini e o Edge-TTS são falsos
         return AccessibilityPipeline(
-            ai=state.ai, tts=state.tts, store=state.storage.results
+            ai=state.ai,
+            tts=state.tts,
+            store=state.storage.results,
+            extractor=DocumentExtractor(state.ai, max_visual_candidates=4),
         )
 
     app.dependency_overrides[get_material_storage] = lambda: state.storage

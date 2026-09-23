@@ -10,10 +10,11 @@ import fitz
 import pytest
 from httpx import AsyncClient
 
-from app.api.routers.accessibility import (
+from app.api.deps import (
     get_accessibility_pipeline,
     get_generated_file_store,
 )
+from app.core.config import settings
 from app.main import app
 from app.schemas.accessibility import (
     AuditItem,
@@ -28,6 +29,7 @@ from app.services.document_extractor import (
     ExtractionResult,
     VisualCandidate,
 )
+from app.services.fakes import FakeAccessibilityAI, FakeEdgeTTS
 from app.services.file_store import GeneratedFileStore
 from app.services.gemini_service import GeminiService
 from app.services.math_detector import detect_math_content
@@ -350,7 +352,12 @@ async def test_extractor_image():
 
 @pytest.mark.asyncio
 async def test_accessibility_pipeline_invalid_level():
-    pipeline = AccessibilityPipeline()
+    pipeline = AccessibilityPipeline(
+        ai=MagicMock(spec=GeminiService),
+        tts=MagicMock(spec=TTSService),
+        store=MagicMock(spec=GeneratedFileStore),
+        extractor=MagicMock(spec=DocumentExtractor),
+    )
     events = []
     async for event in pipeline.run(
         filename='teste.txt', data=b'ola', level=99
@@ -369,7 +376,12 @@ async def test_accessibility_pipeline_empty_content_error():
         return_value=ExtractionResult(text='', visual_candidates=[])
     )
 
-    pipeline = AccessibilityPipeline(ai=ai, extractor=extractor)
+    pipeline = AccessibilityPipeline(
+        ai=ai,
+        tts=MagicMock(spec=TTSService),
+        store=MagicMock(spec=GeneratedFileStore),
+        extractor=extractor,
+    )
     events = []
     async for event in pipeline.run(filename='teste.txt', data=b' ', level=2):
         events.append(event)
@@ -565,3 +577,31 @@ async def test_router_download_files(client: AsyncClient, tmp_path: Path):
         assert resp_400.status_code == 400
     finally:
         app.dependency_overrides.pop(get_generated_file_store, None)
+
+
+@pytest.mark.asyncio
+async def test_pipeline_with_fakes_runs_without_gemini_key(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setattr(settings, 'GEMINI_API_KEY', '')
+    ai = FakeAccessibilityAI()
+    pipeline = AccessibilityPipeline(
+        ai=ai,
+        tts=FakeEdgeTTS(),
+        store=GeneratedFileStore(tmp_path, expires=False),
+        extractor=DocumentExtractor(ai, max_visual_candidates=4),
+    )
+
+    events = [
+        event
+        async for event in pipeline.run(
+            filename='aula.txt', data='Aula de física.'.encode(), level=2
+        )
+    ]
+
+    assert [e.type for e in events if e.type == 'error'] == []
+    result = events[-1]
+    assert result.type == 'result'
+    assert result.result.filename == 'aula.txt'
+    assert 'física' in result.result.raw_text
+    assert result.result.audio_url

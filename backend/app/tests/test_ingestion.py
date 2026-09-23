@@ -5,6 +5,7 @@ import pymupdf as fitz
 import pytest
 from PIL import Image
 
+from app.services.document_extractor import DocumentExtractor
 from app.services.ingestion_service import (
     INGESTION_OCR_PROMPT,
     IngestionService,
@@ -25,7 +26,7 @@ async def test_process_pdf_with_text_and_equations(tmp_path):
     doc.save(str(pdf_path))
     doc.close()
 
-    service = IngestionService()
+    service = _service(_fake_gemini())
     markdown, accessible, equations = await service.process_file(
         str(pdf_path), 'documento_teste.pdf'
     )
@@ -50,7 +51,7 @@ async def test_process_docx_headings_and_paragraphs(tmp_path):
     )
     doc.save(str(docx_path))
 
-    service = IngestionService()
+    service = _service(_fake_gemini())
     markdown, accessible, equations = await service.process_file(
         str(docx_path), 'aula_algoritmos.docx'
     )
@@ -70,7 +71,7 @@ async def test_process_plain_text(tmp_path):
         encoding='utf-8',
     )
 
-    service = IngestionService()
+    service = _service(_fake_gemini())
     markdown, accessible, equations = await service.process_file(
         str(txt_path), 'notas.txt'
     )
@@ -85,6 +86,13 @@ def _png_file(path, color=(255, 255, 255)) -> str:
     return str(path)
 
 
+def _service(gemini) -> IngestionService:
+    extractor = DocumentExtractor(
+        gemini, max_visual_candidates=0, ocr_prompt=INGESTION_OCR_PROMPT
+    )
+    return IngestionService(gemini=gemini, extractor=extractor)
+
+
 def _fake_gemini(ocr_text: str | None = None) -> MagicMock:
     gemini = MagicMock()
     gemini.is_configured = ocr_text is not None
@@ -96,7 +104,7 @@ def _fake_gemini(ocr_text: str | None = None) -> MagicMock:
 async def test_process_image_without_client(tmp_path):
     img_path = _png_file(tmp_path / 'exemplo.png')
     gemini = _fake_gemini(ocr_text=None)
-    service = IngestionService(gemini=gemini)
+    service = _service(gemini)
 
     markdown, accessible, equations = await service.process_file(
         img_path, 'exemplo.png'
@@ -115,7 +123,7 @@ async def test_process_image_with_mocked_gemini(tmp_path):
         'Transcrição OCR: Fórmula quadrática '
         '$x = \\frac{-b \\pm \\sqrt{\\Delta}}{2a}$.'
     )
-    service = IngestionService(gemini=gemini)
+    service = _service(gemini)
 
     markdown, accessible, equations = await service.process_file(
         img_path, 'esquema.png'
@@ -139,7 +147,7 @@ async def test_process_scanned_pdf_page_triggers_gemini_ocr(tmp_path):
     doc.close()
 
     gemini = _fake_gemini('Texto recuperado via OCR da imagem da página 1.')
-    service = IngestionService(gemini=gemini)
+    service = _service(gemini)
 
     markdown, accessible, equations = await service.process_file(
         str(pdf_path), 'digitalizado.pdf'
@@ -159,7 +167,7 @@ async def test_scanned_pdf_without_client_keeps_native_text(tmp_path):
     doc.close()
 
     gemini = _fake_gemini(ocr_text=None)
-    service = IngestionService(gemini=gemini)
+    service = _service(gemini)
 
     markdown, _, _ = await service.process_file(
         str(pdf_path), 'digitalizado.pdf'
@@ -175,6 +183,4 @@ async def test_unsupported_extension_is_rejected(tmp_path):
     csv_path.write_text('a,b\n1,2', encoding='utf-8')
 
     with pytest.raises(ValueError, match='Formato não suportado'):
-        await IngestionService(gemini=_fake_gemini()).process_file(
-            str(csv_path), 'notas.csv'
-        )
+        await _service(_fake_gemini()).process_file(str(csv_path), 'notas.csv')

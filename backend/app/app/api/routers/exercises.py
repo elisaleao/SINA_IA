@@ -1,4 +1,3 @@
-import json
 import uuid
 from datetime import datetime, timezone
 
@@ -8,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.api.deps import get_current_user, get_db, get_llm_client, require_role
+from app.core.protocols import LLMClientProtocol
 from app.database import (
     ExerciseAnswerRecord,
     ExerciseRecord,
@@ -25,6 +25,11 @@ from app.schemas.exercise import (
     SubmitAnswerRequest,
 )
 from app.schemas.user import UserRole
+from app.services.exercise_service import (
+    build_generation_prompt,
+    parse_generated_items,
+    time_limit_for,
+)
 from app.services.math_speech_service import MathToSpeechService
 
 router = APIRouter(prefix='/api/exercicios', tags=['Exercícios e Quiz'])
@@ -42,14 +47,8 @@ async def start_session(
     current_user: UserRecord = Depends(get_current_user),
 ) -> SessionResponse:
     """Cria uma nova sessão de exercícios com tempo calculado de acordo com as preferências do aluno."""
-    # Cálculo do tempo limite baseado em preferências de acessibilidade
-    tempo_limite = 13  # Padrão: 13s (WCAG 2.2.1 / F3.6)
     prefs = current_user.accessibility_preferences
-    if prefs:
-        if prefs.profile == 'adhd':
-            tempo_limite = 26  # 2x mais tempo
-        elif prefs.profile == 'cognitive':
-            tempo_limite = 39  # 3x mais tempo
+    tempo_limite = time_limit_for(prefs.profile if prefs else None)
 
     sessao_id = str(uuid.uuid4())
     sessao = ExerciseSessionRecord(
@@ -287,39 +286,15 @@ async def get_session_result(
 async def generate_exercises(
     payload: GenerateExercisesRequest,
     db: AsyncSession = Depends(get_db),
-    llm=Depends(get_llm_client),
+    llm: LLMClientProtocol = Depends(get_llm_client),
     _user: UserRecord = Depends(get_current_user),
 ) -> list[ExerciseResponse]:
     """Gera questões com IA. Todas as questões geradas obrigatoriamente nascem com status='rascunho'."""
-    prompt = f"""Gere exatamente {payload.quantidade} questões de fixação no formato Verdadeiro ou Falso (V/F) sobre a matéria {payload.materia_id} a partir do texto abaixo.
-Retorne EXCLUSIVAMENTE um array JSON contendo objetos com os seguintes campos:
-- enunciado: Texto em Markdown com equações em sintaxe LaTeX ($...$)
-- codigo: Trecho de código se aplicável, ou null
-- linguagem: 'python', 'c', ou null
-- resposta_correta: true ou false
-- explicacao: Justificativa curta em Linguagem Simples
-
-Texto base:
-{payload.texto_base[:5000]}
-"""
+    prompt = build_generation_prompt(
+        payload.materia_id, payload.quantidade, payload.texto_base
+    )
     raw_response = await llm.generate_text(prompt)
-
-    # Extração de JSON seguro
-    try:
-        start_idx = raw_response.find('[')
-        end_idx = raw_response.rfind(']') + 1
-        items = json.loads(raw_response[start_idx:end_idx])
-    except Exception:
-        # Fallback determinístico caso o LLM mock ou resposta não formate JSON
-        items = [
-            {
-                'enunciado': f'Questão gerada sobre {payload.materia_id}.',
-                'codigo': None,
-                'linguagem': None,
-                'resposta_correta': True,
-                'explicacao': 'Explicação formativa em Linguagem Simples.',
-            }
-        ]
+    items = parse_generated_items(raw_response, payload.materia_id)
 
     created = []
     for item in items:
