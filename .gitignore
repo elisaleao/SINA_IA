@@ -243,3 +243,6 @@ backend/app/data/
 
 
 
+
+# Artefatos locais do fluxo spec-driven
+.specs/
