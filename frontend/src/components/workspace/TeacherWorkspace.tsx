@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ChatPanel } from "@/components/workspace/ChatPanel";
-import { getRegistration } from "@/lib/auth-storage";
+import { useSession } from "@/components/session/SessionProvider";
 import {
   addClassroomFiles,
   createClassroom,
@@ -41,6 +41,7 @@ function ArrowLeftIcon() {
 }
 
 export function TeacherWorkspace() {
+  const { user } = useSession();
   const sidebarId = "teacher-workspace-sidebar";
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeView, setActiveView] = useState<TeacherView>("chat");
@@ -71,9 +72,7 @@ export function TeacherWorkspace() {
     : [];
 
   const syncTeacherRooms = useCallback(() => {
-    const registration = getRegistration("teacher");
-
-    if (!registration || registration.role !== "teacher") {
+    if (!user) {
       setTeacherProfile(null);
       setTeacherRooms([]);
       setSelectedRoom(null);
@@ -81,11 +80,11 @@ export function TeacherWorkspace() {
     }
 
     setTeacherProfile({
-      fullName: registration.fullName,
-      email: registration.email,
+      fullName: user.full_name,
+      email: user.email,
     });
 
-    const nextRooms = getTeacherClassrooms(registration.email);
+    const nextRooms = getTeacherClassrooms(user.email);
     setTeacherRooms(nextRooms);
     setSelectedRoom((current) => {
       if (!current) {
@@ -100,7 +99,7 @@ export function TeacherWorkspace() {
 
       return nextSelectedRoom;
     });
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const syncHandle = window.setTimeout(syncTeacherRooms, 0);
