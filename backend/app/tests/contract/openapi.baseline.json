@@ -127,6 +127,71 @@
           }
         }
       }
+    },
+    "/users/me/llm-key": {
+      "put": {
+        "tags": [
+          "Autenticação"
+        ],
+        "summary": "Salvar a chave pessoal do Gemini do usuário logado",
+        "description": "Testa a chave no Gemini antes de gravar; string vazia remove a chave.",
+        "operationId": "save_my_llm_key_users_me_llm_key_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LLMKeyUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LLMKeyStatus"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Autenticação"
+        ],
+        "summary": "Remover a chave pessoal do Gemini do usuário logado",
+        "description": "Apaga a chave cifrada; as próximas chamadas usam o fallback.",
+        "operationId": "delete_my_llm_key_users_me_llm_key_delete",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
     }
   },
   "components": {

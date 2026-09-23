@@ -21,6 +21,7 @@ from app.services.ingestion_service import (
     INGESTION_OCR_PROMPT,
     IngestionService,
 )
+from app.services.llm_key_service import LLMKeyService
 from app.services.llm_service import LLMService
 from app.services.material_service import (
     MaterialStorage,
@@ -103,6 +104,11 @@ def get_accessibility_pipeline(
         store=store,
         extractor=DocumentExtractor(_default_gemini, max_visual_candidates=4),
     )
+
+
+def get_llm_key_service() -> LLMKeyService:
+    """Caso de uso da chave pessoal do Gemini (substituível nos testes)."""
+    return LLMKeyService()
 
 
 def get_llm_client() -> LLMClientProtocol:

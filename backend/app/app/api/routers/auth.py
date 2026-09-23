@@ -6,7 +6,7 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.deps import get_current_user, get_db
+from app.api.deps import get_current_user, get_db, get_llm_key_service
 from app.core.config import settings
 from app.core.security import (
     create_access_token,
@@ -33,7 +33,14 @@ from app.schemas.user import (
     AccessibilityPreferencesCreate,
     AccessibilityPreferencesResponse,
     AccessibilityPreferencesUpdate,
+    LLMKeyStatus,
+    LLMKeyUpdate,
     UserRole,
+)
+from app.services.llm_key_service import (
+    InvalidLLMKey,
+    LLMKeyCheckUnavailable,
+    LLMKeyService,
 )
 
 router = APIRouter(tags=['Autenticação'])
@@ -266,10 +273,61 @@ async def logout(
     summary='Obter dados e preferências do usuário logado',
 )
 async def get_me(
+    db: AsyncSession = Depends(get_db),
     current_user: UserRecord = Depends(get_current_user),
+    llm_keys: LLMKeyService = Depends(get_llm_key_service),
 ) -> UserResponse:
     """Retorna os dados cadastrais e as preferências UDL do usuário autenticado."""
-    return UserResponse.model_validate(current_user)
+    configured = await llm_keys.is_configured(current_user, db)
+    return UserResponse.model_validate(current_user).model_copy(
+        update={'llm_key_configurada': configured}
+    )
+
+
+@router.put(
+    '/users/me/llm-key',
+    response_model=LLMKeyStatus,
+    summary='Salvar a chave pessoal do Gemini do usuário logado',
+)
+async def save_my_llm_key(
+    payload: LLMKeyUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserRecord = Depends(get_current_user),
+    llm_keys: LLMKeyService = Depends(get_llm_key_service),
+) -> LLMKeyStatus:
+    """Testa a chave no Gemini antes de gravar; string vazia remove a chave."""
+    if not payload.gemini_api_key:
+        await llm_keys.remove(current_user, db)
+        return LLMKeyStatus(llm_key_configurada=False)
+    try:
+        await llm_keys.save(current_user, payload.gemini_api_key, db)
+    except InvalidLLMKey as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail='A chave do Gemini foi recusada. Confira se está correta '
+            'e ativa.',
+        ) from exc
+    except LLMKeyCheckUnavailable as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail='Não foi possível testar a chave agora. Tente de novo em '
+            'instantes.',
+        ) from exc
+    return LLMKeyStatus(llm_key_configurada=True)
+
+
+@router.delete(
+    '/users/me/llm-key',
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary='Remover a chave pessoal do Gemini do usuário logado',
+)
+async def delete_my_llm_key(
+    db: AsyncSession = Depends(get_db),
+    current_user: UserRecord = Depends(get_current_user),
+    llm_keys: LLMKeyService = Depends(get_llm_key_service),
+) -> None:
+    """Apaga a chave cifrada; as próximas chamadas usam o fallback."""
+    await llm_keys.remove(current_user, db)
 
 
 @router.patch(

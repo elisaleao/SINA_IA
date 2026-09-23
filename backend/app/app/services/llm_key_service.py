@@ -24,6 +24,10 @@ class InvalidLLMKey(Exception):
     """A chave foi recusada pelo Gemini na chamada de teste."""
 
 
+class LLMKeyCheckUnavailable(Exception):
+    """Não deu para testar a chave (rede, limite, erro do Gemini)."""
+
+
 async def validate_with_gemini(api_key: str) -> bool:
     """Faz uma chamada curta com a chave; só recusa em erro de autenticação."""
     try:
@@ -44,7 +48,11 @@ class LLMKeyService:
     async def save(
         self, user: UserRecord, api_key: str, db: AsyncSession
     ) -> None:
-        if not await self.validate(api_key):
+        try:
+            valid = await self.validate(api_key)
+        except errors.APIError as exc:
+            raise LLMKeyCheckUnavailable(str(exc)) from exc
+        if not valid:
             raise InvalidLLMKey('A chave do Gemini foi recusada.')
         cipher = encrypt_api_key(api_key)
         await _load_key(user, db)
