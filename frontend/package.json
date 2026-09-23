@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "api:types": "openapi-typescript src/lib/openapi.json -o src/lib/api-types.ts"
   },
   "dependencies": {
     "next": "16.2.7",
@@ -25,6 +26,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.7",
     "jsdom": "^30.1.1",
+    "openapi-typescript": "7.13.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vite": "^8.3.0",
