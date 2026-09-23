@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { ChatPanel } from "@/components/workspace/ChatPanel";
 import { useSession } from "@/components/session/SessionProvider";
+import { FallbackNotice } from "@/components/ui";
 import {
   getStudentClassrooms,
   joinClassroomByCode,
@@ -181,6 +182,7 @@ export function StudentWorkspace() {
   const [generatedContent, setGeneratedContent] = useState<{
     text: string;
     audioUrl: string | null;
+    usedFallback: boolean;
   } | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
 
@@ -357,6 +359,7 @@ export function StudentWorkspace() {
       setGeneratedContent({
         text: response.text_content,
         audioUrl: response.audio_url,
+        usedFallback: response.chave_pessoal_falhou ?? false,
       });
     } catch (error: unknown) {
       console.error(error);
@@ -689,6 +692,7 @@ export function StudentWorkspace() {
 
                       {generatedContent && !isGenerating && (
                         <div className="space-y-6">
+                          {generatedContent.usedFallback && <FallbackNotice />}
                           {generatedContent.audioUrl && (
                             <div className="rounded-[1.5rem] border border-[#1f5f5b]/20 bg-[#edf6f5] p-5 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
                               <p className="text-sm font-bold text-[#1f5f5b] uppercase tracking-[0.16em]">

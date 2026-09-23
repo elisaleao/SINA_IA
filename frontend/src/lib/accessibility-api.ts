@@ -41,6 +41,7 @@ export interface ProcessResult {
   audit: AuditReport;
   text_download_url: string;
   audio_url: string;
+  chave_pessoal_falhou?: boolean;
 }
 
 export type PipelineEvent =
