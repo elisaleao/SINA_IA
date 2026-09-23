@@ -153,4 +153,5 @@ Os fluxos compartilham o mesmo extrator, o mesmo cliente de IA da requisição e
 - `database.py` define as tabelas `usuarios`, `preferencias_acessibilidade`, `chave_gemini_usuario`, `documentos`, `refresh_tokens`, `exercicios`, `sessoes_exercicio` e `respostas_exercicio`.
 - O schema muda **só por migração** em `backend/app/alembic/versions/`. A API não cria tabelas ao iniciar, e o container do backend roda `alembic upgrade head` antes de subir.
 - O `./check.sh` e o CI rodam `alembic check`, que falha quando um model muda sem migração correspondente.
-- SQLite no desenvolvimento e nos testes; PostgreSQL opcional pelo `docker-compose.yml`.
+- PostgreSQL 16 no Docker, no desenvolvimento local e como padrão do `config.py`. SQLite só na suíte de testes, em memória.
+- O CI sobe, confere (`alembic check`) e reverte as migrações num PostgreSQL de verdade (job `migrations`).

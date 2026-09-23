@@ -14,7 +14,8 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = 'uploads'
     OUTPUT_DIR: str = 'outputs'
     DATABASE_URL: str = os.getenv(
-        'DATABASE_URL', 'sqlite+aiosqlite:///./study_platform.db'
+        'DATABASE_URL',
+        'postgresql+asyncpg://sina:sina_secret@localhost:5432/sina_ia',
     )
     CORS_ORIGINS: list[str] = ['*']
 
