@@ -163,6 +163,7 @@ class AccessibilityPipeline:
                 audit=audit,
                 text_download_url=f'/api/accessibility/files/{text_path.name}',
                 audio_url=f'/api/accessibility/files/{audio_path.name}',
+                chave_pessoal_falhou=getattr(self.ai, 'used_fallback', False),
             )
             yield PipelineEvent(type='result', result=result)
 

@@ -782,6 +782,11 @@
             ],
             "title": "Audio Url"
           },
+          "chave_pessoal_falhou": {
+            "default": false,
+            "title": "Chave Pessoal Falhou",
+            "type": "boolean"
+          },
           "document_id": {
             "title": "Document Id",
             "type": "string"
@@ -930,6 +935,11 @@
             ],
             "title": "Audio Url"
           },
+          "chave_pessoal_falhou": {
+            "default": false,
+            "title": "Chave Pessoal Falhou",
+            "type": "boolean"
+          },
           "criado_em": {
             "format": "date-time",
             "title": "Criado Em",
@@ -1059,6 +1069,11 @@
               }
             ],
             "title": "Ambiente Id"
+          },
+          "chave_pessoal_falhou": {
+            "default": false,
+            "title": "Chave Pessoal Falhou",
+            "type": "boolean"
           },
           "criado_em": {
             "format": "date-time",
@@ -1626,6 +1641,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Process Document Stream",
         "tags": [
           "accessibility"

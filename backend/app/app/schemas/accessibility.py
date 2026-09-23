@@ -50,6 +50,7 @@ class ProcessResult(BaseModel):
     audit: AuditReport
     text_download_url: str
     audio_url: str
+    chave_pessoal_falhou: bool = False
 
 
 class PipelineEvent(BaseModel):

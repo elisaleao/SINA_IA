@@ -197,3 +197,87 @@ def test_personal_factory_builds_gemini_with_the_user_key():
 
     assert isinstance(client, GeminiService)
     assert client.is_configured is True
+
+
+async def _upload(client, headers) -> dict:
+    response = await client.post(
+        '/api/materiais',
+        headers=headers,
+        files=[('files', ('aula.txt', TEXT))],
+    )
+    assert response.status_code == 202
+    [material] = response.json()['materiais']
+    detail = await client.get(
+        f'/api/materiais/{material["id"]}', headers=headers
+    )
+    return detail.json()
+
+
+async def _generate(client, headers, test_db_session) -> dict:
+    doc_id = str(uuid.uuid4())
+    test_db_session.add(
+        DocumentRecord(
+            id=doc_id,
+            filename='aula.txt',
+            raw_markdown='Velocidade média.',
+            accessible_text='Velocidade média.',
+        )
+    )
+    await test_db_session.commit()
+    response = await client.post(
+        '/api/content/generate',
+        headers=headers,
+        json={
+            'document_id': doc_id,
+            'generation_type': 'summary',
+            'generate_audio': False,
+        },
+    )
+    assert response.status_code == 200
+    return response.json()
+
+
+@pytest.mark.asyncio
+async def test_key_failure_is_reported_in_every_response(
+    client, providers, test_db_session
+):
+    providers['personal'].failure = _unauthorized()
+    headers = await _student(client, with_key=True)
+
+    streamed = await _process_stream(client, headers)
+    material = await _upload(client, headers)
+    listing = await client.get('/api/materiais', headers=headers)
+    generated = await _generate(client, headers, test_db_session)
+
+    assert streamed['result']['chave_pessoal_falhou'] is True
+    assert material['chave_pessoal_falhou'] is True
+    assert listing.json()[0]['chave_pessoal_falhou'] is True
+    assert generated['chave_pessoal_falhou'] is True
+
+
+@pytest.mark.asyncio
+async def test_missing_key_is_not_reported_as_a_failure(
+    client, providers, test_db_session
+):
+    headers = await _student(client, with_key=False)
+
+    streamed = await _process_stream(client, headers)
+    material = await _upload(client, headers)
+    generated = await _generate(client, headers, test_db_session)
+
+    assert streamed['result']['chave_pessoal_falhou'] is False
+    assert material['chave_pessoal_falhou'] is False
+    assert generated['chave_pessoal_falhou'] is False
+
+
+@pytest.mark.asyncio
+async def test_reused_material_does_not_inherit_the_failure(client, providers):
+    providers['personal'].failure = _unauthorized()
+    headers = await _student(client, with_key=True)
+    first = await _upload(client, headers)
+
+    second = await _upload(client, headers)
+
+    assert first['chave_pessoal_falhou'] is True
+    assert second['reaproveitado'] is True
+    assert second['chave_pessoal_falhou'] is False

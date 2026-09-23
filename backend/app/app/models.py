@@ -80,3 +80,4 @@ class GenerationResponse(BaseModel):
     spoken_content: str
     audio_url: Optional[str] = None
     accessibility_profile: Optional[str] = None
+    chave_pessoal_falhou: bool = False

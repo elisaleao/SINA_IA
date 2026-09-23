@@ -16,6 +16,7 @@ class MaterialSummary(BaseModel):
     nivel: Optional[int] = None
     ambiente_id: Optional[str] = None
     reaproveitado: bool = False
+    chave_pessoal_falhou: bool = False
     criado_em: datetime.datetime
 
 
