@@ -10,7 +10,7 @@ import fitz
 import pytest
 from httpx import AsyncClient
 
-from app.api.routers.accessibility import (
+from app.api.deps import (
     get_accessibility_pipeline,
     get_generated_file_store,
 )
