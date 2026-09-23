@@ -36,7 +36,8 @@ services:
       - DATABASE_URL=sqlite+aiosqlite:////app/data/sina_ia.db
       # Para alternar para PostgreSQL, comente a linha acima e descomente a linha abaixo:
       # - DATABASE_URL=postgresql+asyncpg://sina:sina_secret@db:5432/sina_ia
-      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - LLM_KEY_ENCRYPTION_SECRET=${LLM_KEY_ENCRYPTION_SECRET:-insecure-dev-llm-key-secret-change-me-in-production}
       - UPLOAD_DIR=/app/data/uploads
       - OUTPUT_DIR=/app/data/outputs
     volumes:

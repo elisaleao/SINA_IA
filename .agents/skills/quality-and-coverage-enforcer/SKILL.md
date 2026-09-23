@@ -62,7 +62,7 @@ Qualquer desenvolvedor recém-chegado pode ativar os hooks com:
 * **Padrões Obrigatórios:**
   * **Testes de Rota e Contrato:** Usam cliente assíncrono (`AsyncClient` com `lifespan` ativo em `tests/conftest.py`).
   * **Isolamento de Banco:** Cada teste deve usar sessão transacional isolada com rollback ao final (`test_db_session`).
-  * **Serviços Externos Falsificados:** Chamadas para Google Gemini e Edge-TTS devem usar mocks ou fakes idempotentes (`app.services.fakes`), sem bater na rede externa durante a suíte padrão.
+  * **Serviços Externos Falsificados:** Chamadas para Google Gemini, Groq e Edge-TTS devem usar mocks ou fakes idempotentes (`app.services.fakes`), sem bater na rede externa durante a suíte padrão.
   * **Domínio Puro (`math_speech_service.py`):** Sem dependência de FastAPI, SQLAlchemy ou requests.
   * **Formatação Obrigatória:** Aspas simples (`quote-style = 'single'`) exigidas pelo Ruff.
 * **Comandos de Execução:**

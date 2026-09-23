@@ -84,7 +84,7 @@ backend/app/alembic/   migrações; o schema do banco só muda por elas
 | `math_speech_service.py` | Conversão determinística de LaTeX para fala em português (`[Equação: ...]`). | Domínio puro |
 | `math_detector.py` | Heurística que decide se um texto tem matemática relevante. | Domínio puro |
 | `upload_validation.py` | Tipo do arquivo pela assinatura (não pela extensão), limites e nome seguro para exibição. | Domínio puro |
-| `fakes.py` | Implementações falsas do LLM, do Gemini e do TTS para os testes. | Testes |
+| `fakes.py` | Implementações falsas do LLM, do cliente de IA e do TTS para os testes. | Testes |
 
 Módulos de **domínio puro** não fazem I/O e não importam FastAPI, SQLAlchemy nem clientes externos (ver [`docs/rules/domain.md`](rules/domain.md)).
 
@@ -144,7 +144,7 @@ Os fluxos compartilham o mesmo extrator, o mesmo cliente de IA da requisição e
 | Pipeline de acessibilidade | `POST /api/accessibility/process-stream` | extração, detecção de matemática, adaptação por nível, auditoria, correção, MP3 | Eventos NDJSON; arquivos temporários com expiração |
 | Materiais | `POST /api/materiais` | o mesmo pipeline, em tarefa de fundo | Linha em `documentos` com `status` (`enviado`, `processando`, `pronto`, `erro`) e MP3 permanente |
 | Documento legado | `POST /api/documents/upload` | extração e matemática falada | Linha em `documentos` com `status = pronto` |
-| Conteúdo | `POST /api/content/generate` | prompt por perfil, Gemini, matemática falada, MP3 | Texto, texto falado e URL do áudio |
+| Conteúdo | `POST /api/content/generate` | prompt por perfil, IA da requisição (Gemini do usuário ou Groq), matemática falada, MP3 | Texto, texto falado e URL do áudio |
 
 ---
 
