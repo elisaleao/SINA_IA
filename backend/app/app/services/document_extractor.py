@@ -11,8 +11,8 @@ from pathlib import Path
 import fitz  # PyMuPDF
 from docx import Document
 
+from app.core.protocols import AccessibilityAIProtocol
 from app.services.accessibility_prompts import OCR_PROMPT
-from app.services.gemini_service import GeminiService
 
 SUPPORTED_EXTENSIONS = {
     '.pdf',
@@ -63,7 +63,7 @@ class DocumentExtractor:
 
     def __init__(
         self,
-        ai: GeminiService,
+        ai: AccessibilityAIProtocol,
         *,
         max_visual_candidates: int = 4,
         ocr_prompt: str = OCR_PROMPT,
