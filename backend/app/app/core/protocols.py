@@ -1,8 +1,10 @@
 """Definições de protocolos e contratos de domínio para injeção de dependências."""
 
+from collections.abc import AsyncIterator
 from typing import Optional, Protocol
 
 from app.models import AccessibilityConfig, GenerationType, TeacherConfig
+from app.schemas.accessibility import PipelineEvent
 
 
 class LLMClientProtocol(Protocol):
@@ -30,4 +32,18 @@ class TTSClientProtocol(Protocol):
         self, text: str, voice: Optional[str] = None
     ) -> str:
         """Sintetiza texto falado em arquivo de áudio e retorna o filename relativo gerado."""
+        ...
+
+
+class DocumentPipelineProtocol(Protocol):
+    """Protocolo do pipeline que transforma um documento em material acessível."""
+
+    def run(
+        self,
+        *,
+        filename: str,
+        data: bytes,
+        level: int,
+    ) -> AsyncIterator[PipelineEvent]:
+        """Emite eventos de cada etapa e termina com o resultado ou um erro."""
         ...
