@@ -18,10 +18,8 @@ class Settings(BaseSettings):
     )
     CORS_ORIGINS: list[str] = ['*']
 
-    # IA generativa (um único cliente em app/services/gemini_service.py)
+    # IA generativa: Gemini com a chave do usuário e Groq como fallback (ADR-0003)
     GEMINI_MODEL: str = 'gemini-3.5-flash'
-
-    # IA gratuita de fallback (app/services/groq_service.py, ver ADR-0003)
     GROQ_API_KEY: str = ''
     GROQ_MODEL: str = 'qwen/qwen3.8-27b'
 
