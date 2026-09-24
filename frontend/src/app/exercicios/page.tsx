@@ -8,6 +8,7 @@ import {
   fetchNextQuestion,
   submitExerciseAnswer,
   fetchSessionResult,
+  ExerciseLevel,
   ExercisePublicQuestion,
   SessionResponse,
   AnswerFeedbackResponse,
@@ -24,9 +25,17 @@ const MATERIAS = [
   { id: 'logica-matematica', label: 'Lógica Matemática' },
 ];
 
+const NIVEIS: { id: ExerciseLevel | ''; label: string }[] = [
+  { id: '', label: 'Todos os níveis' },
+  { id: 'basico', label: 'Básico' },
+  { id: 'intermediario', label: 'Intermediário' },
+  { id: 'avancado', label: 'Avançado' },
+];
+
 export default function ExerciciosPage() {
   const [quizState, setQuizState] = useState<QuizState>('setup');
   const [selectedMateria, setSelectedMateria] = useState<string>('calculo');
+  const [selectedNivel, setSelectedNivel] = useState<ExerciseLevel | ''>('');
   const [totalQuestoes, setTotalQuestoes] = useState<number>(3);
   const [currentSession, setCurrentSession] = useState<SessionResponse | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState<ExercisePublicQuestion | null>(null);
@@ -99,7 +108,11 @@ export default function ExerciciosPage() {
     setQuizState('loading');
 
     try {
-      const session = await startExerciseSession(selectedMateria, totalQuestoes);
+      const session = await startExerciseSession(
+        selectedMateria,
+        totalQuestoes,
+        selectedNivel || undefined
+      );
       setCurrentSession(session);
       await loadNextQuestion(session.id);
     } catch (err) {
@@ -108,7 +121,8 @@ export default function ExerciciosPage() {
           ? err.message
           : 'Não foi possível iniciar a sessão de exercícios.'
       );
-      setQuizState('error');
+      // Volta à configuração para a pessoa escolher outro filtro.
+      setQuizState('setup');
     }
   };
 
@@ -277,6 +291,27 @@ export default function ExerciciosPage() {
                 {MATERIAS.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="nivel-select"
+                className="block text-sm font-semibold text-slate-700 mb-2"
+              >
+                Nível de dificuldade
+              </label>
+              <select
+                id="nivel-select"
+                value={selectedNivel}
+                onChange={(e) => setSelectedNivel(e.target.value as ExerciseLevel | '')}
+                className="block w-full px-4 py-3 rounded-lg border border-slate-300 bg-white text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
+              >
+                {NIVEIS.map((n) => (
+                  <option key={n.id} value={n.id}>
+                    {n.label}
                   </option>
                 ))}
               </select>

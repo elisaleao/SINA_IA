@@ -35,8 +35,20 @@ describe('lib/exercises', () => {
     expect(JSON.parse(init.body as string)).toEqual({
       materia_id: 'm1',
       total_questoes: 3,
+      nivel: null,
     });
     expect(session.id).toBe('s1');
+  });
+
+  it('sends the chosen level so the session only serves that level', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ id: 's1' }, 201));
+    const { startExerciseSession } = await import('../exercises');
+
+    await startExerciseSession('m1', 3, 'avancado');
+
+    expect(JSON.parse(lastRequest().init.body as string)).toMatchObject({
+      nivel: 'avancado',
+    });
   });
 
   it('fetches the next question with the bearer token', async () => {
