@@ -1173,6 +1173,50 @@
         "title": "MaterialUploadResponse",
         "type": "object"
       },
+      "ProfileUpdate": {
+        "properties": {
+          "current_password": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Senha atual; obrigatória para trocar a senha",
+            "title": "Current Password"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "minLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Novo nome de exibição",
+            "title": "Full Name"
+          },
+          "new_password": {
+            "anyOf": [
+              {
+                "minLength": 8,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Nova senha, mínimo 8 caracteres",
+            "title": "New Password"
+          }
+        },
+        "title": "ProfileUpdate",
+        "type": "object"
+      },
       "RefreshRequest": {
         "properties": {
           "refresh_token": {
@@ -2642,6 +2686,51 @@
           }
         ],
         "summary": "Obter dados e preferências do usuário logado",
+        "tags": [
+          "Autenticação"
+        ]
+      },
+      "patch": {
+        "description": "E-mail e perfil de uso não mudam aqui; a senha exige a senha atual.",
+        "operationId": "update_me_users_me_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Atualizar nome e senha do usuário logado",
         "tags": [
           "Autenticação"
         ]

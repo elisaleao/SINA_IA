@@ -35,6 +35,7 @@ from app.schemas.user import (
     AccessibilityPreferencesUpdate,
     LLMKeyStatus,
     LLMKeyUpdate,
+    ProfileUpdate,
     UserRole,
 )
 from app.services.llm_key_service import (
@@ -282,6 +283,34 @@ async def get_me(
     return UserResponse.model_validate(current_user).model_copy(
         update={'llm_key_configurada': configured}
     )
+
+
+@router.patch(
+    '/users/me',
+    response_model=UserResponse,
+    summary='Atualizar nome e senha do usuário logado',
+)
+async def update_me(
+    payload: ProfileUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserRecord = Depends(get_current_user),
+    llm_keys: LLMKeyService = Depends(get_llm_key_service),
+) -> UserResponse:
+    """E-mail e perfil de uso não mudam aqui; a senha exige a senha atual."""
+    if payload.new_password:
+        if not payload.current_password or not verify_password(
+            payload.current_password, current_user.hashed_password
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail='A senha atual não confere.',
+            )
+        current_user.hashed_password = hash_password(payload.new_password)
+    if payload.full_name:
+        current_user.full_name = payload.full_name
+    await db.commit()
+    await db.refresh(current_user)
+    return await get_me(db, current_user, llm_keys)
 
 
 @router.put(

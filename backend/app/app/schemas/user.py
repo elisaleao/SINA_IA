@@ -133,6 +133,21 @@ class UserResponse(UserBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+class ProfileUpdate(BaseModel):
+    full_name: Optional[str] = Field(
+        default=None, min_length=2, description='Novo nome de exibição'
+    )
+    current_password: Optional[str] = Field(
+        default=None,
+        description='Senha atual; obrigatória para trocar a senha',
+    )
+    new_password: Optional[str] = Field(
+        default=None,
+        min_length=8,
+        description='Nova senha, mínimo 8 caracteres',
+    )
+
+
 class LLMKeyUpdate(BaseModel):
     gemini_api_key: str = Field(
         max_length=512,
