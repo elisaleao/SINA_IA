@@ -2,6 +2,8 @@ import base64
 import json
 from types import SimpleNamespace
 
+import httpx
+import openai
 import pytest
 from pydantic import ValidationError
 
@@ -179,3 +181,92 @@ def test_conforms_to_the_ai_protocol():
     service, _ = _service()
 
     assert isinstance(service, AccessibilityAIProtocol)
+
+
+class RateLimitedCompletions:
+    """Answers 429 a few times before the real content, like the free tier."""
+
+    def __init__(self, failures: int, retry_after: str | None = '7'):
+        self.failures = failures
+        self.retry_after = retry_after
+        self.requests: list[dict] = []
+
+    async def create(self, **kwargs):
+        self.requests.append(kwargs)
+        if self.failures:
+            self.failures -= 1
+            headers = (
+                {'retry-after': self.retry_after} if self.retry_after else {}
+            )
+            response = httpx.Response(
+                429,
+                headers=headers,
+                request=httpx.Request('POST', 'https://api.groq.com'),
+            )
+            raise openai.RateLimitError(
+                'Rate limit reached', response=response, body=None
+            )
+        message = SimpleNamespace(content='Texto pronto.')
+        return SimpleNamespace(choices=[SimpleNamespace(message=message)])
+
+
+def _rate_limited_service(completions, sleeps):
+    async def fake_sleep(seconds):
+        sleeps.append(seconds)
+
+    client = SimpleNamespace(chat=SimpleNamespace(completions=completions))
+    return GroqService(client=client, model='modelo-teste', sleep=fake_sleep)
+
+
+@pytest.mark.asyncio
+async def test_every_call_caps_the_output_tokens():
+    # The free tier refuses a request whose expected output is above its
+    # per-minute output budget; an explicit cap keeps every call acceptable.
+    service, completions = _service('ok')
+
+    await service.generate_text(system_instruction=None, user_text='Oi')
+
+    assert (
+        completions.requests[0]['max_completion_tokens']
+        == settings.GROQ_MAX_OUTPUT_TOKENS
+    )
+
+
+@pytest.mark.asyncio
+async def test_rate_limit_waits_the_time_groq_asks_and_tries_again():
+    sleeps: list[float] = []
+    completions = RateLimitedCompletions(failures=2, retry_after='7')
+    service = _rate_limited_service(completions, sleeps)
+
+    result = await service.generate_text(
+        system_instruction=None, user_text='Oi'
+    )
+
+    assert result == 'Texto pronto.'
+    assert sleeps == [7.0, 7.0]
+    assert len(completions.requests) == 3
+
+
+@pytest.mark.asyncio
+async def test_rate_limit_without_retry_after_waits_the_default():
+    sleeps: list[float] = []
+    completions = RateLimitedCompletions(failures=1, retry_after=None)
+    service = _rate_limited_service(completions, sleeps)
+
+    await service.generate_text(system_instruction=None, user_text='Oi')
+
+    assert sleeps == [float(settings.GROQ_RATE_LIMIT_WAIT_SECONDS)]
+
+
+@pytest.mark.asyncio
+async def test_rate_limit_gives_up_after_the_last_attempt():
+    sleeps: list[float] = []
+    completions = RateLimitedCompletions(
+        failures=settings.GROQ_RATE_LIMIT_RETRIES + 1
+    )
+    service = _rate_limited_service(completions, sleeps)
+
+    with pytest.raises(openai.RateLimitError):
+        await service.generate_text(system_instruction=None, user_text='Oi')
+
+    assert len(sleeps) == settings.GROQ_RATE_LIMIT_RETRIES

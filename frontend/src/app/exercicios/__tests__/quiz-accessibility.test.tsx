@@ -141,6 +141,27 @@ describe('quiz with a screen reader', () => {
     await waitFor(() => expect(document.activeElement).toBe(next));
   });
 
+  it('shows the question and the explanation formulas as math, not LaTeX', async () => {
+    const heading = await openQuestion();
+    expect(heading.querySelector('math')).not.toBeNull();
+    expect(heading.querySelector('[aria-hidden="true"]')?.textContent).not.toContain('$');
+
+    api.submitExerciseAnswer.mockResolvedValue({
+      exercicio_id: 'q1',
+      resposta_aluno: true,
+      resposta_correta: true,
+      acertou: true,
+      tempo_expirado: false,
+      explicacao: 'Pela regra da potência, $\\frac{d}{dx}x^2 = 2x$.',
+    });
+    fireEvent.click(screen.getByRole('radio', { name: 'Verdadeiro' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar resposta' }));
+
+    const explanation = await screen.findByText(/Pela regra da potência/);
+    expect(explanation.closest('p')?.querySelector('math')).not.toBeNull();
+    expect(explanation.closest('p')?.textContent).not.toContain('$');
+  });
+
   it('reads the question and the alternatives aloud and lets the student stop', async () => {
     await openQuestion();
 

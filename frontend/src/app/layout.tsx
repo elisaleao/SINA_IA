@@ -9,6 +9,7 @@ import { AccessibilityProvider } from '@/components/accessibility/AccessibilityP
 import { ServerPreferencesSync } from '@/components/accessibility/ServerPreferencesSync';
 import { VLibrasWidgetLoader } from '@/components/accessibility/VLibrasWidgetLoader';
 import { SessionProvider } from '@/components/session/SessionProvider';
+import 'katex/dist/katex.min.css';
 import './globals.css';
 
 const geistSans = Geist({
