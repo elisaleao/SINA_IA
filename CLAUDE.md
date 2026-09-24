@@ -28,6 +28,8 @@
 - Backend (em backend/app): `poetry run pytest` · `poetry run ruff check app tests` ·
   `poetry run ruff format app tests` · `poetry run typos` · dev: `poetry run uvicorn app.main:app --reload`
 - Frontend (em frontend): `npm run lint` · `npx tsc --noEmit` · `npm test` · `npm run dev`
+- E2E (em frontend, fora do check.sh, roda no CI): `npm run test:e2e`. Rota nova → entra na tabela `ROUTES`
+  de `e2e/smoke.spec.ts` com título próprio; a API é simulada em `e2e/support/api.ts`.
 - Hooks: `./scripts/install-hooks.sh`
 
 ## Regras que o gate verifica

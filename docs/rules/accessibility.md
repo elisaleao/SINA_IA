@@ -72,3 +72,10 @@ Todos os componentes interativos do SINA_IA em `frontend/src/components/ui/` seg
 * **`EmptyState`**: Mensagem padronizada com ícone ilustrativo, título, descrição e botão de ação orientador.
 * **`Tabs`**: Sistema de abas em conformidade estrita com o padrão WAI-ARIA (`role="tablist"`, `role="tab"`, `role="tabpanel"` e controle por setas direcionais, Home e End).
 
+
+## 3. Verificação automática
+
+* **Lint:** o `npm run lint` aplica o conjunto `recommended` do `eslint-plugin-jsx-a11y`. Desligar uma regra só por linha, com o motivo no próprio comentário (hoje só `media-has-caption` nos `<audio>` que leem um texto já mostrado na tela).
+* **E2E:** `npm run test:e2e` abre cada rota no Chromium e confere título próprio (critério 2.4.2), um único `<h1>`, foco no `<h1>` depois de navegar e o `axe` com as tags `wcag2a`, `wcag2aa`, `wcag21aa` e `wcag22aa`. Roda no CI de cada PR.
+* **CSS global:** resets de elementos (`a`, campos de formulário) ficam em `@layer base`. Fora de camada, eles vencem as classes do Tailwind; foi assim que `text-white` deixou de valer nos links e o contraste caiu para 2,8:1.
+* O `axe` não substitui o roteiro manual com NVDA, teclado e zoom (#18).

@@ -153,8 +153,11 @@ Para rodar partes isoladas:
 cd backend/app && poetry run pytest          # testes do backend
 cd backend/app && poetry run ruff format app tests   # formata o Python
 cd frontend && npm test                      # testes do frontend
+cd frontend && npm run test:e2e              # Playwright: título, h1, foco e axe em cada rota
 cd frontend && npm run build                 # build de produção
 ```
+
+O `npm run test:e2e` faz o build de produção e abre cada rota no Chromium, com a API simulada, sem backend nem banco. Na primeira vez, instale o navegador com `npx playwright install chromium`. Ele roda no CI de cada PR (job "E2E e acessibilidade") e fica fora do `./check.sh` para o gate local continuar rápido.
 
 Os testes do backend usam SQLite em memória e clientes falsos de IA e TTS (`app/services/fakes.py`), então não gastam cota do Gemini nem do Groq e não precisam de internet.
 
