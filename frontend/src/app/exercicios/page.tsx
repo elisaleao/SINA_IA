@@ -390,6 +390,7 @@ export default function ExerciciosPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-slate-100 pb-4">
             <div
               role="progressbar"
+              aria-label="Progresso da rodada"
               aria-valuenow={currentQuestion.numero_questao}
               aria-valuemin={1}
               aria-valuemax={currentQuestion.total_questoes}
