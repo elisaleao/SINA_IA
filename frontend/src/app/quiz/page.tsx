@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { appRoutes } from '@/lib/routes';
 
 export const metadata: Metadata = {
-  title: 'Hub de Quiz e Testes Rápidos | SINA_IA',
+  title: 'Hub de testes rápidos',
   description:
     'Testes rápidos de Verdadeiro ou Falso para fixação de conceitos com equações faladas, tempo ajustável e acessibilidade UDL.',
 };

@@ -1,5 +1,8 @@
 import { PageIntro } from "@/components/layout/PageIntro";
 import { learnMoreGoals, learnMoreText } from "@/lib/content";
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = { title: 'Conhecer mais' };
 
 export default function LearnMorePage() {
   return (

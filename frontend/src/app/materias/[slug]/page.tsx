@@ -35,7 +35,7 @@ export async function generateMetadata({
 }: MateriaPageProps): Promise<Metadata> {
   const { slug } = await params;
   const materia = MATERIAS_MAP[slug];
-  const title = materia ? `${materia.nome} | SINA_IA` : 'Disciplina | SINA_IA';
+  const title = materia ? materia.nome : 'Disciplina';
   return {
     title,
     description: materia?.descricao || 'Estudos dedicados por disciplina.',

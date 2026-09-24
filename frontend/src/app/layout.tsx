@@ -21,7 +21,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'SINA_IA — Plataforma Educacional Inclusiva e Adaptativa',
+  title: {
+    default: 'SINA_IA — Plataforma Educacional Inclusiva e Adaptativa',
+    template: '%s | SINA_IA',
+  },
   description:
     'Ambiente inclusivo e universal para apoio à aprendizagem em engenharia, ciências e tecnologia com suporte UDL e WCAG 2.2 AAA.',
 };
