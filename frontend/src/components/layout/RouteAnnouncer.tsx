@@ -3,16 +3,25 @@
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+const RETRY_MS = 50;
+const MAX_ATTEMPTS = 40;
+
 export function RouteAnnouncer() {
   const pathname = usePathname();
   const [announcement, setAnnouncement] = useState('');
 
   useEffect(() => {
-    // Pequeno timeout para dar tempo do novo conteúdo e h1 renderizarem no DOM
-    const timer = setTimeout(() => {
-      const h1 =
-        document.querySelector<HTMLElement>('main h1') ||
-        document.querySelector<HTMLElement>('h1');
+    let attempts = 0;
+    const findHeading = () =>
+      document.querySelector<HTMLElement>('main h1') ||
+      document.querySelector<HTMLElement>('h1');
+
+    // O h1 de rotas protegidas só aparece depois que a sessão carrega
+    const timer = setInterval(() => {
+      attempts += 1;
+      const h1 = findHeading();
+      if (!h1 && attempts < MAX_ATTEMPTS) return;
+      clearInterval(timer);
 
       if (h1) {
         if (!h1.hasAttribute('tabindex')) {
@@ -23,9 +32,9 @@ export function RouteAnnouncer() {
       } else {
         setAnnouncement(document.title || 'Página carregada');
       }
-    }, 50);
+    }, RETRY_MS);
 
-    return () => clearTimeout(timer);
+    return () => clearInterval(timer);
   }, [pathname]);
 
   return (
