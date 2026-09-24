@@ -6,6 +6,7 @@ import { SkipLink } from '@/components/layout/SkipLink';
 import { RouteAnnouncer } from '@/components/layout/RouteAnnouncer';
 import { AccessibilityBar } from '@/components/accessibility/AccessibilityBar';
 import { AccessibilityProvider } from '@/components/accessibility/AccessibilityProvider';
+import { ServerPreferencesSync } from '@/components/accessibility/ServerPreferencesSync';
 import { VLibrasWidgetLoader } from '@/components/accessibility/VLibrasWidgetLoader';
 import { SessionProvider } from '@/components/session/SessionProvider';
 import './globals.css';
@@ -39,6 +40,7 @@ export default function RootLayout({
       <body className="min-h-full bg-[var(--background)] text-[var(--foreground)] flex flex-col">
         <AccessibilityProvider>
           <SessionProvider>
+            <ServerPreferencesSync />
             <SkipLink />
             <RouteAnnouncer />
             <AccessibilityBar />
