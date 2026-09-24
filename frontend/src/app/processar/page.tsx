@@ -1,21 +1,18 @@
 import { Metadata } from 'next';
-import AccessibleDocumentProcessor from '@/components/AccessibleDocumentProcessor';
+
+import { MaterialsScreen } from '@/components/materials/MaterialsScreen';
+import { RequireRole } from '@/components/session/RequireRole';
 
 export const metadata: Metadata = {
-  title: 'Processador de Documentos Acessíveis | SINA_IA',
+  title: 'Meus materiais | SINA_IA',
   description:
-    'Adaptação de documentos para acessibilidade por áudio, descrição de gráficos e transcrição de fórmulas matemáticas.',
+    'Envie arquivos de estudo e receba texto acessível, descrição de gráficos e áudio, salvos para ouvir de novo.',
 };
 
 export default function ProcessarDocumentoPage() {
   return (
-    <div
-      className="max-w-5xl mx-auto px-4 py-8 sm:px-6 lg:px-8 w-full"
-      role="region"
-      aria-label="Processador de Documentos Acessíveis"
-    >
-      <AccessibleDocumentProcessor />
-    </div>
+    <RequireRole allow={['aluno', 'professor', 'admin']}>
+      <MaterialsScreen />
+    </RequireRole>
   );
 }
-
