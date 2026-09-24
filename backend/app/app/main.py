@@ -40,6 +40,6 @@ app.include_router(routers.audio_router)
 app.include_router(routers.exercises_router)
 app.include_router(routers.accessibility_router)
 
-AudioService = deps.get_tts_client()
+AudioService = deps.get_tts_client(None)
 get_db = deps.get_db
 __all__ = ['AudioService', 'app', 'get_db']
