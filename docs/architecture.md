@@ -11,7 +11,7 @@ As decisões que levaram a essa estrutura estão em [`docs/adr/`](adr/).
 O repositório é um monorepo com duas aplicações que conversam só por HTTP/JSON ([ADR 0001](adr/0001-arquitetura-monorepo-poliglota.md)):
 
 - **`frontend/`**: Next.js 16 (App Router), React 19, TypeScript estrito e TailwindCSS v4.
-- **`backend/app/`**: FastAPI (Python 3.13), SQLAlchemy assíncrono, Alembic, Google Gemini (`google-genai`), Groq (SDK `openai`), Edge-TTS, PyMuPDF e python-docx.
+- **`backend/app/`**: FastAPI (Python 3.13), SQLAlchemy assíncrono, Alembic, Google Gemini (`google-genai`), Groq (SDK `openai`), Edge-TTS, Piper (container próprio), PyMuPDF e python-docx.
 
 ```mermaid
 flowchart TD
@@ -36,12 +36,14 @@ flowchart TD
 
     GEMINI["Google Gemini (chave do usuário)"]
     GROQ["Groq (fallback gratuito)"]
-    TTS["Edge-TTS"]
+    TTS["Edge-TTS (voz online)"]
+    PIPER["Piper (voz local, container piper)"]
 
     LIB -->|REST / multipart / NDJSON| ROUTERS
     SERVICES --> GEMINI
     SERVICES --> GROQ
     SERVICES --> TTS
+    SERVICES --> PIPER
 ```
 
 ---
@@ -73,7 +75,7 @@ backend/app/alembic/   migrações; o schema do banco só muda por elas
 | `ai_provider.py` | `FallbackAIClient`: tenta a chave pessoal e cai para o Groq quando ela falha (401, 403, 429 ou 400 `API_KEY_INVALID`). Marca `used_fallback`. | Integração |
 | `llm_key_service.py` | Salva, testa, lê e remove a chave pessoal do Gemini. | Fluxo |
 | `crypto.py` | Cifra e decifra a chave pessoal com `Fernet`. | Domínio puro |
-| `tts_service.py` | **Único** serviço de voz (Edge-TTS). Voz, velocidade, volume e tom em `Settings.EDGE_TTS_*`. | Integração |
+| `tts_service.py` | **Único** serviço de voz, com dois motores: Edge-TTS (`Settings.EDGE_TTS_*`) e Piper por HTTP (`Settings.PIPER_URL`), com o WAV convertido para MP3. Tenta o motor preferido do usuário e, se falhar, o outro (ADR-0004). | Integração |
 | `document_extractor.py` | **Único** extrator de documentos: PDF (texto nativo ou OCR por página), DOCX (títulos, parágrafos, tabelas e imagens), TXT e imagens. PyMuPDF e python-docx rodam fora do event loop. | Integração |
 | `file_store.py` | Arquivos gerados, com `resolve_safe` contra path traversal e expiração opcional. | Integração |
 | `accessibility_pipeline.py` | Fluxo completo de acessibilidade: extração, detecção de matemática, adaptação por nível (1 a 4), auditoria, correção e MP3. | Fluxo |
@@ -90,7 +92,7 @@ Módulos de **domínio puro** não fazem I/O e não importam FastAPI, SQLAlchemy
 
 ### 2.2. Injeção de dependências
 
-`app/api/deps.py` entrega as integrações às rotas por `Depends`. O TTS e o Groq têm uma instância compartilhada. O cliente de IA é montado a cada requisição por `get_ai_client`: com a chave pessoal do usuário, se houver, e o Groq como fallback. Pipelines, `LLMService` e `IngestionService` recebem esse cliente. Nos testes, `app.dependency_overrides` troca essas instâncias pelos fakes de `app/services/fakes.py`, então a suíte não chama o Gemini nem o Edge-TTS.
+`app/api/deps.py` entrega as integrações às rotas por `Depends`. O Groq tem uma instância compartilhada. O TTS é montado a cada requisição por `get_tts_service` e `get_tts_client`, com o motor preferido do usuário (`online` para anônimos). O cliente de IA é montado a cada requisição por `get_ai_client`: com a chave pessoal do usuário, se houver, e o Groq como fallback. Pipelines, `LLMService` e `IngestionService` recebem esse cliente. Nos testes, `app.dependency_overrides` troca essas instâncias pelos fakes de `app/services/fakes.py`, então a suíte não chama o Gemini, o Edge-TTS nem o Piper.
 
 ### 2.3. Configuração
 

@@ -5,7 +5,7 @@
 ## Estado real (prevalece sobre docs/ quando divergir)
 - Backend em três pastas: rotas em `app/api/routers/`, DTOs em `app/schemas/`, regras, fluxos e
   integrações em `app/services/`. Não existe mais `app/accessibility/`; não crie pacote paralelo.
-- Um único módulo por integração: `services/tts_service.py` (Edge-TTS) e
+- Um único módulo por integração: `services/tts_service.py` (Edge-TTS e Piper, ver ADR-0004) e
   `services/document_extractor.py` (PDF, DOCX, TXT, imagens). Estenda o existente em vez de criar outro.
   Configuração só em `core/config.py` (sem `os.getenv`).
 - IA tem dois provedores sob `AccessibilityAIProtocol` (`core/protocols.py`), ver ADR-0003:
@@ -38,10 +38,11 @@
 
 ## Testes
 - Backend: fixture `client` em tests/conftest.py (SQLite em memória + FakeLLMClient/FakeTTSClient).
-  Nunca chame Gemini, Groq ou Edge-TTS reais na suíte padrão (marcador `live` para isso).
+  Nunca chame Gemini, Groq, Edge-TTS ou Piper reais na suíte padrão (marcador `live` para isso).
+  O `TTSService` aceita `edge_communicate` e `piper_transport` falsos (ver tests/test_tts_service.py).
   Para trocar o provedor de IA num teste de rota, sobrescreva `get_fallback_ai` e `get_personal_ai_factory`.
 - Rota nova → teste de rota + atualizar `tests/contract/openapi.baseline.json` se o contrato mudar.
-- Mudou modelo em `app/database.py` → criar migração em `alembic/versions/` (próximo: 0010).
+- Mudou modelo em `app/database.py` → criar migração em `alembic/versions/` (próximo: 0012).
   O `alembic check` do gate falha se o model mudar sem migração.
 
 ## Idioma
