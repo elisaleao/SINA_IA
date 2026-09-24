@@ -1,9 +1,11 @@
 """IA gratuita de fallback: Groq pela API compatível com OpenAI (ADR-0003)."""
 
+import asyncio
 import base64
-from typing import Any, Optional, TypeVar
+import logging
+from typing import Any, Awaitable, Callable, Optional, TypeVar
 
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, RateLimitError
 from pydantic import BaseModel
 
 from app.core.config import settings
@@ -17,6 +19,9 @@ from app.services.accessibility_prompts import (
 
 GROQ_BASE_URL = 'https://api.groq.com/openai/v1'
 
+logger = logging.getLogger(__name__)
+MAX_WAIT_SECONDS = 120.0
+
 Model = TypeVar('Model', bound=BaseModel)
 
 
@@ -28,8 +33,10 @@ class GroqService:
         client: Optional[Any] = None,
         api_key: Optional[str] = None,
         model: Optional[str] = None,
+        sleep: Callable[[float], Awaitable[Any]] = asyncio.sleep,
     ) -> None:
         self.model = model or settings.GROQ_MODEL
+        self._sleep = sleep
         if client:
             self.client = client
         else:
@@ -38,7 +45,7 @@ class GroqService:
                 AsyncOpenAI(
                     api_key=resolved_key,
                     base_url=GROQ_BASE_URL,
-                    max_retries=3,
+                    max_retries=0,
                 )
                 if resolved_key
                 else None
@@ -65,13 +72,39 @@ class GroqService:
         options: dict[str, Any] = {}
         if response_format is not None:
             options['response_format'] = response_format
-        response = await self._ensure_client().chat.completions.create(
-            model=self.model,
-            messages=messages,
-            temperature=temperature,
-            **options,
-        )
-        return (response.choices[0].message.content or '').strip()
+        client = self._ensure_client()
+        attempt = 0
+        while True:
+            try:
+                response = await client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    temperature=temperature,
+                    max_completion_tokens=settings.GROQ_MAX_OUTPUT_TOKENS,
+                    **options,
+                )
+                return (response.choices[0].message.content or '').strip()
+            except RateLimitError as exc:
+                if attempt >= settings.GROQ_RATE_LIMIT_RETRIES:
+                    raise
+                attempt += 1
+                wait = self._retry_after(exc)
+                logger.warning(
+                    'Groq pediu para esperar %.0f s (tentativa %d).',
+                    wait,
+                    attempt,
+                )
+                await self._sleep(wait)
+
+    @staticmethod
+    def _retry_after(exc: RateLimitError) -> float:
+        default = settings.GROQ_RATE_LIMIT_WAIT_SECONDS
+        header = exc.response.headers.get('retry-after')
+        try:
+            wait = float(header) if header else default
+        except ValueError:
+            wait = default
+        return min(wait, MAX_WAIT_SECONDS)
 
     async def _structured(
         self, messages: list[dict], schema: type[Model]

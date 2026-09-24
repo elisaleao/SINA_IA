@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 
+from app.core.config import settings
 from app.core.protocols import AccessibilityAIProtocol
 from app.schemas.accessibility import (
+    AuditItem,
+    AuditReport,
     ChartDescription,
     PipelineEvent,
     ProcessResult,
@@ -16,6 +19,7 @@ from app.services.accessibility_prompts import (
 from app.services.document_extractor import DocumentExtractor
 from app.services.file_store import GeneratedFileStore
 from app.services.math_detector import detect_math_content
+from app.services.text_chunks import split_into_chunks
 from app.services.tts_service import TTSService
 
 
@@ -103,18 +107,35 @@ class AccessibilityPipeline:
             if math_detection.is_math:
                 system_prompt += '\n\n---\n\n' + MATH_PROMPT
 
-            accessible_text = await self.ai.generate_text(
-                system_instruction=system_prompt,
-                user_text=source_for_conversion,
+            chunks = split_into_chunks(
+                source_for_conversion, settings.AI_CHUNK_CHARS
+            ) or [source_for_conversion]
+            accessible_parts: list[str] = []
+            audit_items: list[AuditItem] = []
+            for index, chunk in enumerate(chunks, start=1):
+                part = await self.ai.generate_text(
+                    system_instruction=system_prompt,
+                    user_text=chunk,
+                )
+                report = await self.ai.audit(chunk, part)
+                if report.status == 'problemas_encontrados' and report.itens:
+                    part = await self.ai.correct(
+                        part, [item.problema for item in report.itens]
+                    )
+                    audit_items.extend(report.itens)
+                accessible_parts.append(part)
+                if len(chunks) > 1:
+                    yield self._stage(
+                        'convert',
+                        'active',
+                        f'Parte {index} de {len(chunks)} convertida.',
+                    )
+            accessible_text = '\n\n'.join(accessible_parts)
+            audit = AuditReport(
+                status='problemas_encontrados' if audit_items else 'ok',
+                itens=audit_items,
             )
             yield self._stage('convert', 'done', 'Texto acessível gerado.')
-
-            yield self._stage(
-                'audit',
-                'active',
-                'Auditando fidelidade entre original e versão acessível.',
-            )
-            audit = await self.ai.audit(source_for_conversion, accessible_text)
             yield self._stage(
                 'audit',
                 'done',
@@ -124,26 +145,15 @@ class AccessibilityPipeline:
                     else f'Auditoria encontrou {len(audit.itens)} ponto(s).'
                 ),
             )
-
             yield self._stage(
                 'correct',
-                'active',
+                'done',
                 (
-                    'Aplicando correções apontadas pela auditoria.'
-                    if audit.itens
-                    else 'Nenhuma correção necessária.'
+                    'Correções aplicadas.'
+                    if audit_items
+                    else 'Etapa de correção dispensada.'
                 ),
             )
-            if audit.status == 'problemas_encontrados' and audit.itens:
-                accessible_text = await self.ai.correct(
-                    accessible_text,
-                    [item.problema for item in audit.itens],
-                )
-                yield self._stage('correct', 'done', 'Correções aplicadas.')
-            else:
-                yield self._stage(
-                    'correct', 'done', 'Etapa de correção dispensada.'
-                )
 
             text_path = self.store.new_path('.txt')
             text_path.write_text(accessible_text, encoding='utf-8')

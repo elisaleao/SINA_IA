@@ -23,6 +23,12 @@ class Settings(BaseSettings):
     GEMINI_MODEL: str = 'gemini-3.5-flash'
     GROQ_API_KEY: str = ''
     GROQ_MODEL: str = 'qwen/qwen3.8-27b'
+    # Tier gratuito do Groq: ~1.000 tokens de saída por minuto por modelo
+    GROQ_MAX_OUTPUT_TOKENS: int = 900
+    GROQ_RATE_LIMIT_RETRIES: int = 8
+    GROQ_RATE_LIMIT_WAIT_SECONDS: float = 20.0
+    # Textos maiores que isso são convertidos, auditados e corrigidos por parte
+    AI_CHUNK_CHARS: int = 2500
 
     # Síntese de voz (um único serviço em app/services/tts_service.py)
     # Voz local do Piper (ADR-0004); vazio = só Edge-TTS
