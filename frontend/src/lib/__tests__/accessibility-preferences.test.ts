@@ -21,7 +21,7 @@ const LOCAL: GlobalAccessibilitySettings = {
   highContrast: true,
   lineSpacing: 'relaxed',
   dyslexiaFont: true,
-  autoAudio: true,
+  autoAudio: false,
   vlibrasActive: true,
   reducedMotion: true,
 };
@@ -31,7 +31,7 @@ const SERVER = {
   high_contrast: true,
   line_spacing: 'relaxed',
   dyslexia_font: true,
-  auto_audio: true,
+  auto_audio: false,
   vlibras_active: true,
 } as const;
 
@@ -52,7 +52,7 @@ describe('accessibility preferences sync', () => {
       highContrast: true,
       lineSpacing: 'relaxed',
       dyslexiaFont: true,
-      autoAudio: true,
+      autoAudio: false,
       vlibrasActive: true,
     });
   });
