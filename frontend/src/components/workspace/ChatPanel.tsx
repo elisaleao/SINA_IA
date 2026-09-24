@@ -174,6 +174,7 @@ export function ChatPanel({
               className="sr-only"
               multiple
               tabIndex={-1}
+              aria-label="Anexar arquivos à conversa"
               onChange={handleFilesSelected}
             />
             <button

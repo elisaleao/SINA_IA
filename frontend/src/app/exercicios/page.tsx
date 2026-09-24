@@ -267,7 +267,7 @@ export default function ExerciciosPage() {
           </div>
           <Link
             href="/entrar"
-            className="px-3 py-1.5 bg-amber-600 text-white font-medium rounded hover:bg-amber-700 text-xs uppercase tracking-wider"
+            className="px-3 py-1.5 bg-amber-800 text-white font-medium rounded hover:bg-amber-900 text-xs uppercase tracking-wider"
           >
             Fazer Login
           </Link>
