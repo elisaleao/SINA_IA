@@ -136,6 +136,9 @@ class AccessibilityPreferencesRecord(Base):
     vlibras_active: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False
     )
+    tts_engine: Mapped[str] = mapped_column(
+        String(20), default='online', nullable=False
+    )
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

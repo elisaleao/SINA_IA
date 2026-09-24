@@ -19,7 +19,7 @@ A interface segue a WCAG 2.2 (meta AAA) e os princípios do Desenho Universal pa
 - IA com a chave do próprio usuário (Google Gemini) ou, sem ela, um provedor gratuito (Groq). Se a chave pessoal falhar, a mesma chamada segue no Groq ([ADR-0003](docs/adr/0003-chave-de-ia-por-usuario-e-fallback-gratuito.md)).
 - Geração de resumo, quiz ou guia de estudo adaptado ao perfil do aluno e à calibração do professor (nível, detalhamento dos cálculos e tom).
 - Pipeline de acessibilidade com progresso em tempo real (`POST /api/accessibility/process-stream`), quatro níveis de adaptação e auditoria de fidelidade feita pela IA.
-- Síntese de voz com Edge-TTS.
+- Síntese de voz com Edge-TTS (online) ou Piper (local, sem internet), à escolha de cada usuário.
 - Cadastro e login com JWT, refresh token rotativo e papéis `aluno`, `professor` e `admin`.
 - Quiz de Verdadeiro ou Falso com tempo controlado no servidor, maior para os perfis TDAH e apoio cognitivo. Questões geradas pela IA começam como rascunho e só entram no quiz depois que um professor publica.
 
@@ -65,13 +65,14 @@ docker compose up -d --build
 
 Sem `JWT_SECRET` ou `LLM_KEY_ENCRYPTION_SECRET` no `.env` da raiz, o `docker compose` para com uma mensagem dizendo qual variável falta. O próprio `.env.example` mostra um comando que gera valores aleatórios.
 
-Isso sobe três serviços:
+Isso sobe quatro serviços:
 
 | Serviço | Endereço | Observação |
 | --- | --- | --- |
 | Frontend | http://localhost:3000 | Next.js em modo de desenvolvimento |
 | API | http://localhost:8000 (documentação em `/docs`) | Aplica as migrações (`alembic upgrade head`) antes de subir |
 | PostgreSQL | localhost:5432 | Usuário `sina`, senha `sina_secret`, banco `sina_ia` |
+| Piper | só na rede interna (`http://piper:5000`) | Voz local em CPU, com a voz `pt_BR-faber-medium` |
 
 Os dados ficam em `./data`: o banco em `./data/postgres`, e uploads e áudios em `./data/uploads` e `./data/outputs`.
 
@@ -128,7 +129,13 @@ npm run dev
 
 - `GROQ_API_KEY` (servidor): IA gratuita de quem não cadastrou chave própria. Crie em [console.groq.com](https://console.groq.com/keys), sem cartão. Sem ela, o processamento com IA responde com erro para esses usuários.
 - Chave do Gemini (por usuário, opcional): cada pessoa cadastra a sua em `/configuracoes/chave-ia`. Gere em [aistudio.google.com](https://aistudio.google.com/apikey). A chave é testada antes de salvar e fica cifrada com `LLM_KEY_ENCRYPTION_SECRET`.
-- O Edge-TTS, que gera o áudio, precisa de acesso à internet e não usa chave.
+### Voz dos áudios
+
+- **Voz online (Edge-TTS):** voz neural da Microsoft. Precisa de internet e não usa chave. É o padrão.
+- **Voz local (Piper):** roda na CPU do servidor, no container `piper`, e não manda o texto para fora. O backend o encontra por `PIPER_URL`, que o Docker já define.
+- Cada usuário escolhe em Configurações → Acessibilidade. Se a voz escolhida falhar, a outra é usada.
+- Sem `PIPER_URL` (desenvolvimento sem Docker), só a voz online funciona.
+- O Piper é GPL-3.0 e por isso roda em container separado. Os motivos estão no [ADR-0004](docs/adr/0004-voz-local-piper-com-fallback.md).
 
 ## Testes e quality gate
 

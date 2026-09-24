@@ -14,7 +14,7 @@ O **SINA_IA** é uma plataforma educacional inclusiva, adaptativa e universal (i
 
 O projeto possui uma arquitetura poliglota clara:
 * **`frontend/`**: Interface assistiva moderna em **Next.js 16 (App Router)**, **React 19**, **TypeScript** e **TailwindCSS v4**.
-* **`backend/app/`**: API assíncrona robusta em **FastAPI (Python 3.13)**, **SQLAlchemy**, **SymPy**, **PyMuPDF**, **Edge-TTS** e integração com **Google Gemini**.
+* **`backend/app/`**: API assíncrona robusta em **FastAPI (Python 3.13)**, **SQLAlchemy**, **SymPy**, **PyMuPDF**, **Edge-TTS**, **Piper** (voz local) e integração com **Google Gemini**.
 
 ---
 
@@ -53,7 +53,7 @@ backend/app/app/api/routers/ (Rotas HTTP; recebem serviços por api/deps.py e DT
     └──► backend/app/app/database.py (Persistência com SQLAlchemy assíncrono; schema só muda por migração Alembic)
 ```
 
-Cada integração externa tem **um único** módulo: voz em `services/tts_service.py` e extração de documentos em `services/document_extractor.py`. Não crie outro serviço de voz nem outro extrator; estenda o existente.
+Cada integração externa tem **um único** módulo: voz em `services/tts_service.py` e extração de documentos em `services/document_extractor.py`. Não crie outro serviço de voz nem outro extrator; estenda o existente. O `tts_service.py` tem dois motores: o Edge-TTS (online) e o Piper (local, em container próprio por ser GPL), escolhidos pela preferência `tts_engine` do usuário e com fallback de um para o outro ([ADR-0004](docs/adr/0004-voz-local-piper-com-fallback.md)).
 
 A camada de IA tem dois provedores sob o mesmo contrato, `AccessibilityAIProtocol` (`core/protocols.py`): o Gemini com a chave pessoal do usuário (`services/gemini_service.py`) e o Groq como fallback gratuito (`services/groq_service.py`). O `FallbackAIClient` (`services/ai_provider.py`) escolhe entre os dois a cada requisição. Um provedor novo só entra com um ADR que substitua o [ADR-0003](docs/adr/0003-chave-de-ia-por-usuario-e-fallback-gratuito.md).
 

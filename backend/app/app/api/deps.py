@@ -33,11 +33,10 @@ from app.services.material_service import (
     MaterialStorage,
     MaterialUploadService,
 )
-from app.services.tts_service import TTSService
+from app.services.tts_service import ONLINE, TTSService
 
 # Integrações compartilhadas; o cliente de IA é montado por requisição (ADR-0003)
 _default_groq = GroqService()
-_default_tts = TTSService()
 security_scheme = HTTPBearer(auto_error=False)
 
 
@@ -57,11 +56,6 @@ def get_material_storage() -> MaterialStorage:
     return MaterialStorage(settings.materials_dir)
 
 
-def get_tts_service() -> TTSService:
-    """Serviço de voz completo, usado pelo pipeline de acessibilidade."""
-    return _default_tts
-
-
 def get_material_upload_service(
     storage: MaterialStorage = Depends(get_material_storage),
 ) -> MaterialUploadService:
@@ -72,11 +66,6 @@ def get_material_upload_service(
 def get_generated_file_store() -> GeneratedFileStore:
     """Pasta dos arquivos gerados pelo pipeline de /process-stream."""
     return GeneratedFileStore()
-
-
-def get_tts_client() -> TTSClientProtocol:
-    """Retorna o cliente TTS padrão (substituível via app.dependency_overrides)."""
-    return _default_tts
 
 
 async def get_current_user(
@@ -170,6 +159,25 @@ async def get_optional_user(
         return result.scalar_one_or_none()
     except Exception:
         return None
+
+
+def _tts_for(user: Optional[UserRecord]) -> TTSService:
+    prefs = user.accessibility_preferences if user else None
+    return TTSService(prefer=prefs.tts_engine if prefs else ONLINE)
+
+
+def get_tts_service(
+    user: Optional[UserRecord] = Depends(get_optional_user),
+) -> TTSService:
+    """Voz do pipeline no motor que o usuário escolheu (ADR-0004)."""
+    return _tts_for(user)
+
+
+def get_tts_client(
+    user: Optional[UserRecord] = Depends(get_optional_user),
+) -> TTSClientProtocol:
+    """Cliente TTS de /api/content no motor que o usuário escolheu."""
+    return _tts_for(user)
 
 
 def can_access_document(

@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     GROQ_MODEL: str = 'qwen/qwen3.8-27b'
 
     # Síntese de voz (um único serviço em app/services/tts_service.py)
+    # Voz local do Piper (ADR-0004); vazio = só Edge-TTS
+    PIPER_URL: str = ''
+    PIPER_TIMEOUT_SECONDS: float = 120.0
     EDGE_TTS_VOICE: str = 'pt-BR-FranciscaNeural'
     EDGE_TTS_RATE: str = '+0%'
     EDGE_TTS_VOLUME: str = '+0%'

@@ -95,6 +95,11 @@
             "default": "visual",
             "description": "Perfil prioritário de acessibilidade"
           },
+          "tts_engine": {
+            "$ref": "#/components/schemas/TTSEngine",
+            "default": "online",
+            "description": "Motor de síntese de voz (online via Edge-TTS ou local via Piper)"
+          },
           "vlibras_active": {
             "default": false,
             "description": "Ativação do tradutor de Libras (VLibras) sob demanda",
@@ -172,6 +177,11 @@
             "$ref": "#/components/schemas/AccessibilityProfileType",
             "default": "visual",
             "description": "Perfil prioritário de acessibilidade"
+          },
+          "tts_engine": {
+            "$ref": "#/components/schemas/TTSEngine",
+            "default": "online",
+            "description": "Motor de síntese de voz (online via Edge-TTS ou local via Piper)"
           },
           "updated_at": {
             "format": "date-time",
@@ -301,6 +311,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/AccessibilityProfileType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tts_engine": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TTSEngine"
               },
               {
                 "type": "null"
@@ -1469,6 +1489,14 @@
         ],
         "title": "SubmitAnswerRequest",
         "type": "object"
+      },
+      "TTSEngine": {
+        "enum": [
+          "online",
+          "local"
+        ],
+        "title": "TTSEngine",
+        "type": "string"
       },
       "TeacherConfig": {
         "properties": {

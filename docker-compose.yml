@@ -41,12 +41,25 @@ services:
       - LLM_KEY_ENCRYPTION_SECRET=${LLM_KEY_ENCRYPTION_SECRET:?Defina LLM_KEY_ENCRYPTION_SECRET no .env da raiz (veja .env.example)}
       - UPLOAD_DIR=/app/data/uploads
       - OUTPUT_DIR=/app/data/outputs
+      - PIPER_URL=http://piper:5000
     volumes:
       # Uploads e áudios MP3 persistem em ./data na sua máquina
       - ./data:/app/data
     depends_on:
       db:
         condition: service_healthy
+      piper:
+        condition: service_started
+
+  # -------------------------------------------------------------
+  # Voz local (Piper, GPL-3.0, isolado neste container; ADR-0004)
+  # -------------------------------------------------------------
+  piper:
+    build:
+      context: ./piper
+      dockerfile: Dockerfile
+    container_name: sina_piper
+    restart: unless-stopped
 
   # -------------------------------------------------------------
   # 3. Frontend Next.js (Interface Web e Acessibilidade)
