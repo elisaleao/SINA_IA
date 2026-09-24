@@ -441,7 +441,11 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Atualizar nome e senha do usuário logado
+         * @description E-mail e perfil de uso não mudam aqui; a senha exige a senha atual.
+         */
+        patch: operations["update_me_users_me_patch"];
         trace?: never;
     };
     "/users/me/llm-key": {
@@ -1056,6 +1060,24 @@ export interface components {
         MaterialUploadResponse: {
             /** Materiais */
             materiais: components["schemas"]["MaterialSummary"][];
+        };
+        /** ProfileUpdate */
+        ProfileUpdate: {
+            /**
+             * Current Password
+             * @description Senha atual; obrigatória para trocar a senha
+             */
+            current_password?: string | null;
+            /**
+             * Full Name
+             * @description Novo nome de exibição
+             */
+            full_name?: string | null;
+            /**
+             * New Password
+             * @description Nova senha, mínimo 8 caracteres
+             */
+            new_password?: string | null;
         };
         /** RefreshRequest */
         RefreshRequest: {
@@ -2020,6 +2042,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+        };
+    };
+    update_me_users_me_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

@@ -7,6 +7,8 @@ export const appRoutes = {
   subjects: '/materias',
   environments: '/ambientes',
   quizHub: '/quiz',
+  settings: '/configuracoes',
+  profileSettings: '/configuracoes/perfil',
   accessibilitySettings: '/configuracoes/acessibilidade',
   aiKeySettings: '/configuracoes/chave-ia',
   learnMore: '/conhecer-mais',

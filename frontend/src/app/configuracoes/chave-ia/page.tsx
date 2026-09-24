@@ -43,7 +43,7 @@ function LlmKeySettings() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-8 px-6 py-8 lg:px-8">
+    <div className="flex flex-col gap-8">
       <nav aria-label="Navegação estrutural">
         <Link
           href={appRoutes.dashboard}
