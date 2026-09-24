@@ -180,3 +180,24 @@ async def test_seed_fixes_level_of_questions_already_in_the_bank(
         .where(ExerciseRecord.nivel == 'avancado')
     )
     assert count > 0
+
+
+@pytest.mark.asyncio
+async def test_seed_rewrites_the_spoken_statement_of_existing_questions(
+    test_db_session,
+):
+    # Fixing the math reader must reach questions already in the bank.
+    await seed(test_db_session)
+    await test_db_session.execute(
+        update(ExerciseRecord).values(enunciado_falado='[Equação: antiga]')
+    )
+    await test_db_session.commit()
+
+    await seed(test_db_session)
+
+    stale = await test_db_session.scalar(
+        select(func.count())
+        .select_from(ExerciseRecord)
+        .where(ExerciseRecord.enunciado_falado.contains('[Equação'))
+    )
+    assert stale == 0

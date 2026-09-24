@@ -37,6 +37,11 @@ async def _seed_data(session: AsyncSession) -> tuple[int, int]:
 
         if existing:
             existing.nivel = item['nivel']
+            existing.enunciado_falado = (
+                MathToSpeechService.latex_to_spoken_portuguese(
+                    item['enunciado']
+                )
+            )
             skipped += 1
             continue
 

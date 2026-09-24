@@ -19,6 +19,7 @@ from app.services.accessibility_prompts import (
 from app.services.document_extractor import DocumentExtractor
 from app.services.file_store import GeneratedFileStore
 from app.services.math_detector import detect_math_content
+from app.services.math_speech_service import MathToSpeechService
 from app.services.text_chunks import split_into_chunks
 from app.services.tts_service import TTSService
 
@@ -160,7 +161,12 @@ class AccessibilityPipeline:
 
             yield self._stage('tts', 'active', 'Gerando MP3 com Edge TTS.')
             audio_path = self.store.new_path('.mp3')
-            await self.tts.synthesize(accessible_text, audio_path)
+            await self.tts.synthesize(
+                MathToSpeechService.latex_to_spoken_portuguese(
+                    accessible_text
+                ),
+                audio_path,
+            )
             yield self._stage('tts', 'done', 'Áudio MP3 gerado.')
 
             result = ProcessResult(
