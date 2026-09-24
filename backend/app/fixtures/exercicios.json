@@ -5,7 +5,8 @@
     "codigo": null,
     "linguagem": null,
     "resposta_correta": true,
-    "explicacao": "Pela regra do tombo para polinômios, ao derivar x elevado a n, multiplicamos pelo expoente e subtraímos um. Logo, a derivada de x ao quadrado é dois x."
+    "explicacao": "Pela regra do tombo para polinômios, ao derivar x elevado a n, multiplicamos pelo expoente e subtraímos um. Logo, a derivada de x ao quadrado é dois x.",
+    "nivel": "basico"
   },
   {
     "materia_id": "calculo",
@@ -13,7 +14,8 @@
     "codigo": null,
     "linguagem": null,
     "resposta_correta": false,
-    "explicacao": "A integral de cosseno de x é seno positivo de x mais a constante C. A derivada de menos seno seria menos cosseno."
+    "explicacao": "A integral de cosseno de x é seno positivo de x mais a constante C. A derivada de menos seno seria menos cosseno.",
+    "nivel": "basico"
   },
   {
     "materia_id": "calculo",
@@ -21,7 +23,8 @@
     "codigo": null,
     "linguagem": null,
     "resposta_correta": true,
-    "explicacao": "Este é o limite fundamental trigonométrico, amplamente utilizado no cálculo diferencial."
+    "explicacao": "Este é o limite fundamental trigonométrico, amplamente utilizado no cálculo diferencial.",
+    "nivel": "intermediario"
   },
   {
     "materia_id": "fisica",
@@ -29,7 +32,8 @@
     "codigo": null,
     "linguagem": null,
     "resposta_correta": true,
-    "explicacao": "O princípio da inércia afirma que na ausência de forças resultantes externas, a velocidade vetorial do corpo permanece constante."
+    "explicacao": "O princípio da inércia afirma que na ausência de forças resultantes externas, a velocidade vetorial do corpo permanece constante.",
+    "nivel": "basico"
   },
   {
     "materia_id": "fisica",
@@ -37,7 +41,8 @@
     "codigo": null,
     "linguagem": null,
     "resposta_correta": false,
-    "explicacao": "A fórmula correta da energia cinética é metade da massa multiplicada pelo quadrado da velocidade: Ec = (1/2) * m * v^2."
+    "explicacao": "A fórmula correta da energia cinética é metade da massa multiplicada pelo quadrado da velocidade: Ec = (1/2) * m * v^2.",
+    "nivel": "basico"
   },
   {
     "materia_id": "algoritmos",
@@ -45,7 +50,8 @@
     "codigo": "def binary_search(arr, target):\n    low, high = 0, len(arr) - 1\n    while low <= high:\n        mid = (low + high) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid - 1\n    return -1",
     "linguagem": "python",
     "resposta_correta": true,
-    "explicacao": "A cada iteração o espaço de busca é dividido pela metade, resultando em complexidade logarítmica O(log n)."
+    "explicacao": "A cada iteração o espaço de busca é dividido pela metade, resultando em complexidade logarítmica O(log n).",
+    "nivel": "intermediario"
   },
   {
     "materia_id": "algoritmos",
@@ -53,7 +59,8 @@
     "codigo": null,
     "linguagem": null,
     "resposta_correta": false,
-    "explicacao": "O Bubble Sort realiza comparações par a par sucessivas, tendo complexidade média e de pior caso quadrática O(n^2)."
+    "explicacao": "O Bubble Sort realiza comparações par a par sucessivas, tendo complexidade média e de pior caso quadrática O(n^2).",
+    "nivel": "intermediario"
   },
   {
     "materia_id": "estruturas-de-dados",
@@ -61,7 +68,8 @@
     "codigo": null,
     "linguagem": null,
     "resposta_correta": false,
-    "explicacao": "A pilha opera sob a disciplina LIFO (Last-In, First-Out), onde o último a entrar é o primeiro a sair. FIFO é a disciplina da Fila (Queue)."
+    "explicacao": "A pilha opera sob a disciplina LIFO (Last-In, First-Out), onde o último a entrar é o primeiro a sair. FIFO é a disciplina da Fila (Queue).",
+    "nivel": "basico"
   },
   {
     "materia_id": "estruturas-de-dados",
@@ -69,15 +77,331 @@
     "codigo": null,
     "linguagem": null,
     "resposta_correta": true,
-    "explicacao": "Esta é a propriedade fundamental de ordenação da Árvore Binária de Busca (BST)."
+    "explicacao": "Esta é a propriedade fundamental de ordenação da Árvore Binária de Busca (BST).",
+    "nivel": "intermediario"
   },
   {
-    "materia_id": "logica",
+    "materia_id": "logica-matematica",
     "enunciado": "Pelas Leis de De Morgan, a negação da conjunção $\\neg(A \\land B)$ é logicamente equivalente a $(\\neg A) \\lor (\\neg B)$.",
     "codigo": null,
     "linguagem": null,
     "resposta_correta": true,
-    "explicacao": "A negação de 'A e B' é verdadeira quando pelo menos um deles é falso: 'não A ou não B'."
+    "explicacao": "A negação de 'A e B' é verdadeira quando pelo menos um deles é falso: 'não A ou não B'.",
+    "nivel": "intermediario"
+  },
+  {
+    "materia_id": "calculo",
+    "nivel": "basico",
+    "enunciado": "A derivada de uma função constante, como $f(x) = 7$, é $f'(x) = 0$.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": true,
+    "explicacao": "Uma constante não muda quando x muda. Por isso a taxa de variação, que é a derivada, vale zero."
+  },
+  {
+    "materia_id": "calculo",
+    "nivel": "intermediario",
+    "enunciado": "Pela regra da cadeia, a derivada de $f(x) = \\sin(2x)$ é $f'(x) = \\cos(2x)$.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": false,
+    "explicacao": "Falta multiplicar pela derivada de dentro. A derivada de 2x é 2, então o certo é $f'(x) = 2\\cos(2x)$."
+  },
+  {
+    "materia_id": "calculo",
+    "nivel": "intermediario",
+    "enunciado": "A integral definida $\\int_0^1 2x \\, dx$ vale $1$.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": true,
+    "explicacao": "Uma primitiva de 2x é $x^2$. Calculando de 0 até 1: $1^2 - 0^2 = 1$."
+  },
+  {
+    "materia_id": "calculo",
+    "nivel": "avancado",
+    "enunciado": "A série harmônica $\\sum_{n=1}^{\\infty} \\frac{1}{n}$ é convergente.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": false,
+    "explicacao": "Os termos diminuem, mas a soma cresce sem limite. A série harmônica é divergente."
+  },
+  {
+    "materia_id": "calculo",
+    "nivel": "avancado",
+    "enunciado": "Pela regra de L'Hôpital, $\\lim_{x \\to 0} \\frac{e^x - 1}{x} = 1$.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": true,
+    "explicacao": "Numerador e denominador vão a zero. Derivando os dois, fica $\\frac{e^x}{1}$, que vale 1 quando x vai a zero."
+  },
+  {
+    "materia_id": "calculo",
+    "nivel": "avancado",
+    "enunciado": "A integral $\\int x e^x \\, dx$ é igual a $x e^x - e^x + C$.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": true,
+    "explicacao": "Integrando por partes, com $u = x$ e $dv = e^x dx$, o resultado é $x e^x - e^x + C$. Derivar a resposta devolve $x e^x$."
+  },
+  {
+    "materia_id": "fisica",
+    "nivel": "basico",
+    "enunciado": "No Sistema Internacional, a unidade de força é o newton, que equivale a um quilograma vezes metro por segundo ao quadrado.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": true,
+    "explicacao": "Pela Segunda Lei de Newton, força é massa vezes aceleração. Massa em quilograma e aceleração em metro por segundo ao quadrado dão o newton."
+  },
+  {
+    "materia_id": "fisica",
+    "nivel": "intermediario",
+    "enunciado": "Em queda livre, sem resistência do ar, a aceleração de um objeto perto da superfície da Terra é constante e vale cerca de 9,8 metros por segundo ao quadrado.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": true,
+    "explicacao": "Sem o ar, só o peso atua. A aceleração é a da gravidade, que é praticamente constante perto da superfície."
+  },
+  {
+    "materia_id": "fisica",
+    "nivel": "intermediario",
+    "enunciado": "Pela Terceira Lei de Newton, ação e reação atuam no mesmo corpo e por isso se anulam.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": false,
+    "explicacao": "Ação e reação têm o mesmo módulo e sentidos opostos, mas atuam em corpos diferentes. Por isso não se anulam."
+  },
+  {
+    "materia_id": "fisica",
+    "nivel": "intermediario",
+    "enunciado": "A potência mecânica média é o trabalho realizado dividido pelo tempo gasto: $P = \\frac{W}{t}$.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": true,
+    "explicacao": "Potência mede a rapidez com que o trabalho é feito. No SI, a unidade é o watt, um joule por segundo."
+  },
+  {
+    "materia_id": "fisica",
+    "nivel": "avancado",
+    "enunciado": "Em um movimento circular uniforme, a aceleração é nula porque o módulo da velocidade é constante.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": false,
+    "explicacao": "A direção da velocidade muda o tempo todo. Existe uma aceleração centrípeta, apontada para o centro da curva."
+  },
+  {
+    "materia_id": "fisica",
+    "nivel": "avancado",
+    "enunciado": "A energia potencial elástica de uma mola é $E = \\frac{k x^2}{2}$, em que $k$ é a constante elástica e $x$ é a deformação.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": true,
+    "explicacao": "A força da mola cresce com a deformação. A área sob esse gráfico de força dá $\\frac{k x^2}{2}$."
+  },
+  {
+    "materia_id": "fisica",
+    "nivel": "avancado",
+    "enunciado": "Em uma colisão perfeitamente inelástica, a energia cinética total do sistema se conserva.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": false,
+    "explicacao": "Nessa colisão, os corpos seguem juntos. A quantidade de movimento se conserva, mas parte da energia cinética vira calor e deformação."
+  },
+  {
+    "materia_id": "algoritmos",
+    "nivel": "basico",
+    "enunciado": "Um algoritmo é uma sequência finita de passos bem definidos para resolver um problema.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": true,
+    "explicacao": "Um algoritmo precisa terminar e cada passo precisa ser claro, sem ambiguidade."
+  },
+  {
+    "materia_id": "algoritmos",
+    "nivel": "basico",
+    "enunciado": "O laço abaixo imprime três números: 0, 1 e 2.",
+    "codigo": "for i in range(3):\n    print(i)",
+    "linguagem": "python",
+    "resposta_correta": true,
+    "explicacao": "range(3) gera 0, 1 e 2. O corpo do laço roda uma vez para cada valor."
+  },
+  {
+    "materia_id": "algoritmos",
+    "nivel": "basico",
+    "enunciado": "Uma variável criada dentro de uma função pode ser usada em qualquer parte do programa.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": false,
+    "explicacao": "Uma variável criada dentro da função é local. Ela só existe enquanto a função executa."
+  },
+  {
+    "materia_id": "algoritmos",
+    "nivel": "intermediario",
+    "enunciado": "A busca linear em uma lista não ordenada de $n$ elementos tem complexidade de pior caso $O(n)$.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": true,
+    "explicacao": "No pior caso, o elemento está no fim ou não existe. Aí é preciso olhar os n elementos."
+  },
+  {
+    "materia_id": "algoritmos",
+    "nivel": "avancado",
+    "enunciado": "O Merge Sort tem complexidade de tempo $O(n \\log n)$ inclusive no pior caso.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": true,
+    "explicacao": "O Merge Sort sempre divide a lista ao meio e junta as partes em tempo linear. Isso dá $O(n \\log n)$ em qualquer caso."
+  },
+  {
+    "materia_id": "algoritmos",
+    "nivel": "avancado",
+    "enunciado": "O Quicksort tem complexidade $O(n \\log n)$ em todos os casos, inclusive no pior caso.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": false,
+    "explicacao": "Com pivôs muito ruins, como sempre o menor elemento, o Quicksort chega a $O(n^2)$. O caso médio é $O(n \\log n)$."
+  },
+  {
+    "materia_id": "algoritmos",
+    "nivel": "avancado",
+    "enunciado": "Todo algoritmo recursivo pode ser reescrito de forma iterativa usando uma pilha explícita.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": true,
+    "explicacao": "A recursão usa a pilha de chamadas do programa. Uma pilha criada pelo programador faz o mesmo papel."
+  },
+  {
+    "materia_id": "estruturas-de-dados",
+    "nivel": "basico",
+    "enunciado": "Em uma fila, o primeiro elemento inserido é o primeiro a ser removido.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": true,
+    "explicacao": "A fila segue a regra FIFO: o primeiro a entrar é o primeiro a sair, como numa fila de banco."
+  },
+  {
+    "materia_id": "estruturas-de-dados",
+    "nivel": "basico",
+    "enunciado": "Em um vetor de 10 posições com índices começando em zero, o último índice válido é 10.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": false,
+    "explicacao": "Os índices vão de 0 a 9. Acessar a posição 10 sai do vetor."
+  },
+  {
+    "materia_id": "estruturas-de-dados",
+    "nivel": "intermediario",
+    "enunciado": "Em uma lista encadeada simples, acessar o elemento da posição $i$ tem custo constante $O(1)$.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": false,
+    "explicacao": "É preciso percorrer os nós a partir do início até chegar à posição i. O custo é $O(i)$, que no pior caso é $O(n)$."
+  },
+  {
+    "materia_id": "estruturas-de-dados",
+    "nivel": "intermediario",
+    "enunciado": "Uma tabela hash bem dimensionada permite busca com tempo médio $O(1)$.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": true,
+    "explicacao": "A função hash leva direto ao lugar da chave. Com poucas colisões, a busca não depende do tamanho da tabela."
+  },
+  {
+    "materia_id": "estruturas-de-dados",
+    "nivel": "avancado",
+    "enunciado": "A altura de uma árvore AVL com $n$ nós é $O(\\log n)$.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": true,
+    "explicacao": "A AVL se rebalanceia a cada inserção e remoção. Isso mantém a altura proporcional a $\\log n$."
+  },
+  {
+    "materia_id": "estruturas-de-dados",
+    "nivel": "avancado",
+    "enunciado": "Em um heap binário de mínimo, o maior elemento sempre fica na raiz.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": false,
+    "explicacao": "No heap de mínimo, a raiz guarda o menor elemento. O maior fica em alguma folha."
+  },
+  {
+    "materia_id": "estruturas-de-dados",
+    "nivel": "avancado",
+    "enunciado": "A busca em largura em um grafo não ponderado encontra, a partir da origem, o caminho com o menor número de arestas.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": true,
+    "explicacao": "A busca em largura visita os vértices por camadas de distância. O primeiro caminho que chega a um vértice é o mais curto em arestas."
+  },
+  {
+    "materia_id": "logica-matematica",
+    "nivel": "basico",
+    "enunciado": "A proposição $A \\land B$ (A e B) é verdadeira somente quando A e B são verdadeiras.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": true,
+    "explicacao": "Na conjunção, basta uma das partes ser falsa para o resultado ser falso."
+  },
+  {
+    "materia_id": "logica-matematica",
+    "nivel": "basico",
+    "enunciado": "A proposição $A \\lor B$ (A ou B) é falsa quando apenas uma das duas é verdadeira.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": false,
+    "explicacao": "Na disjunção, basta uma das partes ser verdadeira para o resultado ser verdadeiro. Ela só é falsa quando as duas são falsas."
+  },
+  {
+    "materia_id": "logica-matematica",
+    "nivel": "basico",
+    "enunciado": "A negação de uma proposição verdadeira é uma proposição falsa.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": true,
+    "explicacao": "Negar troca o valor lógico: verdadeiro vira falso e falso vira verdadeiro."
+  },
+  {
+    "materia_id": "logica-matematica",
+    "nivel": "intermediario",
+    "enunciado": "A implicação $A \\rightarrow B$ é falsa somente quando A é verdadeira e B é falsa.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": true,
+    "explicacao": "Se a condição A acontece e o resultado B não, a promessa foi quebrada. Em todos os outros casos, a implicação é verdadeira."
+  },
+  {
+    "materia_id": "logica-matematica",
+    "nivel": "intermediario",
+    "enunciado": "A implicação $A \\rightarrow B$ é logicamente equivalente à sua recíproca $B \\rightarrow A$.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": false,
+    "explicacao": "A recíproca pode ter outro valor. Exemplo: \"se chove, a rua molha\" não garante que \"se a rua molha, choveu\"."
+  },
+  {
+    "materia_id": "logica-matematica",
+    "nivel": "avancado",
+    "enunciado": "A contrapositiva $\\neg B \\rightarrow \\neg A$ é logicamente equivalente a $A \\rightarrow B$.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": true,
+    "explicacao": "As duas têm a mesma tabela-verdade. Ambas só são falsas quando A é verdadeira e B é falsa."
+  },
+  {
+    "materia_id": "logica-matematica",
+    "nivel": "avancado",
+    "enunciado": "A fórmula $A \\lor \\neg A$ é uma tautologia.",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": true,
+    "explicacao": "Qualquer que seja o valor de A, uma das duas partes é verdadeira. A fórmula é sempre verdadeira."
+  },
+  {
+    "materia_id": "logica-matematica",
+    "nivel": "avancado",
+    "enunciado": "A negação de \"todo número par é maior que 2\" é \"nenhum número par é maior que 2\".",
+    "codigo": null,
+    "linguagem": null,
+    "resposta_correta": false,
+    "explicacao": "Para negar um \"todo\", basta um contraexemplo: \"existe um número par que não é maior que 2\", como o próprio 2."
   }
 ]
-

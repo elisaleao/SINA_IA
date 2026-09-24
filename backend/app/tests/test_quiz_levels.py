@@ -1,8 +1,11 @@
 import uuid
 
 import pytest
+from sqlalchemy import func, select, update
 
 from app.database import ExerciseRecord
+from app.schemas.exercise import ExerciseLevel
+from scripts.seed_exercicios import seed
 
 
 async def _student(client) -> dict:
@@ -133,3 +136,47 @@ async def test_draft_questions_do_not_count_as_available(
     response = await _start(client, headers, materia_id='calculo')
 
     assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_seed_covers_every_subject_at_every_level(test_db_session):
+    # The quiz screen offers each subject at each level; an empty
+    # combination would answer the student with 422 instead of questions.
+    await seed(test_db_session)
+    rows = await test_db_session.execute(
+        select(ExerciseRecord.materia_id, ExerciseRecord.nivel)
+    )
+    combos = set(rows.all())
+    subjects = {
+        'calculo',
+        'fisica',
+        'algoritmos',
+        'estruturas-de-dados',
+        'logica-matematica',
+    }
+    levels = {level.value for level in ExerciseLevel}
+    assert combos == {(s, lv) for s in subjects for lv in levels}
+
+
+@pytest.mark.asyncio
+async def test_seed_fixes_level_of_questions_already_in_the_bank(
+    test_db_session,
+):
+    # Databases seeded before levels existed got 'basico' everywhere from
+    # the migration; re-running the seed must put each question at its
+    # real level instead of leaving the advanced filter empty.
+    await seed(test_db_session)
+    await test_db_session.execute(
+        update(ExerciseRecord).values(nivel='basico')
+    )
+    await test_db_session.commit()
+
+    inserted, _ = await seed(test_db_session)
+
+    assert inserted == 0
+    count = await test_db_session.scalar(
+        select(func.count())
+        .select_from(ExerciseRecord)
+        .where(ExerciseRecord.nivel == 'avancado')
+    )
+    assert count > 0
