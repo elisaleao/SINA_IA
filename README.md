@@ -47,7 +47,7 @@ core/           configuração (Settings), segurança e protocolos
 database.py     models do SQLAlchemy; o schema só muda por migração em alembic/
 ```
 
-O backend guarda os dados em SQLite no desenvolvimento e aceita PostgreSQL pelo Docker Compose. A conversão de LaTeX para fala fica em `backend/app/app/services/math_speech_service.py`, um módulo sem I/O que o quality gate impede de importar banco ou framework web. Os detalhes estão em [docs/architecture.md](docs/architecture.md).
+O backend guarda os dados em PostgreSQL. O SQLite só é usado pela suíte de testes, em memória. A conversão de LaTeX para fala fica em `backend/app/app/services/math_speech_service.py`, um módulo sem I/O que o quality gate impede de importar banco ou framework web. Os detalhes estão em [docs/architecture.md](docs/architecture.md).
 
 ## Como rodar
 
@@ -59,9 +59,11 @@ Pré-requisitos: Docker com o Compose v2. Nada mais precisa estar instalado na m
 
 ```bash
 cp .env.example .env        # na raiz do repositório
-# edite o .env: GROQ_API_KEY e LLM_KEY_ENCRYPTION_SECRET
+# edite o .env: JWT_SECRET e LLM_KEY_ENCRYPTION_SECRET (obrigatórios) e GROQ_API_KEY
 docker compose up -d --build
 ```
+
+Sem `JWT_SECRET` ou `LLM_KEY_ENCRYPTION_SECRET` no `.env` da raiz, o `docker compose` para com uma mensagem dizendo qual variável falta. O próprio `.env.example` mostra um comando que gera valores aleatórios.
 
 Isso sobe três serviços:
 
@@ -86,11 +88,13 @@ docker compose down && rm -rf data/postgres                # apaga o banco e com
 
 O `.env` do `backend/app` não entra na imagem (está no `.dockerignore`). No Docker, as variáveis vêm do `.env` da raiz e do `docker-compose.yml`.
 
+Versões anteriores do Compose usavam SQLite em `./data/sina_ia.db`. Esses dados **não são levados** para o PostgreSQL: contas, preferências e materiais antigos não aparecem depois da atualização. O arquivo continua em `./data`, sem uso.
+
 ### Sem Docker (desenvolvimento)
 
 Pré-requisitos: Node.js 22, Python 3.13, [Poetry](https://python-poetry.org/docs/#installation) 2.x e Docker, só para o PostgreSQL.
 
-Suba só o banco:
+Suba só o banco. O Compose lê o `.env` da raiz mesmo para um serviço só, então crie esse arquivo antes, como na seção anterior:
 
 ```bash
 docker compose up -d db
