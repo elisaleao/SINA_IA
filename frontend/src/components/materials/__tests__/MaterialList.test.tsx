@@ -126,6 +126,23 @@ describe('MaterialList', () => {
     expect(screen.queryByRole('button', { name: 'Sim, apagar' })).toBeNull();
   });
 
+  it('warns when the personal key failed and the free ai finished the job', () => {
+    renderList([material({ chave_pessoal_falhou: true })]);
+
+    const notice = within(item('aula.pdf')).getByText(/sua chave do Gemini falhou/);
+    expect(notice.closest('[role="status"]')).not.toBeNull();
+    expect(screen.getByRole('link', { name: 'Conferir a chave' })).toHaveAttribute(
+      'href',
+      '/configuracoes/chave-ia'
+    );
+  });
+
+  it('does not warn when the personal key was not involved', () => {
+    renderList([material()]);
+
+    expect(screen.queryByText(/sua chave do Gemini falhou/)).toBeNull();
+  });
+
   it('invites the first upload when the list is empty', () => {
     renderList([]);
 

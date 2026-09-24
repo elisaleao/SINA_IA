@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 
-import { EmptyState, StatusBadge, StatusVariant } from '@/components/ui';
+import { EmptyState, FallbackNotice, StatusBadge, StatusVariant } from '@/components/ui';
 import type { MaterialSummary } from '@/lib/materials';
 import { STATUS_LABEL } from './useMaterials';
 
@@ -81,6 +81,7 @@ export function MaterialList({
                     Resultado reaproveitado de um envio anterior
                   </p>
                 )}
+                {material.chave_pessoal_falhou && <FallbackNotice />}
                 {material.status === 'erro' && material.erro_mensagem && (
                   <p className="mt-2 text-sm font-bold text-red-900">{material.erro_mensagem}</p>
                 )}
