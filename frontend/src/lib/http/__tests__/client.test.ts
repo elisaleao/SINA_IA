@@ -108,6 +108,20 @@ describe('createApiClient request', () => {
     );
   });
 
+  it('keeps a structured detail and reads its mensagem as the message', async () => {
+    const detail = { mensagem: 'Arquivos recusados.', arquivos: [{ arquivo: 'a.pdf', erro: 'x' }] };
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ detail }), { status: 422 }));
+    const client = createApiClient({
+      baseUrl: 'https://api.test',
+      tokenStore: createTokenStore(),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+    });
+
+    await expect(client.request('/api/materiais', { method: 'POST', body: {} })).rejects.toMatchObject(
+      { message: 'Arquivos recusados.', status: 422, detail }
+    );
+  });
+
   it('throws an ApiError with "Erro HTTP <status>" when there is no detail', async () => {
     fetchMock.mockResolvedValueOnce(new Response('not json', { status: 500 }));
     const client = createApiClient({
