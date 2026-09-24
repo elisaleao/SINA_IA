@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "api:types": "openapi-typescript src/lib/openapi.json -o src/lib/api-types.ts"
+    "api:types": "openapi-typescript src/lib/openapi.json -o src/lib/api-types.ts --default-non-nullable false"
   },
   "dependencies": {
     "next": "16.2.7",

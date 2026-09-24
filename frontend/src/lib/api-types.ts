@@ -503,30 +503,30 @@ export interface components {
              * @description Destaca ideias centrais e termos-chave para foco visual
              * @default true
              */
-            highlight_key_points: boolean;
+            highlight_key_points?: boolean;
             /**
              * Include Glossary
              * @description Gera glossário explicativo de termos técnicos complexos
              * @default false
              */
-            include_glossary: boolean;
+            include_glossary?: boolean;
             /**
              * Plain Language
              * @description Se True, simplifica frases e vocabulário (Linguagem Simples)
              * @default false
              */
-            plain_language: boolean;
+            plain_language?: boolean;
             /**
              * @description Perfil prioritário de acessibilidade
              * @default visual
              */
-            profile: components["schemas"]["AccessibilityProfileType"];
+            profile?: components["schemas"]["AccessibilityProfileType"];
             /**
              * Vlibras Active
              * @description Ativação do tradutor de Libras (VLibras) sob demanda
              * @default false
              */
-            vlibras_active: boolean;
+            vlibras_active?: boolean;
         };
         /** AccessibilityPreferencesCreate */
         AccessibilityPreferencesCreate: {
@@ -535,69 +535,69 @@ export interface components {
              * @description Reprodução automática do áudio gerado
              * @default false
              */
-            auto_audio: boolean;
+            auto_audio?: boolean;
             /**
              * Dyslexia Font
              * @description Fonte adaptada para dislexia
              * @default false
              */
-            dyslexia_font: boolean;
+            dyslexia_font?: boolean;
             /**
              * Font Family
              * @description Família tipográfica adaptada (ex: opendyslexic)
              * @default system-ui
              */
-            font_family: string;
+            font_family?: string;
             /**
              * @description Tamanho da fonte (normal, large, larger)
              * @default normal
              */
-            font_size: components["schemas"]["FontSize"];
+            font_size?: components["schemas"]["FontSize"];
             /**
              * High Contrast
              * @description Modo de alto contraste para baixa visão
              * @default false
              */
-            high_contrast: boolean;
+            high_contrast?: boolean;
             /**
              * Highlight Key Points
              * @description Destaque visual de ideias centrais
              * @default true
              */
-            highlight_key_points: boolean;
+            highlight_key_points?: boolean;
             /**
              * Include Glossary
              * @description Glossário automático de termos técnicos
              * @default false
              */
-            include_glossary: boolean;
+            include_glossary?: boolean;
             /**
              * @description Espaçamento entre linhas (normal, relaxed)
              * @default normal
              */
-            line_spacing: components["schemas"]["LineSpacing"];
+            line_spacing?: components["schemas"]["LineSpacing"];
             /**
              * Plain Language
              * @description Simplificação textual e vocabulário acessível
              * @default false
              */
-            plain_language: boolean;
+            plain_language?: boolean;
             /**
              * @description Perfil prioritário de acessibilidade
              * @default visual
              */
-            profile: components["schemas"]["AccessibilityProfileType"];
+            profile?: components["schemas"]["AccessibilityProfileType"];
             /**
              * @description Motor de síntese de voz (online via Edge-TTS ou local via Piper)
              * @default online
              */
-            tts_engine: components["schemas"]["TTSEngine"];
+            tts_engine?: components["schemas"]["TTSEngine"];
             /**
              * Vlibras Active
              * @description Ativação do tradutor de Libras (VLibras) sob demanda
              * @default false
              */
-            vlibras_active: boolean;
+            vlibras_active?: boolean;
         };
         /** AccessibilityPreferencesResponse */
         AccessibilityPreferencesResponse: {
@@ -606,7 +606,7 @@ export interface components {
              * @description Reprodução automática do áudio gerado
              * @default false
              */
-            auto_audio: boolean;
+            auto_audio?: boolean;
             /**
              * Created At
              * Format: date-time
@@ -617,30 +617,30 @@ export interface components {
              * @description Fonte adaptada para dislexia
              * @default false
              */
-            dyslexia_font: boolean;
+            dyslexia_font?: boolean;
             /**
              * Font Family
              * @description Família tipográfica adaptada (ex: opendyslexic)
              * @default system-ui
              */
-            font_family: string;
+            font_family?: string;
             /**
              * @description Tamanho da fonte (normal, large, larger)
              * @default normal
              */
-            font_size: components["schemas"]["FontSize"];
+            font_size?: components["schemas"]["FontSize"];
             /**
              * High Contrast
              * @description Modo de alto contraste para baixa visão
              * @default false
              */
-            high_contrast: boolean;
+            high_contrast?: boolean;
             /**
              * Highlight Key Points
              * @description Destaque visual de ideias centrais
              * @default true
              */
-            highlight_key_points: boolean;
+            highlight_key_points?: boolean;
             /** Id */
             id: string;
             /**
@@ -648,28 +648,28 @@ export interface components {
              * @description Glossário automático de termos técnicos
              * @default false
              */
-            include_glossary: boolean;
+            include_glossary?: boolean;
             /**
              * @description Espaçamento entre linhas (normal, relaxed)
              * @default normal
              */
-            line_spacing: components["schemas"]["LineSpacing"];
+            line_spacing?: components["schemas"]["LineSpacing"];
             /**
              * Plain Language
              * @description Simplificação textual e vocabulário acessível
              * @default false
              */
-            plain_language: boolean;
+            plain_language?: boolean;
             /**
              * @description Perfil prioritário de acessibilidade
              * @default visual
              */
-            profile: components["schemas"]["AccessibilityProfileType"];
+            profile?: components["schemas"]["AccessibilityProfileType"];
             /**
              * @description Motor de síntese de voz (online via Edge-TTS ou local via Piper)
              * @default online
              */
-            tts_engine: components["schemas"]["TTSEngine"];
+            tts_engine?: components["schemas"]["TTSEngine"];
             /**
              * Updated At
              * Format: date-time
@@ -682,7 +682,7 @@ export interface components {
              * @description Ativação do tradutor de Libras (VLibras) sob demanda
              * @default false
              */
-            vlibras_active: boolean;
+            vlibras_active?: boolean;
         };
         /** AccessibilityPreferencesUpdate */
         AccessibilityPreferencesUpdate: {
@@ -740,7 +740,7 @@ export interface components {
              * Level
              * @default 2
              */
-            level: number;
+            level?: number;
         };
         /** Body_upload_document_api_documents_upload_post */
         Body_upload_document_api_documents_upload_post: {
@@ -845,7 +845,7 @@ export interface components {
              * @description Nível de dificuldade
              * @default basico
              */
-            nivel: components["schemas"]["ExerciseLevel"];
+            nivel?: components["schemas"]["ExerciseLevel"];
             /**
              * Resposta Correta
              * @description Gabarito verdadeiro ou falso da assertiva
@@ -875,7 +875,7 @@ export interface components {
              * @description Quantidade de questões a gerar com a IA
              * @default 3
              */
-            quantidade: number;
+            quantidade?: number;
             /**
              * Texto Base
              * @description Texto base ou transcrição do material para geração
@@ -891,9 +891,9 @@ export interface components {
              * Generate Audio
              * @default true
              */
-            generate_audio: boolean;
+            generate_audio?: boolean;
             /** @default summary */
-            generation_type: components["schemas"]["GenerationType"];
+            generation_type?: components["schemas"]["GenerationType"];
             /**
              * @default {
              *       "math_detail_level": "direto",
@@ -901,12 +901,12 @@ export interface components {
              *       "tone": "formal"
              *     }
              */
-            teacher_config: components["schemas"]["TeacherConfig"] | null;
+            teacher_config?: components["schemas"]["TeacherConfig"] | null;
             /**
              * Voice
              * @default pt-BR-AntonioNeural
              */
-            voice: string;
+            voice?: string;
         };
         /** GenerationResponse */
         GenerationResponse: {
@@ -918,7 +918,7 @@ export interface components {
              * Chave Pessoal Falhou
              * @default false
              */
-            chave_pessoal_falhou: boolean;
+            chave_pessoal_falhou?: boolean;
             /** Document Id */
             document_id: string;
             /** Generation Type */
@@ -993,7 +993,7 @@ export interface components {
              * Chave Pessoal Falhou
              * @default false
              */
-            chave_pessoal_falhou: boolean;
+            chave_pessoal_falhou?: boolean;
             /**
              * Criado Em
              * Format: date-time
@@ -1013,7 +1013,7 @@ export interface components {
              * Reaproveitado
              * @default false
              */
-            reaproveitado: boolean;
+            reaproveitado?: boolean;
             /** Resultado */
             resultado?: {
                 [key: string]: unknown;
@@ -1038,7 +1038,7 @@ export interface components {
              * Chave Pessoal Falhou
              * @default false
              */
-            chave_pessoal_falhou: boolean;
+            chave_pessoal_falhou?: boolean;
             /**
              * Criado Em
              * Format: date-time
@@ -1058,7 +1058,7 @@ export interface components {
              * Reaproveitado
              * @default false
              */
-            reaproveitado: boolean;
+            reaproveitado?: boolean;
             /**
              * Status
              * @enum {string}
@@ -1121,7 +1121,7 @@ export interface components {
              * @description Papel no sistema
              * @default aluno
              */
-            role: components["schemas"]["UserRole"];
+            role?: components["schemas"]["UserRole"];
         };
         /** SessionResponse */
         SessionResponse: {
@@ -1175,7 +1175,7 @@ export interface components {
              * @description Quantidade de questões na sessão de quiz
              * @default 5
              */
-            total_questoes: number;
+            total_questoes?: number;
         };
         /** SubmitAnswerRequest */
         SubmitAnswerRequest: {
@@ -1194,7 +1194,7 @@ export interface components {
              * @description Tempo gasto pelo aluno nesta questão
              * @default 0
              */
-            tempo_gasto_segundos: number;
+            tempo_gasto_segundos?: number;
         };
         /**
          * TTSEngine
@@ -1208,19 +1208,19 @@ export interface components {
              * @description direto, passo_a_passo, explicativo
              * @default direto
              */
-            math_detail_level: string;
+            math_detail_level?: string;
             /**
              * Pedagogical Level
              * @description basico, intermediario, avancado
              * @default basico
              */
-            pedagogical_level: string;
+            pedagogical_level?: string;
             /**
              * Tone
              * @description formal, socrático, encorajador
              * @default formal
              */
-            tone: string;
+            tone?: string;
         };
         /** TokenResponse */
         TokenResponse: {
@@ -1234,7 +1234,7 @@ export interface components {
              * Token Type
              * @default bearer
              */
-            token_type: string;
+            token_type?: string;
         };
         /** UserResponse */
         UserResponse: {
@@ -1254,15 +1254,15 @@ export interface components {
              * Is Active
              * @default true
              */
-            is_active: boolean;
+            is_active?: boolean;
             /**
              * Llm Key Configurada
              * @description Indica se o usuário tem chave pessoal do Gemini salva
              * @default false
              */
-            llm_key_configurada: boolean;
+            llm_key_configurada?: boolean;
             /** @default aluno */
-            role: components["schemas"]["UserRole"];
+            role?: components["schemas"]["UserRole"];
             /**
              * Updated At
              * Format: date-time
