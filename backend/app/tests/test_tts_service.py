@@ -1,5 +1,6 @@
 import io
 import json
+import logging
 import wave
 from pathlib import Path
 
@@ -131,14 +132,22 @@ async def test_piper_timeout_counts_as_failure(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_piper_answer_that_is_not_wav_counts_as_failure(tmp_path):
+async def test_piper_answer_that_is_not_wav_counts_as_failure(
+    tmp_path, caplog, monkeypatch
+):
+    # The Piper server answers error pages with HTTP 200 and text/html; the
+    # log must say so plainly for whoever runs the server.
     piper = FakePiper(status=200, body=b'<html>erro</html>')
     edge = FakeEdge()
     out = tmp_path / 'a.mp3'
 
-    await _service('local', piper, edge).synthesize('Olá.', out)
+    tts_logger = logging.getLogger('app.services.tts_service')
+    monkeypatch.setattr(tts_logger, 'disabled', False)
+    with caplog.at_level(logging.WARNING, logger=tts_logger.name):
+        await _service('local', piper, edge).synthesize('Olá.', out)
 
     assert out.read_bytes() == b'edge-mp3'
+    assert 'O Piper não devolveu um WAV' in caplog.text
 
 
 @pytest.mark.asyncio
