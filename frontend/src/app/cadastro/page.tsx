@@ -3,11 +3,13 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useSession } from '@/components/session/SessionProvider';
 import { registerUser, UserRole } from '@/lib/auth';
 import { appRoutes } from '@/lib/routes';
 
 export default function CadastroPage() {
   const router = useRouter();
+  const { reload } = useSession();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -32,6 +34,7 @@ export default function CadastroPage() {
         password,
         role,
       });
+      await reload();
       router.push(appRoutes.dashboard);
     } catch (err) {
       if (err instanceof Error) {

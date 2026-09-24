@@ -5,6 +5,9 @@ import CadastroPage from '../page';
 
 const push = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
+vi.mock('@/components/session/SessionProvider', () => ({
+  useSession: () => ({ reload: async () => undefined }),
+}));
 
 const registerUser = vi.hoisted(() =>
   vi.fn(() =>
