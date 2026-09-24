@@ -3,12 +3,56 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAccessibility } from '@/components/accessibility/AccessibilityProvider';
+import { useSession } from '@/components/session/SessionProvider';
 import { appRoutes } from '@/lib/routes';
+import { updateUserPreferences, type TTSEngine } from '@/lib/auth';
 import { RadioCard, CheckboxCard } from '@/components/ui';
+
+type VoiceFeedback = { type: 'success' | 'error'; message: string };
 
 export default function ConfiguracoesAcessibilidadePage() {
   const { settings, updateSettings } = useAccessibility();
+  const { status: sessionStatus, user, reload } = useSession();
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const sessionTtsEngine = user?.accessibility_preferences?.tts_engine ?? 'online';
+  const [ttsEngineOverride, setTtsEngineOverride] = useState<TTSEngine | null>(null);
+  const [lastSessionTtsEngine, setLastSessionTtsEngine] = useState(sessionTtsEngine);
+  const [savingVoice, setSavingVoice] = useState(false);
+  const [voiceFeedback, setVoiceFeedback] = useState<VoiceFeedback | null>(null);
+
+  if (sessionTtsEngine !== lastSessionTtsEngine) {
+    setLastSessionTtsEngine(sessionTtsEngine);
+    setTtsEngineOverride(null);
+  }
+
+  const ttsEngine = ttsEngineOverride ?? sessionTtsEngine;
+
+  const handleVoiceEngineChange = async (value: string) => {
+    const nextEngine = value as TTSEngine;
+    const previousEngine = ttsEngine;
+    setTtsEngineOverride(nextEngine);
+    setSavingVoice(true);
+    setVoiceFeedback(null);
+    try {
+      await updateUserPreferences({ tts_engine: nextEngine });
+      await reload();
+      setVoiceFeedback({
+        type: 'success',
+        message: 'Voz dos áudios atualizada com sucesso.',
+      });
+    } catch (error) {
+      setTtsEngineOverride(previousEngine);
+      setVoiceFeedback({
+        type: 'error',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Não foi possível salvar a voz escolhida.',
+      });
+    } finally {
+      setSavingVoice(false);
+    }
+  };
 
   const handleSave = () => {
     setSuccessMessage('Preferências salvas com sucesso!');
@@ -139,6 +183,66 @@ export default function ConfiguracoesAcessibilidadePage() {
             description="Inicia a leitura em voz alta ao abrir materiais e enunciados de exercícios."
           />
         </div>
+      </section>
+
+      {/* Seção 3: Voz dos Áudios */}
+      <section aria-labelledby="secao-voz-title" className="space-y-4 pt-4 border-t border-stone-200">
+        <h2 id="secao-voz-title" className="text-xl font-bold text-stone-900">
+          Voz dos áudios
+        </h2>
+        {sessionStatus === 'authenticated' ? (
+          <fieldset className="space-y-3">
+            <legend className="sr-only">Voz dos áudios</legend>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <RadioCard
+                id="voice-engine-online"
+                name="ttsEngine"
+                value="online"
+                checked={ttsEngine === 'online'}
+                onChange={handleVoiceEngineChange}
+                disabled={savingVoice}
+                title="Voz online"
+                description="Voz neural da Microsoft, precisa de internet."
+              />
+              <RadioCard
+                id="voice-engine-local"
+                name="ttsEngine"
+                value="local"
+                checked={ttsEngine === 'local'}
+                onChange={handleVoiceEngineChange}
+                disabled={savingVoice}
+                title="Voz local"
+                description="Voz do servidor (Piper), funciona sem internet e não envia o texto para fora."
+              />
+            </div>
+            <p className="text-xs text-stone-600">
+              Se a voz escolhida falhar, a outra é usada automaticamente.
+            </p>
+            {voiceFeedback && (
+              <div
+                role={voiceFeedback.type === 'success' ? 'status' : 'alert'}
+                aria-live={voiceFeedback.type === 'success' ? 'polite' : 'assertive'}
+                className={
+                  voiceFeedback.type === 'success'
+                    ? 'p-3 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-sm font-semibold'
+                    : 'p-3 rounded-xl bg-rose-50 border border-rose-300 text-rose-900 text-sm font-semibold'
+                }
+              >
+                {voiceFeedback.message}
+              </div>
+            )}
+          </fieldset>
+        ) : (
+          <p className="text-sm text-stone-600">
+            Entre na sua conta para escolher a voz dos áudios.{' '}
+            <Link
+              href={appRoutes.login}
+              className="font-semibold text-blue-600 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-600 rounded"
+            >
+              Fazer login
+            </Link>
+          </p>
+        )}
       </section>
 
       {/* Nota de Privacidade / LGPD */}

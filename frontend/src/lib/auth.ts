@@ -1,8 +1,11 @@
 import { AccessibilityConfig } from './api';
+import type { components } from './api-types';
 import { apiClient } from './http';
 import { localStorageTokenStore } from './http/token-store';
 
 export type UserRole = 'aluno' | 'professor' | 'admin';
+
+export type TTSEngine = components['schemas']['TTSEngine'];
 
 export type TokenResponse = {
   access_token: string;
@@ -36,6 +39,7 @@ export type AccessibilityPreferences = {
   line_spacing: string;
   high_contrast: boolean;
   vlibras_active: boolean;
+  tts_engine: TTSEngine;
 };
 
 export type UserProfile = {
