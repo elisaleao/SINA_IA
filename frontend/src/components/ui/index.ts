@@ -7,3 +7,4 @@ export * from './Dropzone';
 export * from './Tabs';
 
 export * from './FallbackNotice';
+export * from './MathText';
