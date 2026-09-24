@@ -1,67 +1,70 @@
+import pytest
+
 from app.services.math_speech_service import MathToSpeechService
 
 
+def speak(text: str) -> str:
+    return MathToSpeechService.latex_to_spoken_portuguese(text)
+
+
 def test_no_latex_text():
-    """Text without any LaTeX expressions should remain unchanged (only whitespace normalized)."""
+    """Text without any LaTeX expressions should remain unchanged."""
     text = 'Olá, este é um texto comum sem fórmulas matematicas.'
-    result = MathToSpeechService.latex_to_spoken_portuguese(text)
-    assert result == 'Olá, este é um texto comum sem fórmulas matematicas.'
+    assert speak(text) == text
 
 
-def test_inline_latex_simple():
-    """Simple inline LaTeX expressions should be converted correctly."""
-    text = 'O valor de $x = 2$ é a resposta.'
-    result = MathToSpeechService.latex_to_spoken_portuguese(text)
-    assert 'O valor de [Equação: x igual a 2] é a resposta.' in result
+def test_inline_latex_is_spoken_inside_the_sentence():
+    # No "[Equação: ...]" marker: the screen reader and the TTS would read
+    # the brackets and the word aloud in the middle of the sentence.
+    assert speak('O valor de $x = 2$ é a resposta.') == (
+        'O valor de x é igual a 2 é a resposta.'
+    )
 
 
 def test_display_latex_simple():
-    """Display LaTeX expressions ($$...$$) should also be converted."""
-    text = 'Dada a equação: $$y = 10$$'
-    result = MathToSpeechService.latex_to_spoken_portuguese(text)
-    assert 'Dada a equação: [Equação: y igual a 10]' in result
+    assert speak('Dada a equação: $$y = 10$$') == (
+        'Dada a equação: y é igual a 10'
+    )
 
 
 def test_latex_fractions():
-    """Fractions in LaTeX should be expanded to numerador and denominador words."""
-    text = 'Temos $\\frac{a}{b}$ como resultado.'
-    result = MathToSpeechService.latex_to_spoken_portuguese(text)
-    assert '[Equação: fração com numerador a e denominador b]' in result
+    assert speak('Temos $\\frac{a}{b}$ como resultado.') == (
+        'Temos fração com numerador a e denominador b como resultado.'
+    )
 
 
 def test_latex_square_root():
-    """Square roots should be converted into 'raiz quadrada de'."""
-    text = 'Calcule $\\sqrt{y}$.'
-    result = MathToSpeechService.latex_to_spoken_portuguese(text)
-    assert '[Equação: raiz quadrada de y]' in result
+    assert speak('Calcule $\\sqrt{y}$.') == 'Calcule raiz quadrada de y.'
 
 
 def test_latex_custom_root():
-    """Roots with custom index should display index text."""
-    text = 'A expressão $\\sqrt[3]{8}$ é igual a 2.'
-    result = MathToSpeechService.latex_to_spoken_portuguese(text)
-    assert '[Equação: raiz de índice 3 de 8]' in result
+    assert speak('A expressão $\\sqrt[3]{8}$ é igual a 2.') == (
+        'A expressão raiz de índice 3 de 8 é igual a 2.'
+    )
 
 
-def test_latex_exponentiation():
-    """Powers/exponents should display 'elevado a'."""
-    text = 'Seja $x^2$ e $y^{3a}$.'
-    result = MathToSpeechService.latex_to_spoken_portuguese(text)
-    assert '[Equação: x elevado a 2]' in result
-    assert '[Equação: y elevado a 3a]' in result
+@pytest.mark.parametrize(
+    ('latex', 'spoken'),
+    [
+        ('$x^2$', 'x ao quadrado'),
+        ('$x^3$', 'x ao cubo'),
+        ('$y^{3a}$', 'y elevado a 3a'),
+        ('$e^{x+1}$', 'e elevado a x mais 1'),
+    ],
+)
+def test_latex_exponentiation(latex, spoken):
+    assert speak(latex) == spoken
 
 
 def test_latex_indices():
-    """Subscripts/indices should translate to 'de índice'."""
-    text = 'Considere $x_1$ e $y_{max}$.'
-    result = MathToSpeechService.latex_to_spoken_portuguese(text)
-    assert '[Equação: x de índice 1]' in result
-    assert '[Equação: y de índice max]' in result
+    assert speak('Considere $x_1$ e $y_{max}$.') == (
+        'Considere x de índice 1 e y de índice max.'
+    )
 
 
-def test_latex_operators():
-    """Common mathematical operators should be replaced by their written Portuguese equivalent."""
-    cases = [
+@pytest.mark.parametrize(
+    ('latex', 'expected'),
+    [
         ('$\\int$', 'integral de'),
         ('$\\sum$', 'somatório'),
         ('$\\infty$', 'infinito'),
@@ -71,14 +74,94 @@ def test_latex_operators():
         ('$\\leq$', 'menor ou igual a'),
         ('$\\geq$', 'maior ou igual a'),
         ('$\\neq$', 'diferente de'),
-        ('$\\approx$', 'aproximadamente'),
+        ('$\\approx$', 'aproximadamente igual a'),
         ('$\\pi$', 'pi'),
         ('$+$', 'mais'),
         ('$-$', 'menos'),
         ('$/$', 'dividido por'),
-    ]
-    for latex, expected in cases:
-        result = MathToSpeechService.latex_to_spoken_portuguese(latex)
-        assert expected in result, (
-            f"Falha na tradução de {latex}. Esperava '{expected}' no resultado '{result}'"
-        )
+    ],
+)
+def test_latex_operators(latex, expected):
+    assert speak(latex) == expected
+
+
+@pytest.mark.parametrize(
+    ('latex', 'spoken'),
+    [
+        # MATH-01 AC1: trigonometric functions
+        ('$\\sin x$', 'seno de x'),
+        ('$\\cos(2x)$', 'cosseno de 2x'),
+        ('$\\tan x$', 'tangente de x'),
+        ('$\\cot x$', 'cotangente de x'),
+        ('$\\sec x$', 'secante de x'),
+        ('$\\csc x$', 'cossecante de x'),
+        # MATH-01 AC2: logarithms
+        ('$\\log_{2} 8$', 'logaritmo na base 2 de 8'),
+        ('$\\log x$', 'logaritmo de x'),
+        ('$\\ln x$', 'logaritmo natural de x'),
+        # MATH-01 AC3: greek letters
+        ('$\\alpha + \\beta$', 'alfa mais beta'),
+        ('$\\omega$', 'ômega'),
+        ('$\\Delta x$', 'delta maiúsculo x'),
+        ('$\\Sigma$', 'sigma maiúsculo'),
+        ('$\\Pi$', 'pi maiúsculo'),
+        # MATH-01 AC4: limits and derivatives
+        ('$\\lim_{x \\to a} f(x)$', 'limite quando x tende a a de f de x'),
+        ('$\\frac{d}{dx} x^2$', 'derivada em relação a x de x ao quadrado'),
+        # MATH-01 AC5: relations, sets and logic
+        ('$a < b$', 'a menor que b'),
+        ('$a > b$', 'a maior que b'),
+        ('$x \\in A$', 'x pertence a A'),
+        ('$A \\cup B$', 'A união B'),
+        ('$A \\cap B$', 'A interseção B'),
+        ('$\\forall x$', 'para todo x'),
+        ('$\\exists x$', 'existe x'),
+        ('$p \\Rightarrow q$', 'p implica q'),
+        ('$p \\Leftrightarrow q$', 'p se e somente se q'),
+        # MATH-01 AC6: nested fractions
+        (
+            '$\\frac{a+b}{\\sqrt{c}}$',
+            'fração com numerador a mais b e denominador raiz quadrada de c',
+        ),
+    ],
+)
+def test_math_01_rules(latex, spoken):
+    assert speak(latex) == spoken
+
+
+def test_definite_integral_reads_its_limits():
+    assert speak('$$\\int_0^1 2x\\,dx = 1$$') == (
+        'integral de 0 a 1 de 2x dx é igual a 1'
+    )
+
+
+def test_sum_reads_its_limits():
+    assert speak('$\\sum_{i=1}^{n} i$') == (
+        'somatório de i é igual a 1 até n de i'
+    )
+
+
+def test_function_application_reads_as_de():
+    assert speak('$f(x) = x^2$') == 'f de x é igual a x ao quadrado'
+
+
+def test_money_is_not_treated_as_math():
+    # Brazilian materials mention R$ often; it must reach the audio intact.
+    assert speak('Custa R$ 10 e R$ 20.') == 'Custa R$ 10 e R$ 20.'
+
+
+def test_paragraph_breaks_are_kept_for_audio_pauses():
+    assert speak('Primeiro.\n\nSegundo com $x^2$.') == (
+        'Primeiro.\n\nSegundo com x ao quadrado.'
+    )
+
+
+def test_invalid_latex_does_not_raise():
+    assert 'fração' in speak('$\\frac{1}{$ fim')
+
+
+def test_only_symbols_written_together_are_read_together():
+    # "2x" and "dx" are one word; "m c" is two symbols and must stay apart,
+    # otherwise E = m c^2 would be read as "mc".
+    assert speak('$$E = m c^2$$') == 'E é igual a m c ao quadrado'
+    assert speak('$2x\\,dx$') == '2x dx'

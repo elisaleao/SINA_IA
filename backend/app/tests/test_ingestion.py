@@ -36,7 +36,7 @@ async def test_process_pdf_with_text_and_equations(tmp_path):
     assert len(equations) >= 2
     assert any('E = m c^2' in eq for eq in equations)
     assert any('x + y = 10' in eq for eq in equations)
-    assert 'elevado a' in accessible or 'vezes' in accessible
+    assert 'm c ao quadrado' in accessible
 
 
 @pytest.mark.asyncio
