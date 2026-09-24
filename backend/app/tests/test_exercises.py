@@ -40,6 +40,7 @@ async def student_auth(client):
             'password': 'senhaForte123',
             'full_name': 'Aluno Teste',
             'role': 'aluno',
+            'accessibility_preferences': {'profile': 'universal'},
         },
     )
     data = resp.json()
@@ -385,3 +386,39 @@ async def test_publish_exercise_teacher_moderation(
     assert pub_data['status'] == 'publicado'
     assert pub_data['revisado_por'] is not None
     assert pub_data['revisado_em'] is not None
+
+
+@pytest.mark.asyncio
+async def test_visual_profile_is_never_timed_out(client, sample_exercise):
+    # The default profile is 'visual'. A screen reader user needs longer
+    # than any fixed limit to hear a question, so the session has no limit
+    # and a slow answer still counts (WCAG 2.2.1).
+    reg = await client.post(
+        '/auth/register',
+        json={
+            'email': f'cego_{uuid.uuid4().hex[:6]}@sina.edu.br',
+            'password': 'senhaForte123',
+            'full_name': 'Aluno Cego',
+            'role': 'aluno',
+        },
+    )
+    headers = {'Authorization': f'Bearer {reg.json()["access_token"]}'}
+    start = await client.post(
+        '/api/exercicios/sessoes',
+        headers=headers,
+        json={'materia_id': 'calculo', 'total_questoes': 1},
+    )
+    assert start.json()['tempo_limite_segundos'] == 0
+
+    answer = await client.post(
+        f'/api/exercicios/sessoes/{start.json()["id"]}/respostas',
+        headers=headers,
+        json={
+            'exercicio_id': sample_exercise.id,
+            'resposta_aluno': sample_exercise.resposta_correta,
+            'tempo_gasto_segundos': 600.0,
+        },
+    )
+
+    assert answer.json()['tempo_expirado'] is False
+    assert answer.json()['acertou'] is True
