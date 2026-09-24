@@ -2,48 +2,19 @@ import { API_BASE_URL, apiClient } from "./http";
 
 export { API_BASE_URL };
 
-export type GenerationType = "summary" | "quiz" | "study_guide";
-
-export type TeacherConfig = {
-  pedagogical_level?: "basico" | "intermediario" | "avancado" | string;
-  math_detail_level?: "direto" | "passo_a_passo" | "explicativo" | string;
-  tone?: "formal" | "socrático" | "encorajador" | string;
-};
-
-export type AccessibilityConfig = {
-  profile?: "visual" | "dyslexia" | "adhd" | "cognitive" | "universal";
-  plain_language?: boolean;
-  include_glossary?: boolean;
-  highlight_key_points?: boolean;
-  vlibras_active?: boolean;
-};
-
-export type GenerateRequest = {
-  document_id: string;
-  generation_type: GenerationType;
-  teacher_config?: TeacherConfig;
-  accessibility_config?: AccessibilityConfig;
-  generate_audio?: boolean;
-  voice?: string;
-};
-
-export type DocumentProcessResponse = {
-  document_id: string;
-  filename: string;
-  extracted_markdown: string;
-  accessible_text: string;
-  equations_found: string[];
-};
-
-export type GenerationResponse = {
-  document_id: string;
-  generation_type: string;
-  text_content: string;
-  spoken_content: string;
-  audio_url: string | null;
-  accessibility_profile?: string | null;
-  chave_pessoal_falhou?: boolean;
-};
+export type {
+  AccessibilityConfig,
+  DocumentProcessResponse,
+  GenerateRequest,
+  GenerationResponse,
+  GenerationType,
+  TeacherConfig,
+} from "./api-schema";
+import type {
+  DocumentProcessResponse,
+  GenerateRequest,
+  GenerationResponse,
+} from "./api-schema";
 
 /**
  * Uploads a document to the backend for OCR and processing.

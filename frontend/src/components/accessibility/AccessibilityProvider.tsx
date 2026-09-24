@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from 'react';
 import {
@@ -12,6 +13,7 @@ import {
   getDefaultAccessibilitySettings,
   getPreferenciasRepo,
   GlobalAccessibilitySettings,
+  LocalStoragePreferenciasRepo,
 } from '@/lib/accessibility-preferences';
 
 interface AccessibilityContextValue {
@@ -20,6 +22,7 @@ interface AccessibilityContextValue {
     partial: Partial<GlobalAccessibilitySettings>
   ) => Promise<GlobalAccessibilitySettings>;
   announcement: string;
+  hydrate: (partial: Partial<GlobalAccessibilitySettings>) => void;
 }
 
 const AccessibilityContext = createContext<
@@ -35,12 +38,14 @@ export function AccessibilityProvider({
     getDefaultAccessibilitySettings
   );
   const [announcement, setAnnouncement] = useState<string>('');
+  const serverOverrides = useRef<Partial<GlobalAccessibilitySettings>>({});
 
   useEffect(() => {
     const repo = getPreferenciasRepo();
     repo.getPreferences().then((initial) => {
-      setSettings(initial);
-      applyAccessibilitySettingsToDom(initial);
+      const merged = { ...initial, ...serverOverrides.current };
+      setSettings(merged);
+      applyAccessibilitySettingsToDom(merged);
     });
   }, []);
 
@@ -104,6 +109,17 @@ export function AccessibilityProvider({
     []
   );
 
+  const hydrate = useCallback(
+    (partial: Partial<GlobalAccessibilitySettings>) => {
+      serverOverrides.current = partial;
+      setSettings((prev) => ({ ...prev, ...partial }));
+      void new LocalStoragePreferenciasRepo()
+        .savePreferences(partial)
+        .then(applyAccessibilitySettingsToDom);
+    },
+    []
+  );
+
   useEffect(() => {
     const handleVlibrasExternal = (e: Event) => {
       const customEvent = e as CustomEvent<{ active: boolean }>;
@@ -120,7 +136,7 @@ export function AccessibilityProvider({
 
   return (
     <AccessibilityContext.Provider
-      value={{ settings, updateSettings, announcement }}
+      value={{ settings, updateSettings, announcement, hydrate }}
     >
       {children}
       {/* Região global ao vivo para anúncio de leitores de tela */}
