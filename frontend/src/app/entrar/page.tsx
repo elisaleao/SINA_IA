@@ -3,11 +3,13 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useSession } from '@/components/session/SessionProvider';
 import { loginUser } from '@/lib/auth';
 import { appRoutes } from '@/lib/routes';
 
 export default function EntrarPage() {
   const router = useRouter();
+  const { reload } = useSession();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -21,6 +23,7 @@ export default function EntrarPage() {
 
     try {
       await loginUser({ email, password });
+      await reload();
       router.push(appRoutes.dashboard);
     } catch (err) {
       if (err instanceof Error) {
