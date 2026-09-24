@@ -47,6 +47,7 @@ export default function ExerciciosPage() {
   const [selectedAnswer, setSelectedAnswer] = useState<boolean | null>(null);
   const questionHeadingRef = useRef<HTMLHeadingElement>(null);
   const summaryHeadingRef = useRef<HTMLHeadingElement>(null);
+  const nextButtonRef = useRef<HTMLButtonElement>(null);
   const { status } = useSession();
   const isAuthenticated = status !== 'anonymous';
 
@@ -110,6 +111,7 @@ export default function ExerciciosPage() {
   useEffect(() => {
     if (quizState === 'question') questionHeadingRef.current?.focus();
     if (quizState === 'summary') summaryHeadingRef.current?.focus();
+    if (quizState === 'feedback') nextButtonRef.current?.focus();
   }, [quizState, currentQuestion]);
 
   const handleStart = async () => {
@@ -265,7 +267,7 @@ export default function ExerciciosPage() {
           </div>
           <Link
             href="/entrar"
-            className="px-3 py-1.5 bg-amber-600 text-white font-medium rounded hover:bg-amber-700 text-xs uppercase tracking-wider"
+            className="px-3 py-1.5 bg-amber-800 text-white font-medium rounded hover:bg-amber-900 text-xs uppercase tracking-wider"
           >
             Fazer Login
           </Link>
@@ -544,7 +546,7 @@ export default function ExerciciosPage() {
 
           <button
             type="button"
-            autoFocus
+            ref={nextButtonRef}
             onClick={handleNextFromFeedback}
             className="w-full py-3.5 px-6 rounded-lg text-white bg-blue-600 hover:bg-blue-700 font-bold text-base shadow focus:outline-none focus:ring-4 focus:ring-blue-300 transition-colors"
           >

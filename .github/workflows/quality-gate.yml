@@ -182,11 +182,43 @@ jobs:
           print('Fronteiras de domínio puro validadas com sucesso.')
           "
 
+  # ------------------------------------------------ E2E e acessibilidade (Chromium)
+  e2e:
+    name: E2E e acessibilidade
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js (Frontend)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependências Frontend
+        run: cd frontend && npm ci
+
+      - name: Instalar o Chromium do Playwright
+        run: cd frontend && npx playwright install --with-deps chromium
+
+      - name: Playwright (rotas, títulos, foco e axe)
+        run: cd frontend && npm run test:e2e
+
+      - name: Relatório do Playwright
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report
+          path: frontend/playwright-report
+          retention-days: 7
+
   # ------------------------------------------------- Relatório Consolidado no PR
   report:
     name: Relatório
     if: ${{ !cancelled() }}
-    needs: [static, tests, migrations, boundaries]
+    needs: [static, tests, migrations, boundaries, e2e]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -214,6 +246,7 @@ jobs:
                 covPct ? `cobertura total de ${covPct}%` : 'sem dados de cobertura'],
               ['Migrações no PostgreSQL', needs.migrations.result, 'upgrade, alembic check e downgrade num PostgreSQL 16'],
               ['Fronteiras de Domínio', needs.boundaries.result, 'Domínio puro isolado de I/O e Banco'],
+              ['E2E e acessibilidade', needs.e2e.result, 'Playwright em Chromium: título, h1, foco e axe (WCAG 2.2 AA) por rota'],
             ];
 
             const label = {

@@ -702,6 +702,7 @@ export function StudentWorkspace() {
                                 Play para ouvir a explicação da IA. As equações matemáticas foram traduzidas foneticamente.
                               </p>
                               <div className="mt-4 flex items-center">
+                                {/* eslint-disable-next-line jsx-a11y/media-has-caption -- o áudio lê a explicação mostrada logo abaixo */}
                                 <audio
                                   src={getAudioUrl(generatedContent.audioUrl) || undefined}
                                   controls

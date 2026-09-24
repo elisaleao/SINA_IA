@@ -2,6 +2,9 @@ import Link from 'next/link';
 import { RequireRole } from '@/components/session/RequireRole';
 import { PageIntro } from '@/components/layout/PageIntro';
 import { appRoutes } from '@/lib/routes';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = { title: 'Área do aluno' };
 
 export default function StudentPage() {
   return (

@@ -37,6 +37,7 @@ function AudioPanel({ materialId, name }: { materialId: string; name: string }) 
   return (
     <div className="flex flex-col gap-3">
       <p>Ouça o texto acessível deste material.</p>
+      {/* eslint-disable-next-line jsx-a11y/media-has-caption -- o áudio lê o texto acessível, que está na aba ao lado */}
       <audio controls src={url} aria-label={`Áudio do material ${name}`} className="w-full" />
     </div>
   );

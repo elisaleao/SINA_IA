@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { appRoutes } from '@/lib/routes';
 
 export const metadata: Metadata = {
-  title: 'Boas-vindas ao SINA_IA | Configuração Acessível',
+  title: 'Boas-vindas',
   description:
     'Bem-vindo à plataforma educacional inclusiva. Configure suas preferências de estudo e acessibilidade personalizada.',
 };

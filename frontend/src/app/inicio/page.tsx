@@ -4,7 +4,7 @@ import { LlmKeyNotice } from '@/components/session/LlmKeyNotice';
 import { appRoutes, subjectDetailRoute } from '@/lib/routes';
 
 export const metadata: Metadata = {
-  title: 'Meu Painel de Estudos | SINA_IA',
+  title: 'Meu painel de estudos',
   description:
     'Painel central de aprendizagem inclusiva com acesso aos ambientes de estudo, disciplinas acadêmicas e testes rápidos.',
 };

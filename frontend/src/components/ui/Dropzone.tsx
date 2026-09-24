@@ -75,6 +75,7 @@ export function Dropzone({
         multiple={multiple}
         disabled={disabled}
         onChange={handleInputChange}
+        aria-label="Escolher arquivos"
         aria-describedby={`${id}-formats`}
         className="sr-only"
         tabIndex={-1}

@@ -33,7 +33,7 @@ export function RoleNavigation() {
           className={`flex min-h-40 flex-col justify-between rounded-[1.75rem] px-6 py-6 transition duration-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#1f5f5b] ${action.tone}`}
         >
           <span className="text-2xl font-semibold tracking-tight">{action.title}</span>
-          <span className="max-w-xs text-sm leading-6 opacity-90">
+          <span className="max-w-xs text-sm leading-6">
             {action.description}
           </span>
         </Link>
