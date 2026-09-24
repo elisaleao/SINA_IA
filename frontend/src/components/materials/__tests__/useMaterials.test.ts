@@ -203,6 +203,18 @@ describe('useMaterials', () => {
     expect(result.current.materials.map((m) => m.id)).toEqual(['b']);
   });
 
+  it('drops a material that was already deleted elsewhere', async () => {
+    api.listMaterials.mockResolvedValue([material('a', 'pronto'), material('b', 'pronto')]);
+    api.deleteMaterial.mockRejectedValue(new ApiError('Material não encontrado.', 404));
+    const { result } = await mount();
+
+    await act(async () => {
+      await result.current.remove('a');
+    });
+
+    expect(result.current.materials.map((m) => m.id)).toEqual(['b']);
+  });
+
   it('drops a material the backend answers with 404', async () => {
     api.listMaterials.mockResolvedValue([material('a', 'erro'), material('b', 'pronto')]);
     api.reprocessMaterial.mockRejectedValue(new ApiError('Material não encontrado.', 404));
