@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import ExerciciosPage from '../page';
@@ -72,7 +72,7 @@ describe('quiz with a screen reader', () => {
   it('moves focus to the question and names it with the spoken version', async () => {
     const heading = await openQuestion();
 
-    expect(document.activeElement).toBe(heading);
+    await waitFor(() => expect(document.activeElement).toBe(heading));
     expect(heading).toHaveAccessibleName(
       /Questão 1 de 2\. A derivada de x ao quadrado é dois x\./
     );
@@ -159,6 +159,6 @@ describe('quiz with a screen reader', () => {
 
     const heading = await screen.findByRole('heading', { name: /Rodada Concluída/ });
     expect(heading).toHaveTextContent('Você acertou 1 de 2.');
-    expect(document.activeElement).toBe(heading);
+    await waitFor(() => expect(document.activeElement).toBe(heading));
   });
 });

@@ -86,6 +86,7 @@ describe('MaterialResult', () => {
     const audio = container.querySelector('audio') as HTMLAudioElement;
     expect(audio).toHaveAttribute('controls');
     expect(audio).toHaveAttribute('src', 'blob:audio-1');
+    expect(audio).toHaveAccessibleName('Áudio do material aula.pdf');
   });
 
   it('says when the material has no audio yet', async () => {

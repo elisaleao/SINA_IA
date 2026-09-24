@@ -10,7 +10,7 @@ type Audit = { itens?: { problema: string }[] };
 
 const NO_AUDIO = 'Este material ainda não tem áudio.';
 
-function AudioPanel({ materialId }: { materialId: string }) {
+function AudioPanel({ materialId, name }: { materialId: string; name: string }) {
   const [url, setUrl] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -37,7 +37,7 @@ function AudioPanel({ materialId }: { materialId: string }) {
   return (
     <div className="flex flex-col gap-3">
       <p>Ouça o texto acessível deste material.</p>
-      <audio controls src={url} className="w-full" />
+      <audio controls src={url} aria-label={`Áudio do material ${name}`} className="w-full" />
     </div>
   );
 }
@@ -117,7 +117,7 @@ export function MaterialResult({ materialId }: { materialId: string }) {
     {
       id: 'audio',
       label: 'Áudio',
-      content: material.audio_url ? <AudioPanel materialId={material.id} /> : <p>{NO_AUDIO}</p>,
+      content: material.audio_url ? <AudioPanel materialId={material.id} name={material.nome_original} /> : <p>{NO_AUDIO}</p>,
     },
   ];
 
