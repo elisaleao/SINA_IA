@@ -1,3 +1,4 @@
+import type { AccessibilityPreferencesUpdate } from './api-schema';
 import { getStoredAccessToken, updateUserPreferences } from './auth';
 
 export type FontSizeOption = 'normal' | 'large' | 'larger';
@@ -35,6 +36,39 @@ export function getDefaultAccessibilitySettings(): GlobalAccessibilitySettings {
     vlibrasActive: false,
     reducedMotion: Boolean(prefersReducedMotion),
   };
+}
+
+export type SharedAccessibilitySettings = Omit<GlobalAccessibilitySettings, 'reducedMotion'>;
+
+export type ServerAccessibilityPreferences = Pick<
+  AccessibilityPreferencesUpdate,
+  'font_size' | 'high_contrast' | 'line_spacing' | 'dyslexia_font' | 'auto_audio' | 'vlibras_active'
+>;
+
+export function toServerPreferences(
+  settings: SharedAccessibilitySettings
+): ServerAccessibilityPreferences {
+  return {
+    font_size: settings.fontSize,
+    high_contrast: settings.highContrast,
+    line_spacing: settings.lineSpacing,
+    dyslexia_font: settings.dyslexiaFont,
+    auto_audio: settings.autoAudio,
+    vlibras_active: settings.vlibrasActive,
+  };
+}
+
+export function fromServerPreferences(
+  prefs: ServerAccessibilityPreferences
+): Partial<SharedAccessibilitySettings> {
+  const mapped: Partial<SharedAccessibilitySettings> = {};
+  if (prefs.font_size != null) mapped.fontSize = prefs.font_size;
+  if (prefs.high_contrast != null) mapped.highContrast = prefs.high_contrast;
+  if (prefs.line_spacing != null) mapped.lineSpacing = prefs.line_spacing;
+  if (prefs.dyslexia_font != null) mapped.dyslexiaFont = prefs.dyslexia_font;
+  if (prefs.auto_audio != null) mapped.autoAudio = prefs.auto_audio;
+  if (prefs.vlibras_active != null) mapped.vlibrasActive = prefs.vlibras_active;
+  return mapped;
 }
 
 export interface PreferenciasRepo {
@@ -91,12 +125,7 @@ export class ApiPreferenciasRepo implements PreferenciasRepo {
     const token = getStoredAccessToken();
     if (token) {
       try {
-        await updateUserPreferences({
-          font_size: updated.fontSize,
-          high_contrast: updated.highContrast,
-          line_spacing: updated.lineSpacing,
-          vlibras_active: updated.vlibrasActive,
-        });
+        await updateUserPreferences(toServerPreferences(updated));
       } catch (err) {
         console.warn('Falha ao sincronizar preferências com a API:', err);
       }

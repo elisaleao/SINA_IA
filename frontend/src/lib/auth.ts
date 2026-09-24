@@ -1,5 +1,6 @@
 import type {
   AccessibilityPreferencesResponse,
+  AccessibilityPreferencesUpdate,
   LoginRequest,
   RegisterRequest,
   TokenResponse,
@@ -88,7 +89,7 @@ export async function logoutUser(): Promise<void> {
 }
 
 export async function updateUserPreferences(
-  prefs: Partial<AccessibilityPreferences>
+  prefs: AccessibilityPreferencesUpdate
 ): Promise<AccessibilityPreferences> {
   const token = getStoredAccessToken();
   if (!token) {
