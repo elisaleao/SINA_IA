@@ -212,3 +212,53 @@ def test_migration_0010_adds_level_and_renames_logic_subject():
     finally:
         if os.path.exists(db_path):
             os.remove(db_path)
+
+
+def test_migration_0011_adds_voice_engine_with_online_default():
+    """Migração 0011 cria tts_engine com 'online' para quem já existia."""
+    with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as tmp:
+        db_path = tmp.name
+
+    def columns() -> list[str]:
+        connection = sqlite3.connect(db_path)
+        try:
+            return [
+                name
+                for _, name, *_ in connection.execute(
+                    'PRAGMA table_info(preferencias_acessibilidade)'
+                )
+            ]
+        finally:
+            connection.close()
+
+    try:
+        alembic_cfg = _alembic_config(f'sqlite:///{db_path}')
+        command.upgrade(alembic_cfg, '0010_nivel_exercicios')
+        connection = sqlite3.connect(db_path)
+        connection.execute(
+            'INSERT INTO usuarios (id, email, hashed_password, full_name) '
+            "VALUES ('u1', 'u1@sina.dev', 'hash', 'Teste')"
+        )
+        connection.execute(
+            'INSERT INTO preferencias_acessibilidade (id, user_id) '
+            "VALUES ('p1', 'u1')"
+        )
+        connection.commit()
+        connection.close()
+
+        command.upgrade(alembic_cfg, '0011_tts_engine')
+        connection = sqlite3.connect(db_path)
+        try:
+            engine = connection.execute(
+                'SELECT tts_engine FROM preferencias_acessibilidade '
+                "WHERE id = 'p1'"
+            ).fetchone()
+        finally:
+            connection.close()
+        assert engine == ('online',)
+
+        command.downgrade(alembic_cfg, '0010_nivel_exercicios')
+        assert 'tts_engine' not in columns()
+    finally:
+        if os.path.exists(db_path):
+            os.remove(db_path)

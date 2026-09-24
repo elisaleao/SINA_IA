@@ -24,6 +24,11 @@ class LineSpacing(str, Enum):
     RELAXED = 'relaxed'
 
 
+class TTSEngine(str, Enum):
+    ONLINE = 'online'
+    LOCAL = 'local'
+
+
 class AccessibilityPreferencesBase(BaseModel):
     profile: AccessibilityProfileType = Field(
         default=AccessibilityProfileType.VISUAL,
@@ -69,6 +74,10 @@ class AccessibilityPreferencesBase(BaseModel):
         default=False,
         description='Ativação do tradutor de Libras (VLibras) sob demanda',
     )
+    tts_engine: TTSEngine = Field(
+        default=TTSEngine.ONLINE,
+        description='Motor de síntese de voz (online via Edge-TTS ou local via Piper)',
+    )
 
 
 class AccessibilityPreferencesCreate(AccessibilityPreferencesBase):
@@ -87,6 +96,7 @@ class AccessibilityPreferencesUpdate(BaseModel):
     dyslexia_font: Optional[bool] = None
     auto_audio: Optional[bool] = None
     vlibras_active: Optional[bool] = None
+    tts_engine: Optional[TTSEngine] = None
 
 
 class AccessibilityPreferencesResponse(AccessibilityPreferencesBase):

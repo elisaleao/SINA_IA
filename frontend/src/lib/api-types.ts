@@ -588,6 +588,11 @@ export interface components {
              */
             profile: components["schemas"]["AccessibilityProfileType"];
             /**
+             * @description Motor de síntese de voz (online via Edge-TTS ou local via Piper)
+             * @default online
+             */
+            tts_engine: components["schemas"]["TTSEngine"];
+            /**
              * Vlibras Active
              * @description Ativação do tradutor de Libras (VLibras) sob demanda
              * @default false
@@ -661,6 +666,11 @@ export interface components {
              */
             profile: components["schemas"]["AccessibilityProfileType"];
             /**
+             * @description Motor de síntese de voz (online via Edge-TTS ou local via Piper)
+             * @default online
+             */
+            tts_engine: components["schemas"]["TTSEngine"];
+            /**
              * Updated At
              * Format: date-time
              */
@@ -693,6 +703,7 @@ export interface components {
             /** Plain Language */
             plain_language?: boolean | null;
             profile?: components["schemas"]["AccessibilityProfileType"] | null;
+            tts_engine?: components["schemas"]["TTSEngine"] | null;
             /** Vlibras Active */
             vlibras_active?: boolean | null;
         };
@@ -1185,6 +1196,11 @@ export interface components {
              */
             tempo_gasto_segundos: number;
         };
+        /**
+         * TTSEngine
+         * @enum {string}
+         */
+        TTSEngine: "online" | "local";
         /** TeacherConfig */
         TeacherConfig: {
             /**
