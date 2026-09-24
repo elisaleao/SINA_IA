@@ -288,6 +288,9 @@ class ExerciseRecord(Base):
     materia_id: Mapped[str] = mapped_column(
         String(50), nullable=False, index=True
     )
+    nivel: Mapped[str] = mapped_column(
+        String(20), default='basico', nullable=False, index=True
+    )
     enunciado: Mapped[str] = mapped_column(Text, nullable=False)
     enunciado_falado: Mapped[str] = mapped_column(Text, nullable=False)
     codigo: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -328,6 +331,7 @@ class ExerciseSessionRecord(Base):
     materia_id: Mapped[Optional[str]] = mapped_column(
         String(50), nullable=True, index=True
     )
+    nivel: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     total_questoes: Mapped[int] = mapped_column(
         Integer, default=5, nullable=False
     )
