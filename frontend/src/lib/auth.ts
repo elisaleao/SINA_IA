@@ -1,56 +1,20 @@
-import { AccessibilityConfig } from './api';
-import type { components } from './api-types';
+import type {
+  AccessibilityPreferencesResponse,
+  LoginRequest,
+  RegisterRequest,
+  TokenResponse,
+  TTSEngine,
+  UserResponse,
+  UserRole,
+} from './api-schema';
 import { apiClient } from './http';
 import { localStorageTokenStore } from './http/token-store';
 
-export type UserRole = 'aluno' | 'professor' | 'admin';
-
-export type TTSEngine = components['schemas']['TTSEngine'];
-
-export type TokenResponse = {
-  access_token: string;
-  refresh_token: string;
-  token_type: string;
-  expires_in: number;
-};
-
-export type LoginCredentials = {
-  email: string;
-  password: string;
-};
-
-export type RegisterCredentials = {
-  email: string;
-  password: string;
-  full_name: string;
-  role?: UserRole;
-  accessibility_preferences?: AccessibilityConfig;
-};
-
-export type AccessibilityPreferences = {
-  id: string;
-  user_id: string;
-  profile: string;
-  plain_language: boolean;
-  include_glossary: boolean;
-  highlight_key_points: boolean;
-  font_family: string;
-  font_size: string;
-  line_spacing: string;
-  high_contrast: boolean;
-  vlibras_active: boolean;
-  tts_engine: TTSEngine;
-};
-
-export type UserProfile = {
-  id: string;
-  email: string;
-  full_name: string;
-  role: UserRole;
-  is_active: boolean;
-  accessibility_preferences: AccessibilityPreferences | null;
-  llm_key_configurada: boolean;
-};
+export type { TokenResponse, TTSEngine, UserRole };
+export type LoginCredentials = LoginRequest;
+export type RegisterCredentials = RegisterRequest;
+export type AccessibilityPreferences = AccessibilityPreferencesResponse;
+export type UserProfile = UserResponse;
 
 const VLIBRAS_STORAGE_KEY = 'sina_vlibras_ativo';
 
