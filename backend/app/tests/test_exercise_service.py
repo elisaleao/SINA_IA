@@ -11,7 +11,7 @@ from app.services.exercise_service import (
     ('profile', 'expected'),
     [
         (None, 13),
-        ('visual', 13),
+        ('visual', 0),
         ('dyslexia', 13),
         ('universal', 13),
         ('adhd', 26),
@@ -19,6 +19,8 @@ from app.services.exercise_service import (
     ],
 )
 def test_time_limit_for(profile, expected):
+    # Blind and low vision students listen to each question with a screen
+    # reader; 0 means no limit (WCAG 2.2.1), so they are never timed out.
     assert time_limit_for(profile) == expected
 
 

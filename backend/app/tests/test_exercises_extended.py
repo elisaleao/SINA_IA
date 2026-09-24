@@ -17,6 +17,7 @@ async def sample_students(client):
             'password': 'senhaForte123',
             'full_name': 'Estudante 1',
             'role': 'aluno',
+            'accessibility_preferences': {'profile': 'universal'},
         },
     )
     r2 = await client.post(
