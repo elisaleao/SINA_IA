@@ -12,6 +12,7 @@
     "api:types": "openapi-typescript src/lib/openapi.json -o src/lib/api-types.ts --default-non-nullable false"
   },
   "dependencies": {
+    "katex": "^0.18.9",
     "next": "16.2.7",
     "react": "19.2.4",
     "react-dom": "19.2.4"

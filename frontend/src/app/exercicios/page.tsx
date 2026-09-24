@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useSession } from '@/components/session/SessionProvider';
-import { RadioCard } from '@/components/ui';
+import { MathText, RadioCard } from '@/components/ui';
 import {
   startExerciseSession,
   fetchNextQuestion,
@@ -390,6 +390,7 @@ export default function ExerciciosPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-slate-100 pb-4">
             <div
               role="progressbar"
+              aria-label="Progresso da rodada"
               aria-valuenow={currentQuestion.numero_questao}
               aria-valuemin={1}
               aria-valuemax={currentQuestion.total_questoes}
@@ -430,7 +431,9 @@ export default function ExerciciosPage() {
                 Questão {currentQuestion.numero_questao} de {currentQuestion.total_questoes}.{' '}
                 {currentQuestion.enunciado_falado || currentQuestion.enunciado}
               </span>
-              <span aria-hidden="true">{currentQuestion.enunciado}</span>
+              <span aria-hidden="true">
+                <MathText text={currentQuestion.enunciado} />
+              </span>
             </h2>
 
             {currentQuestion.enunciado_falado &&
@@ -540,7 +543,7 @@ export default function ExerciciosPage() {
               Explicação Formativa
             </h3>
             <p className="text-base text-slate-800 leading-relaxed">
-              {feedback.explicacao}
+              <MathText text={feedback.explicacao} />
             </p>
           </div>
 
@@ -633,7 +636,9 @@ export default function ExerciciosPage() {
                   Sua resposta: {item.resposta_aluno ? 'Verdadeiro' : 'Falso'} |
                   Gabarito: {item.resposta_correta ? 'Verdadeiro' : 'Falso'}
                 </p>
-                <p className="text-xs text-slate-700 italic">{item.explicacao}</p>
+                <p className="text-xs text-slate-700 italic">
+                  <MathText text={item.explicacao} />
+                </p>
               </div>
             ))}
           </div>

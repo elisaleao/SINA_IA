@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 
-import { Tabs } from '@/components/ui';
+import { MathText, Tabs } from '@/components/ui';
 import { MaterialDetail, fetchMaterialAudio, getMaterial } from '@/lib/materials';
 
 type Chart = { source_label: string; title?: string | null; description: string };
@@ -46,7 +46,7 @@ function AudioPanel({ materialId, name }: { materialId: string; name: string }) 
 function textBlock(text: string | null | undefined, empty: string) {
   return (
     <div className="max-h-96 overflow-auto whitespace-pre-wrap rounded-lg border border-stone-200 p-4 leading-7 text-stone-900">
-      {text || empty}
+      <MathText text={text || empty} />
     </div>
   );
 }
@@ -94,7 +94,9 @@ export function MaterialResult({ materialId }: { materialId: string }) {
             <article key={`${chart.source_label}-${index}`} className="rounded-lg border border-stone-200 p-4">
               <h4 className="font-semibold">{chart.title || chart.source_label}</h4>
               {chart.title && <p className="mt-1 text-sm text-stone-600">{chart.source_label}</p>}
-              <p className="mt-3 whitespace-pre-wrap leading-7">{chart.description}</p>
+              <p className="mt-3 whitespace-pre-wrap leading-7">
+                <MathText text={chart.description} />
+              </p>
             </article>
           ))}
         </div>
