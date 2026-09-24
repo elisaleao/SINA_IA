@@ -755,6 +755,11 @@ export interface components {
             filename: string;
         };
         /**
+         * ExerciseLevel
+         * @enum {string}
+         */
+        ExerciseLevel: "basico" | "intermediario" | "avancado";
+        /**
          * ExercisePublicQuestion
          * @description Modelo público da questão para o aluno em teste.
          *
@@ -773,6 +778,7 @@ export interface components {
             linguagem?: string | null;
             /** Materia Id */
             materia_id: string;
+            nivel: components["schemas"]["ExerciseLevel"];
             /** Numero Questao */
             numero_questao: number;
             /** Tempo Limite Segundos */
@@ -820,6 +826,11 @@ export interface components {
              * @description Identificador da matéria / tópico
              */
             materia_id: string;
+            /**
+             * @description Nível de dificuldade
+             * @default basico
+             */
+            nivel: components["schemas"]["ExerciseLevel"];
             /**
              * Resposta Correta
              * @description Gabarito verdadeiro ou falso da assertiva
@@ -1092,6 +1103,7 @@ export interface components {
             iniciado_em: string;
             /** Materia Id */
             materia_id?: string | null;
+            nivel?: components["schemas"]["ExerciseLevel"] | null;
             /** Tempo Limite Segundos */
             tempo_limite_segundos: number;
             /** Total Questoes */
@@ -1123,6 +1135,8 @@ export interface components {
              * @description Filtrar questões por matéria específica (opcional)
              */
             materia_id?: string | null;
+            /** @description Filtrar questões por nível de dificuldade (opcional) */
+            nivel?: components["schemas"]["ExerciseLevel"] | null;
             /**
              * Total Questoes
              * @description Quantidade de questões na sessão de quiz

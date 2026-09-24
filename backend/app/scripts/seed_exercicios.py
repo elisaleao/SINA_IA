@@ -36,6 +36,7 @@ async def _seed_data(session: AsyncSession) -> tuple[int, int]:
         existing = res.scalar_one_or_none()
 
         if existing:
+            existing.nivel = item['nivel']
             skipped += 1
             continue
 
@@ -46,6 +47,7 @@ async def _seed_data(session: AsyncSession) -> tuple[int, int]:
         rec = ExerciseRecord(
             id=str(uuid.uuid4()),
             materia_id=item['materia_id'],
+            nivel=item['nivel'],
             enunciado=item['enunciado'],
             enunciado_falado=enunciado_falado,
             codigo=item.get('codigo'),

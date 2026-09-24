@@ -35,6 +35,15 @@ from app.services.math_speech_service import MathToSpeechService
 router = APIRouter(prefix='/api/exercicios', tags=['Exercícios e Quiz'])
 
 
+def _published_questions(stmt, materia_id, nivel):
+    stmt = stmt.where(ExerciseRecord.status == 'publicado')
+    if materia_id:
+        stmt = stmt.where(ExerciseRecord.materia_id == materia_id)
+    if nivel:
+        stmt = stmt.where(ExerciseRecord.nivel == nivel)
+    return stmt
+
+
 @router.post(
     '/sessoes',
     response_model=SessionResponse,
@@ -49,12 +58,26 @@ async def start_session(
     """Cria uma nova sessão de exercícios com tempo calculado de acordo com as preferências do aluno."""
     prefs = current_user.accessibility_preferences
     tempo_limite = time_limit_for(prefs.profile if prefs else None)
+    nivel = payload.nivel.value if payload.nivel else None
+
+    disponiveis = await db.scalar(
+        _published_questions(
+            select(func.count(ExerciseRecord.id)), payload.materia_id, nivel
+        )
+    )
+    if not disponiveis:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail='Não há questões para essa matéria e nível. '
+            'Escolha outro filtro.',
+        )
 
     sessao_id = str(uuid.uuid4())
     sessao = ExerciseSessionRecord(
         id=sessao_id,
         user_id=current_user.id,
         materia_id=payload.materia_id,
+        nivel=nivel,
         total_questoes=payload.total_questoes,
         tempo_limite_segundos=tempo_limite,
     )
@@ -108,11 +131,9 @@ async def get_next_question(
         )
 
     # Busca a próxima questão disponível que ainda não foi respondida
-    q_stmt = select(ExerciseRecord).where(
-        ExerciseRecord.status == 'publicado',
+    q_stmt = _published_questions(
+        select(ExerciseRecord), sessao.materia_id, sessao.nivel
     )
-    if sessao.materia_id:
-        q_stmt = q_stmt.where(ExerciseRecord.materia_id == sessao.materia_id)
     if respondidas_ids:
         q_stmt = q_stmt.where(ExerciseRecord.id.not_in(respondidas_ids))
 
@@ -129,6 +150,7 @@ async def get_next_question(
     return ExercisePublicQuestion(
         id=exercise.id,
         materia_id=exercise.materia_id,
+        nivel=exercise.nivel,
         enunciado=exercise.enunciado,
         enunciado_falado=exercise.enunciado_falado,
         codigo=exercise.codigo,

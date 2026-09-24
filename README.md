@@ -75,12 +75,13 @@ Isso sobe três serviços:
 
 Os dados ficam em `./data`: o banco em `./data/postgres`, e uploads e áudios em `./data/uploads` e `./data/outputs`.
 
+Ao subir, o backend aplica as migrações e carrega as questões do quiz. A carga é idempotente: não duplica questões e corrige o nível das que já existem.
+
 Comandos do dia a dia:
 
 ```bash
 docker compose ps                                          # estado dos serviços
 docker compose logs -f backend                             # logs da API
-docker compose exec backend python -m scripts.seed_exercicios   # questões de exemplo do quiz
 docker compose up -d --build backend                       # depois de mudar o código do backend
 docker compose down                                        # para tudo e mantém os dados
 docker compose down && rm -rf data/postgres                # apaga o banco e começa do zero

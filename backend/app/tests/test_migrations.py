@@ -162,3 +162,53 @@ def test_migration_0008_creates_and_drops_user_key_table():
     finally:
         if os.path.exists(db_path):
             os.remove(db_path)
+
+
+def test_migration_0010_adds_level_and_renames_logic_subject():
+    """Migração 0010 cria o nível (padrão básico) e alinha o ID de lógica."""
+    with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as tmp:
+        db_path = tmp.name
+
+    def rows() -> list[tuple]:
+        connection = sqlite3.connect(db_path)
+        try:
+            columns = [
+                name
+                for _, name, *_ in connection.execute(
+                    'PRAGMA table_info(exercicios)'
+                )
+            ]
+            select_level = ', nivel' if 'nivel' in columns else ''
+            return connection.execute(
+                f'SELECT id, materia_id{select_level} FROM exercicios '
+                'ORDER BY id'
+            ).fetchall()
+        finally:
+            connection.close()
+
+    try:
+        alembic_cfg = _alembic_config(f'sqlite:///{db_path}')
+        command.upgrade(alembic_cfg, '0009_remove_unique_duplicado')
+        connection = sqlite3.connect(db_path)
+        for exercise_id, materia in (('a', 'logica'), ('b', 'fisica')):
+            connection.execute(
+                'INSERT INTO exercicios (id, materia_id, enunciado, '
+                'enunciado_falado, resposta_correta, explicacao, fonte, '
+                "status) VALUES (?, ?, 'x', 'x', 1, 'x', 'manual', "
+                "'publicado')",
+                (exercise_id, materia),
+            )
+        connection.commit()
+        connection.close()
+
+        command.upgrade(alembic_cfg, '0010_nivel_exercicios')
+        assert rows() == [
+            ('a', 'logica-matematica', 'basico'),
+            ('b', 'fisica', 'basico'),
+        ]
+
+        command.downgrade(alembic_cfg, '0009_remove_unique_duplicado')
+        assert rows() == [('a', 'logica'), ('b', 'fisica')]
+    finally:
+        if os.path.exists(db_path):
+            os.remove(db_path)

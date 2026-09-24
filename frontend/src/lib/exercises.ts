@@ -1,8 +1,11 @@
 import { ApiError, apiClient } from './http';
 
+export type ExerciseLevel = 'basico' | 'intermediario' | 'avancado';
+
 export type ExercisePublicQuestion = {
   id: string;
   materia_id: string;
+  nivel: ExerciseLevel;
   enunciado: string;
   enunciado_falado: string | null;
   codigo: string | null;
@@ -17,6 +20,7 @@ export type SessionResponse = {
   id: string;
   user_id: string;
   materia_id: string | null;
+  nivel: ExerciseLevel | null;
   total_questoes: number;
   tempo_limite_segundos: number;
   criado_em: string;
@@ -50,11 +54,12 @@ export type SessionResultResponse = {
 
 export async function startExerciseSession(
   materia_id?: string,
-  total_questoes: number = 5
+  total_questoes: number = 5,
+  nivel?: ExerciseLevel
 ): Promise<SessionResponse> {
   return apiClient.request<SessionResponse>('/api/exercicios/sessoes', {
     method: 'POST',
-    body: { materia_id: materia_id || null, total_questoes },
+    body: { materia_id: materia_id || null, total_questoes, nivel: nivel || null },
   });
 }
 
