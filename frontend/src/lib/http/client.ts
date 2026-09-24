@@ -16,11 +16,13 @@ export interface ApiClient {
 
 export class ApiError extends Error {
   status: number;
+  detail: unknown;
 
-  constructor(message: string, status: number) {
+  constructor(message: string, status: number, detail?: unknown) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
+    this.detail = detail;
   }
 }
 
@@ -123,17 +125,24 @@ export function createApiClient(options: CreateApiClientOptions): ApiClient {
     });
   }
 
-  async function readErrorMessage(response: Response): Promise<string> {
-    const detail = await response
+  async function readErrorDetail(response: Response): Promise<unknown> {
+    return response
       .clone()
       .json()
-      .then((data: unknown) => (data as { detail?: string } | null)?.detail)
+      .then((data: unknown) => (data as { detail?: unknown } | null)?.detail)
       .catch(() => undefined);
-    return detail || `Erro HTTP ${response.status}`;
+  }
+
+  function errorMessage(detail: unknown, status: number): string {
+    if (typeof detail === 'string' && detail) return detail;
+    const mensagem = (detail as { mensagem?: unknown } | null | undefined)?.mensagem;
+    if (typeof mensagem === 'string' && mensagem) return mensagem;
+    return `Erro HTTP ${status}`;
   }
 
   async function fail(response: Response): Promise<never> {
-    throw new ApiError(await readErrorMessage(response), response.status);
+    const detail = await readErrorDetail(response);
+    throw new ApiError(errorMessage(detail, response.status), response.status, detail);
   }
 
   async function sendWithAuthRetry(path: string, init: RequestOptions): Promise<Response> {

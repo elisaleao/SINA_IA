@@ -13,7 +13,7 @@ export interface DropzoneProps {
 
 export function Dropzone({
   onFilesSelected,
-  acceptedFormatsText = 'Formatos aceitos: PDF, DOCX, TXT, PNG, JPG/JPEG (máx. 20 MB)',
+  acceptedFormatsText = 'Formatos aceitos: PDF, DOCX, TXT, PNG, JPG e WEBP (máx. 20 MB por arquivo)',
   accept = '.pdf,.docx,.txt,.png,.jpg,.jpeg,.webp',
   multiple = true,
   disabled = false,
@@ -37,7 +37,7 @@ export function Dropzone({
     setIsDragOver(false);
     if (disabled) return;
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      onFilesSelected(e.dataTransfer.files);
+      onFilesSelected(Array.from(e.dataTransfer.files));
     }
   };
 
@@ -49,8 +49,9 @@ export function Dropzone({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      onFilesSelected(e.target.files);
+      onFilesSelected(Array.from(e.target.files));
     }
+    e.target.value = '';
   };
 
   return (
@@ -98,6 +99,7 @@ export function Dropzone({
         type="button"
         onClick={handleButtonClick}
         disabled={disabled}
+        aria-describedby={`${id}-formats`}
         className="min-h-[44px] inline-flex items-center justify-center px-6 py-2.5 rounded-xl text-sm font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-colors cursor-pointer disabled:opacity-50"
       >
         Escolher arquivos
