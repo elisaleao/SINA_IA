@@ -165,3 +165,26 @@ def test_only_symbols_written_together_are_read_together():
     # otherwise E = m c^2 would be read as "mc".
     assert speak('$$E = m c^2$$') == 'E é igual a m c ao quadrado'
     assert speak('$2x\\,dx$') == '2x dx'
+
+
+@pytest.mark.parametrize(
+    ('latex', 'spoken'),
+    [
+        # Used by the logic questions of the quiz bank.
+        ('$A \\rightarrow B$', 'A implica B'),
+        ('$A \\land B$', 'A e B'),
+        ('$A \\lor B$', 'A ou B'),
+        ('$\\neg A$', 'não A'),
+        ('$\\lnot A \\wedge B \\vee C$', 'não A e B ou C'),
+        (
+            '$\\neg(A \\land B)$',
+            'não abre parênteses A e B fecha parênteses',
+        ),
+    ],
+)
+def test_logic_operators(latex, spoken):
+    assert speak(latex) == spoken
+
+
+def test_arrow_in_a_limit_still_reads_tends_to():
+    assert speak('$\\lim_{x \\to 0} x$') == 'limite quando x tende a 0 de x'
