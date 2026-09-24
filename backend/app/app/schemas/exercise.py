@@ -1,11 +1,21 @@
 from datetime import datetime
+from enum import Enum
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
+class ExerciseLevel(str, Enum):
+    BASICO = 'basico'
+    INTERMEDIARIO = 'intermediario'
+    AVANCADO = 'avancado'
+
+
 class ExerciseBase(BaseModel):
     materia_id: str = Field(description='Identificador da matéria / tópico')
+    nivel: ExerciseLevel = Field(
+        default=ExerciseLevel.BASICO, description='Nível de dificuldade'
+    )
     enunciado: str = Field(
         description='Texto da questão em Markdown com fórmulas LaTeX'
     )
@@ -50,6 +60,7 @@ class ExercisePublicQuestion(BaseModel):
 
     id: str
     materia_id: str
+    nivel: ExerciseLevel
     enunciado: str
     enunciado_falado: str
     codigo: Optional[str] = None
@@ -65,6 +76,10 @@ class StartSessionRequest(BaseModel):
         default=None,
         description='Filtrar questões por matéria específica (opcional)',
     )
+    nivel: Optional[ExerciseLevel] = Field(
+        default=None,
+        description='Filtrar questões por nível de dificuldade (opcional)',
+    )
     total_questoes: int = Field(
         default=5,
         ge=1,
@@ -77,6 +92,7 @@ class SessionResponse(BaseModel):
     id: str
     user_id: str
     materia_id: Optional[str] = None
+    nivel: Optional[ExerciseLevel] = None
     total_questoes: int
     tempo_limite_segundos: int
     iniciado_em: datetime
