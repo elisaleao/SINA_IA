@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import { ChatPanel } from "@/components/workspace/ChatPanel";
 import { useSession } from "@/components/session/SessionProvider";
-import { FallbackNotice } from "@/components/ui";
+import { FallbackNotice, MathText } from "@/components/ui";
 import {
   getStudentClassrooms,
   joinClassroomByCode,
@@ -718,7 +718,7 @@ export function StudentWorkspace() {
                               Conteúdo Escrito ({adaptationType === "summary" ? "Resumo" : adaptationType === "quiz" ? "Questões" : "Guia de Estudos"})
                             </h4>
                             <div className="mt-4 text-stone-800 leading-relaxed whitespace-pre-wrap text-base font-sans space-y-4">
-                              {generatedContent.text}
+                              <MathText text={generatedContent.text} />
                             </div>
                           </div>
                         </div>
