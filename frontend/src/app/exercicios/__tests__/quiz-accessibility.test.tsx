@@ -123,6 +123,24 @@ describe('quiz with a screen reader', () => {
     );
   });
 
+  it('moves focus to the next button once the feedback is shown', async () => {
+    await openQuestion();
+    api.submitExerciseAnswer.mockResolvedValue({
+      exercicio_id: 'q1',
+      resposta_aluno: true,
+      resposta_correta: true,
+      acertou: true,
+      tempo_expirado: false,
+      explicacao: 'Regra da potência.',
+    });
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Verdadeiro' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar resposta' }));
+
+    const next = await screen.findByRole('button', { name: 'Avançar para a Próxima' });
+    await waitFor(() => expect(document.activeElement).toBe(next));
+  });
+
   it('reads the question and the alternatives aloud and lets the student stop', async () => {
     await openQuestion();
 
