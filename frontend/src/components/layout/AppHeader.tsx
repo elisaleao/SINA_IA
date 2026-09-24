@@ -98,6 +98,21 @@ export function AppHeader() {
             Processar Documento
           </Link>
 
+          {isAuthenticated && (
+            <Link
+              href={appRoutes.settings}
+              aria-current={pathname.startsWith(appRoutes.settings) ? 'page' : undefined}
+              className={`min-h-[44px] inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-blue-600 ${
+                pathname.startsWith(appRoutes.settings)
+                  ? 'border-blue-600 bg-blue-50 text-blue-900'
+                  : 'border-stone-300 text-stone-800 hover:border-stone-900 hover:text-stone-950'
+              }`}
+            >
+              <span aria-hidden="true">⚙</span>
+              Configurações
+            </Link>
+          )}
+
           {isAuthenticated ? (
             <button
               type="button"

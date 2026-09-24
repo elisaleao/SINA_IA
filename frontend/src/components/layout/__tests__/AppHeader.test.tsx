@@ -31,8 +31,21 @@ describe('AppHeader', () => {
         '/entrar'
       );
       expect(screen.queryByRole('button', { name: 'Sair' })).toBeNull();
+      // Settings belong to an account, so they only show up after login.
+      expect(screen.queryByRole('link', { name: /Configurações/ })).toBeNull();
     }
   );
+
+  it('links an authenticated user to the settings', () => {
+    session.status = 'authenticated';
+
+    render(<AppHeader />);
+
+    expect(screen.getByRole('link', { name: /Configurações/ })).toHaveAttribute(
+      'href',
+      '/configuracoes'
+    );
+  });
 
   it('offers "Sair" to an authenticated user and signs out on click', () => {
     session.status = 'authenticated';
