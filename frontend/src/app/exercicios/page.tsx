@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useSession } from '@/components/session/SessionProvider';
+import { RadioCard } from '@/components/ui';
 import {
   startExerciseSession,
   fetchNextQuestion,
@@ -43,6 +44,9 @@ export default function ExerciciosPage() {
   const [summary, setSummary] = useState<SessionResultResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [selectedAnswer, setSelectedAnswer] = useState<boolean | null>(null);
+  const questionHeadingRef = useRef<HTMLHeadingElement>(null);
+  const summaryHeadingRef = useRef<HTMLHeadingElement>(null);
   const { status } = useSession();
   const isAuthenticated = status !== 'anonymous';
 
@@ -103,6 +107,11 @@ export default function ExerciciosPage() {
     return () => stopTimer();
   }, [quizState, tempoRestante, handleTimeout, stopTimer]);
 
+  useEffect(() => {
+    if (quizState === 'question') questionHeadingRef.current?.focus();
+    if (quizState === 'summary') summaryHeadingRef.current?.focus();
+  }, [quizState, currentQuestion]);
+
   const handleStart = async () => {
     setErrorMessage(null);
     setQuizState('loading');
@@ -130,6 +139,7 @@ export default function ExerciciosPage() {
     setQuizState('loading');
     stopTimer();
     setFeedback(null);
+    setSelectedAnswer(null);
 
     try {
       const q = await fetchNextQuestion(sessionId);
@@ -154,9 +164,15 @@ export default function ExerciciosPage() {
     }
   };
 
+  const stopSpeech = () => {
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    setIsPlayingSpeech(false);
+  };
+
   const handleAnswer = async (userChoice: boolean) => {
     if (!currentSession || !currentQuestion || isSubmitting) return;
     stopTimer();
+    stopSpeech();
     setIsSubmitting(true);
 
     const elapsedSeconds = Math.max(
@@ -181,10 +197,16 @@ export default function ExerciciosPage() {
     }
   };
 
+  const handleConfirm = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (selectedAnswer !== null) void handleAnswer(selectedAnswer);
+  };
+
   const handleSpeakQuestion = () => {
     if (!currentQuestion) return;
-    const textToSpeak =
-      currentQuestion.enunciado_falado || currentQuestion.enunciado;
+    const textToSpeak = `${
+      currentQuestion.enunciado_falado || currentQuestion.enunciado
+    } Alternativas: Verdadeiro ou Falso.`;
 
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
@@ -374,40 +396,58 @@ export default function ExerciciosPage() {
               Questão {currentQuestion.numero_questao} de {currentQuestion.total_questoes}
             </div>
 
-            <div
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold ${
-                tempoRestante <= 5
-                  ? 'bg-red-100 text-red-700 animate-pulse'
-                  : 'bg-blue-50 text-blue-700'
-              }`}
-              aria-live="polite"
-              aria-atomic="true"
-            >
-              <span aria-hidden="true">⏱</span>
-              <span>Tempo restante: {tempoRestante}s</span>
-            </div>
+            {tempoTotalQuestao > 0 ? (
+              <div
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold ${
+                  tempoRestante <= 5
+                    ? 'bg-red-100 text-red-700 animate-pulse'
+                    : 'bg-blue-50 text-blue-700'
+                }`}
+              >
+                <span aria-hidden="true">⏱</span>
+                <span>Tempo restante: {tempoRestante}s</span>
+              </div>
+            ) : (
+              <p className="text-sm font-semibold text-slate-600">Sem limite de tempo</p>
+            )}
           </div>
+          <p aria-live="polite" className="sr-only">
+            {tempoTotalQuestao > 0 && tempoRestante === 5
+              ? 'Faltam 5 segundos para responder.'
+              : ''}
+          </p>
 
           {/* Enunciado */}
           <div className="my-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 leading-snug">
-              {currentQuestion.enunciado}
+            <h2
+              ref={questionHeadingRef}
+              tabIndex={-1}
+              className="text-xl sm:text-2xl font-bold text-slate-900 leading-snug focus:outline-none focus:ring-2 focus:ring-blue-600 rounded"
+            >
+              <span className="sr-only">
+                Questão {currentQuestion.numero_questao} de {currentQuestion.total_questoes}.{' '}
+                {currentQuestion.enunciado_falado || currentQuestion.enunciado}
+              </span>
+              <span aria-hidden="true">{currentQuestion.enunciado}</span>
             </h2>
 
-            {currentQuestion.enunciado_falado && (
-              <div className="mt-4">
-                <button
-                  type="button"
-                  onClick={handleSpeakQuestion}
-                  disabled={isPlayingSpeech}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                  aria-label="Ouvir enunciado da questão em português falado por extenso"
-                >
-                  <span aria-hidden="true">{isPlayingSpeech ? '🔊' : '🔈'}</span>
-                  <span>{isPlayingSpeech ? 'Falando...' : 'Ouvir Enunciado Falado'}</span>
-                </button>
-              </div>
-            )}
+            {currentQuestion.enunciado_falado &&
+              currentQuestion.enunciado_falado !== currentQuestion.enunciado && (
+                <p aria-hidden="true" className="mt-3 text-base text-slate-700">
+                  <strong>Leitura por extenso:</strong> {currentQuestion.enunciado_falado}
+                </p>
+              )}
+
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={isPlayingSpeech ? stopSpeech : handleSpeakQuestion}
+                className="min-h-[44px] inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold text-blue-800 bg-blue-50 hover:bg-blue-100 border border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-colors"
+              >
+                <span aria-hidden="true">{isPlayingSpeech ? '⏹' : '🔈'}</span>
+                <span>{isPlayingSpeech ? 'Parar leitura' : 'Ouvir pergunta e alternativas'}</span>
+              </button>
+            </div>
           </div>
 
           {/* Bloco de Código se houver */}
@@ -419,28 +459,43 @@ export default function ExerciciosPage() {
             </div>
           )}
 
-          {/* Botões de Resposta Verdadeiro / Falso */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
+          <form
+            className="mt-8"
+            onSubmit={handleConfirm}
+          >
+            <fieldset>
+              <legend className="text-base font-bold text-slate-900 mb-3">
+                Sua resposta
+              </legend>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <RadioCard
+                  id="resposta-verdadeiro"
+                  name="resposta"
+                  value="true"
+                  checked={selectedAnswer === true}
+                  onChange={() => setSelectedAnswer(true)}
+                  title="Verdadeiro"
+                  disabled={isSubmitting}
+                />
+                <RadioCard
+                  id="resposta-falso"
+                  name="resposta"
+                  value="false"
+                  checked={selectedAnswer === false}
+                  onChange={() => setSelectedAnswer(false)}
+                  title="Falso"
+                  disabled={isSubmitting}
+                />
+              </div>
+            </fieldset>
             <button
-              type="button"
-              onClick={() => handleAnswer(true)}
-              disabled={isSubmitting}
-              className="py-4 px-6 rounded-xl border-2 border-emerald-600 bg-emerald-50 text-emerald-800 hover:bg-emerald-600 hover:text-white font-extrabold text-lg flex items-center justify-center gap-3 shadow-sm focus:outline-none focus:ring-4 focus:ring-emerald-300 disabled:opacity-50 transition-all cursor-pointer"
+              type="submit"
+              disabled={isSubmitting || selectedAnswer === null}
+              className="mt-6 w-full min-h-[44px] py-3.5 px-6 rounded-lg text-white bg-blue-700 hover:bg-blue-800 font-bold text-base shadow focus:outline-none focus:ring-4 focus:ring-blue-300 disabled:opacity-50 transition-colors"
             >
-              <span className="text-2xl" aria-hidden="true">✓</span>
-              <span>VERDADEIRO</span>
+              {isSubmitting ? 'Enviando…' : 'Confirmar resposta'}
             </button>
-
-            <button
-              type="button"
-              onClick={() => handleAnswer(false)}
-              disabled={isSubmitting}
-              className="py-4 px-6 rounded-xl border-2 border-rose-600 bg-rose-50 text-rose-800 hover:bg-rose-600 hover:text-white font-extrabold text-lg flex items-center justify-center gap-3 shadow-sm focus:outline-none focus:ring-4 focus:ring-rose-300 disabled:opacity-50 transition-all cursor-pointer"
-            >
-              <span className="text-2xl" aria-hidden="true">✕</span>
-              <span>FALSO</span>
-            </button>
-          </div>
+          </form>
         </div>
       )}
 
@@ -502,8 +557,13 @@ export default function ExerciciosPage() {
       {quizState === 'summary' && summary && (
         <div className="bg-white p-6 sm:p-8 rounded-xl shadow border border-slate-200">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-extrabold text-slate-900">
-              Rodada Concluída!
+            <h2
+              ref={summaryHeadingRef}
+              tabIndex={-1}
+              className="text-3xl font-extrabold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 rounded"
+            >
+              Rodada Concluída! Você acertou {summary.total_acertos} de{' '}
+              {summary.total_respondidas}.
             </h2>
             <p className="text-slate-600 mt-1">
               Confira seu desempenho formativo abaixo:
