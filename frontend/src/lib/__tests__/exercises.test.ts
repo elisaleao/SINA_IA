@@ -51,6 +51,17 @@ describe('lib/exercises', () => {
     });
   });
 
+  it('reads when the session started from iniciado_em, as the backend sends it', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ id: 's1', iniciado_em: '2026-09-24T10:00:00Z' }, 201)
+    );
+    const { startExerciseSession } = await import('../exercises');
+
+    const session = await startExerciseSession('m1', 3);
+
+    expect(session.iniciado_em).toBe('2026-09-24T10:00:00Z');
+  });
+
   it('fetches the next question with the bearer token', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse({ id: 'q1' }));
     const { fetchNextQuestion } = await import('../exercises');

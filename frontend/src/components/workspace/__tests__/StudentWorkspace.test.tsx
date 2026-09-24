@@ -36,6 +36,9 @@ describe('StudentWorkspace', () => {
       role: 'aluno',
       is_active: true,
       accessibility_preferences: null,
+      version_id: 1,
+      created_at: '2026-09-24T10:00:00Z',
+      updated_at: '2026-09-24T10:00:00Z',
       llm_key_configurada: false,
     };
   });

@@ -358,7 +358,7 @@ export function StudentWorkspace() {
 
       setGeneratedContent({
         text: response.text_content,
-        audioUrl: response.audio_url,
+        audioUrl: response.audio_url ?? null,
         usedFallback: response.chave_pessoal_falhou ?? false,
       });
     } catch (error: unknown) {
